@@ -1715,9 +1715,9 @@ const Dashboard = () => {
   //   }
   // };
 
-  useEffect(() => {
-    debugDepartments();
-  }, []);
+  // useEffect(() => {
+  //   debugDepartments();
+  // }, []);
 
   const handleLogout = async () => {
     try {
