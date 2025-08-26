@@ -21,6 +21,8 @@ import ExportReports from "./pages/ExportReports";
 import QRCodeAnalytics from "./pages/QRCodeAnalytics";
 import { QRCodeProvider } from "./contexts/QRCodeContext";
 import DataManagement from "./pages/DataManagement";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,8 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/review/:qrCodeId" element={<ReviewSubmission />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               {/* Protected routes - require authentication */}
               <Route
                 path="/dashboard"

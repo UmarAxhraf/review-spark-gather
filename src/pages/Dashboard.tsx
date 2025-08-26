@@ -1604,6 +1604,9 @@ const Dashboard = () => {
   const [recentReviews, setRecentReviews] = useState<Review[]>([]);
   const [topPerformers, setTopPerformers] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [dropdownDepartments, setDropdownDepartments] = useState<Department[]>(
+    []
+  );
   const [chartData, setChartData] = useState<{
     reviewTrends: ChartData[];
     ratingDistribution: ChartData[];
@@ -1740,6 +1743,25 @@ const Dashboard = () => {
     const startDate = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
     const endDate = now;
     return { startDate, endDate };
+  };
+
+  const fetchDropdownDepartments = async () => {
+    try {
+      // Fetch ALL departments without company_id filter for the dropdown
+      const { data: allDepartments, error } = await supabase
+        .from("departments")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching dropdown departments:", error);
+        return;
+      }
+
+      setDropdownDepartments(allDepartments || []);
+    } catch (error) {
+      console.error("Error in fetchDropdownDepartments:", error);
+    }
   };
 
   // Replace the fetchDashboardData function with this updated version:
@@ -2198,6 +2220,7 @@ const Dashboard = () => {
   useEffect(() => {
     if (user?.id) {
       fetchDashboardData();
+      fetchDropdownDepartments();
     }
   }, [user?.id, timeRange, selectedDepartment]); // Add selectedDepartment as dependency
 
@@ -2501,8 +2524,7 @@ const Dashboard = () => {
                 </SelectContent>
               </Select>
 
-              {/* Department Filter with scrollable dropdown */}
-              <Select
+              {/* <Select
                 value={selectedDepartment}
                 onValueChange={setSelectedDepartment}
               >
@@ -2517,7 +2539,26 @@ const Dashboard = () => {
                     </SelectItem>
                   ))}
                 </SelectContent>
+              </Select> */}
+
+              {/* Department Filter with scrollable dropdown */}
+              <Select
+                value={selectedDepartment}
+                onValueChange={setSelectedDepartment}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="All Departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {dropdownDepartments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
+
               {/* Enhanced Department Filter with better scrolling */}
               {/* <Select
                 value={selectedDepartment}
