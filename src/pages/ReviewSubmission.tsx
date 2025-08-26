@@ -722,7 +722,7 @@ const ReviewSubmission = () => {
 
   const fetchEmployeeAndCompany = async () => {
     try {
-      console.log("Fetching employee for QR code:", qrCodeId);
+      //console.log("Fetching employee for QR code:", qrCodeId);
 
       // Fetch employee data
       const { data: employeeData, error: employeeError } = await supabase
@@ -738,7 +738,7 @@ const ReviewSubmission = () => {
         return;
       }
 
-      console.log("Employee found:", employeeData);
+      //  console.log("Employee found:", employeeData);
       setEmployee(employeeData);
 
       // Fetch company settings from profiles table
@@ -770,7 +770,7 @@ const ReviewSubmission = () => {
           follow_up_enabled: false,
         });
       } else {
-        console.log("Company settings loaded:", companyData);
+        // console.log("Company settings loaded:", companyData);
         setCompany({
           ...companyData,
           thank_you_message: "Thank you for your feedback!",
@@ -821,7 +821,7 @@ const ReviewSubmission = () => {
       if (error) {
         console.error("Error recording QR code scan:", error);
       } else {
-        console.log("QR code scan recorded successfully");
+        // console.log("QR code scan recorded successfully");
       }
     } catch (error) {
       console.error("Error recording scan:", error);

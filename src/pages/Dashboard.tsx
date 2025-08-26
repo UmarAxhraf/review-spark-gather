@@ -1673,47 +1673,47 @@ const Dashboard = () => {
     },
   ]);
 
-  const debugDepartments = async () => {
-    console.log("Current departments state:", departments);
-    console.log("Departments length:", departments.length);
-    console.log("Selected department:", selectedDepartment);
+  // const debugDepartments = async () => {
+  //   console.log("Current departments state:", departments);
+  //   console.log("Departments length:", departments.length);
+  //   console.log("Selected department:", selectedDepartment);
 
-    // Let's also check what's actually in the database
-    if (user?.id) {
-      try {
-        // Check total departments without any filters
-        const { data: allDepts, error: allError } = await supabase
-          .from("departments")
-          .select("*");
+  //   // Let's also check what's actually in the database
+  //   if (user?.id) {
+  //     try {
+  //       // Check total departments without any filters
+  //       const { data: allDepts, error: allError } = await supabase
+  //         .from("departments")
+  //         .select("*");
 
-        console.log("ALL departments in database:", allDepts?.length || 0);
-        console.log("All departments data:", allDepts);
+  //       console.log("ALL departments in database:", allDepts?.length || 0);
+  //       console.log("All departments data:", allDepts);
 
-        // Check departments for your company specifically
-        const { data: companyDepts, error: companyError } = await supabase
-          .from("departments")
-          .select("*")
-          .eq("company_id", user.id);
+  //       // Check departments for your company specifically
+  //       const { data: companyDepts, error: companyError } = await supabase
+  //         .from("departments")
+  //         .select("*")
+  //         .eq("company_id", user.id);
 
-        console.log("Departments for your company:", companyDepts?.length || 0);
-        console.log("Company departments data:", companyDepts);
+  //       console.log("Departments for your company:", companyDepts?.length || 0);
+  //       console.log("Company departments data:", companyDepts);
 
-        // Check if there are departments with different company_ids
-        const { data: uniqueCompanies, error: companiesError } = await supabase
-          .from("departments")
-          .select("company_id")
-          .not("company_id", "is", null);
+  //       // Check if there are departments with different company_ids
+  //       const { data: uniqueCompanies, error: companiesError } = await supabase
+  //         .from("departments")
+  //         .select("company_id")
+  //         .not("company_id", "is", null);
 
-        const uniqueCompanyIds = [
-          ...new Set(uniqueCompanies?.map((d) => d.company_id)),
-        ];
-        console.log("Unique company IDs in departments:", uniqueCompanyIds);
-        console.log("Your company ID:", user.id);
-      } catch (error) {
-        console.error("Debug query error:", error);
-      }
-    }
-  };
+  //       const uniqueCompanyIds = [
+  //         ...new Set(uniqueCompanies?.map((d) => d.company_id)),
+  //       ];
+  //       console.log("Unique company IDs in departments:", uniqueCompanyIds);
+  //       console.log("Your company ID:", user.id);
+  //     } catch (error) {
+  //       console.error("Debug query error:", error);
+  //     }
+  //   }
+  // };
 
   useEffect(() => {
     debugDepartments();
@@ -1818,9 +1818,9 @@ const Dashboard = () => {
       const allDepartments = departmentsResponse.data || [];
       const allQrScans = qrScansResponse.data || [];
 
-      console.log("Fetched departments:", allDepartments); // Debug log
-      console.log("User ID for query:", user.id); // Debug user ID
-      console.log("Total departments found:", allDepartments.length); // Debug count
+      //console.log("Fetched departments:", allDepartments); // Debug log
+      // console.log("User ID for query:", user.id); // Debug user ID
+      //  console.log("Total departments found:", allDepartments.length); // Debug count
 
       // Apply department filtering if needed
       if (selectedDepartment && selectedDepartment !== "all") {
@@ -2236,7 +2236,7 @@ const Dashboard = () => {
           filter: `company_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log("Real-time review update:", payload);
+          // console.log("Real-time review update:", payload);
           fetchDashboardData();
 
           if (payload.eventType === "INSERT") {
@@ -2258,7 +2258,7 @@ const Dashboard = () => {
           filter: `company_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log("Real-time QR scan update:", payload);
+          //console.log("Real-time QR scan update:", payload);
           fetchDashboardData();
 
           if (payload.eventType === "INSERT") {
@@ -2280,7 +2280,7 @@ const Dashboard = () => {
           filter: `company_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log("Real-time employee update:", payload);
+          // console.log("Real-time employee update:", payload);
           fetchDashboardData();
         }
       )

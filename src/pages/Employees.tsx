@@ -93,7 +93,7 @@ const Employees = () => {
             filter: `company_id=eq.${user.id}`,
           },
           () => {
-            console.log("Reviews changed, refreshing employee data...");
+            // console.log("Reviews changed, refreshing employee data...");
             fetchEmployees();
           }
         )
@@ -110,7 +110,7 @@ const Employees = () => {
             filter: `company_id=eq.${user.id}`,
           },
           (payload) => {
-            console.log("Employee data changed:", payload);
+            //console.log("Employee data changed:", payload);
             if (payload.eventType === "UPDATE") {
               setEmployees((prev) =>
                 prev.map((emp) =>
@@ -166,7 +166,7 @@ const Employees = () => {
     if (!user) return;
 
     try {
-      console.log("Fetching employees data...");
+      //console.log("Fetching employees data...");
 
       // First, try the simple query without joins to ensure basic functionality
       const { data, error } = await supabase
@@ -255,7 +255,7 @@ const Employees = () => {
       );
 
       setEmployees(employeesWithDeptPos);
-      console.log("Employees updated:", employeesWithDeptPos.length);
+      //console.log("Employees updated:", employeesWithDeptPos.length);
     } catch (error: any) {
       console.error("Error fetching employees:", error);
       toast.error("Failed to load employees");
@@ -365,7 +365,7 @@ const Employees = () => {
 
   const handleViewProfile = (employee: Employee) => {
     // Implement profile view logic here
-    console.log("View profile for:", employee);
+    // console.log("View profile for:", employee);
   };
 
   const handleBulkExport = () => {

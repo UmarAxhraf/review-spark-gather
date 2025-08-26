@@ -424,7 +424,7 @@ const Notifications = () => {
           table: "notifications",
         },
         (payload) => {
-          console.log("Notification change received:", payload);
+          //console.log("Notification change received:", payload);
 
           if (payload.eventType === "INSERT") {
             const newNotification: Notification = {
@@ -467,7 +467,7 @@ const Notifications = () => {
         }
       )
       .subscribe((status) => {
-        console.log("Subscription status:", status);
+        //console.log("Subscription status:", status);
       });
 
     channelRef.current = channel;

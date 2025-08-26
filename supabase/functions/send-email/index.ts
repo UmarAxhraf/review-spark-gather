@@ -1,65 +1,3 @@
-// import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-// import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-// import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
-
-// const corsHeaders = {
-//   "Access-Control-Allow-Origin": "*",
-//   "Access-Control-Allow-Headers":
-//     "authorization, x-client-info, apikey, content-type",
-// };
-
-// serve(async (req) => {
-//   // Handle CORS preflight requests
-//   if (req.method === "OPTIONS") {
-//     return new Response("ok", { headers: corsHeaders });
-//   }
-
-//   try {
-//     const { to, subject, html, reviewData } = await req.json();
-
-//     // Initialize SMTP client with Gmail
-//     const client = new SMTPClient({
-//       connection: {
-//         hostname: "smtp.gmail.com",
-//         port: 587,
-//         tls: true,
-//         auth: {
-//           username: Deno.env.get("EMAIL_USER")!,
-//           password: Deno.env.get("EMAIL_PASS")!,
-//         },
-//       },
-//     });
-
-//     // Send email
-//     await client.send({
-//       from: Deno.env.get("EMAIL_USER")!,
-//       to: to,
-//       subject: subject,
-//       content: html,
-//       html: html,
-//     });
-
-//     await client.close();
-
-//     return new Response(
-//       JSON.stringify({ success: true, message: "Email sent successfully" }),
-//       {
-//         headers: { ...corsHeaders, "Content-Type": "application/json" },
-//         status: 200,
-//       }
-//     );
-//   } catch (error) {
-//     console.error("Error sending email:", error);
-//     return new Response(
-//       JSON.stringify({ success: false, error: error.message }),
-//       {
-//         headers: { ...corsHeaders, "Content-Type": "application/json" },
-//         status: 500,
-//       }
-//     );
-//   }
-// });
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -192,7 +130,7 @@ async function sendEmailViaSMTP(
       }
     } else {
       // Fallback: Use a simple HTTP-to-SMTP service or return success for development
-      console.log("Email would be sent:", emailData);
+      // console.log("Email would be sent:", emailData);
       return { success: true, messageId: `dev-${Date.now()}` };
     }
   } catch (error) {

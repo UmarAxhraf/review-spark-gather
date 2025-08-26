@@ -301,7 +301,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
     setVideoInfo(null);
 
     try {
-      console.log("Validating file:", file.name, file.type, file.size);
+      //console.log("Validating file:", file.name, file.type, file.size);
 
       // Check file extension against accepted formats
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
@@ -373,12 +373,12 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
         video.onloadedmetadata = () => {
           clearTimeout(timeout);
 
-          console.log(
-            "Video validation successful:",
-            video.duration,
-            video.videoWidth,
-            video.videoHeight
-          );
+          // console.log(
+          //   "Video validation successful:",
+          //   video.duration,
+          //   video.videoWidth,
+          //   video.videoHeight
+          // );
           if (video.duration > 0) {
             // Store video information for potential compression
             setVideoInfo({
@@ -479,11 +479,11 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
         webkitRelativePath: "",
       });
 
-      console.log(
-        `Compressed video: ${compressedSizeMB.toFixed(
-          2
-        )}MB (from ${originalSizeMB.toFixed(2)}MB)`
-      );
+      // console.log(
+      //   `Compressed video: ${compressedSizeMB.toFixed(
+      //     2
+      //   )}MB (from ${originalSizeMB.toFixed(2)}MB)`
+      // );
 
       setIsCompressing(false);
       setCompressionProgress(0);
@@ -508,7 +508,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
 
   // Handle file selection
   const handleFileSelect = async (file: File) => {
-    console.log("File selected:", file.name, file.type, file.size);
+    //console.log("File selected:", file.name, file.type, file.size);
 
     const isValid = await validateFile(file);
     if (isValid) {
@@ -536,7 +536,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
     setIsDragOver(false);
 
     const files = Array.from(e.dataTransfer.files);
-    console.log("Files dropped:", files.length);
+    // console.log("Files dropped:", files.length);
 
     if (files.length > 0) {
       handleFileSelect(files[0]);
@@ -557,7 +557,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    console.log("File input changed:", files?.length);
+    //console.log("File input changed:", files?.length);
 
     if (files && files.length > 0) {
       handleFileSelect(files[0]);
