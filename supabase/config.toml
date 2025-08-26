@@ -1,0 +1,8 @@
+project_id = "uiszftfrxbqjqdgybbmk"
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.send-email.env]
+GMAIL_USER = "env(EMAIL_USER)"
+GMAIL_APP_PASSWORD = "env(EMAIL_PASS)"
