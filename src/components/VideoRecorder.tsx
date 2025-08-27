@@ -126,14 +126,22 @@ const QUALITY_CONFIGS: Record<
   },
 };
 
+// iOS-specific MIME types that Safari actually supports
+const IOS_SUPPORTED_MIME_TYPES = [
+  "video/mp4", // Basic MP4 support on iOS
+  "video/quicktime", // Basic QuickTime support
+];
+
 // Supported MIME types in order of preference
 const SUPPORTED_MIME_TYPES = [
   "video/webm;codecs=vp9,opus",
   "video/webm;codecs=vp8,opus",
   "video/webm;codecs=h264,opus",
   "video/mp4;codecs=h264,aac",
+  "video/mp4", // Fallback for iOS
   "video/quicktime;codecs=h264,aac", // <-- iPhone .mov (H.264)
   "video/quicktime;codecs=hevc,aac", // <-- iPhone .mov (HEVC)
+  "video/quicktime", // Fallback for iOS
   "video/webm",
 ];
 
@@ -182,30 +190,118 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   }, []);
 
+  // const getSupportedMimeType = useCallback((): string => {
+  //   for (const type of SUPPORTED_MIME_TYPES) {
+  //     if (MediaRecorder.isTypeSupported(type)) {
+  //       return type;
+  //     }
+  //   }
+  //   return "";
+  // }, []);
+  // Enhanced MIME type detection with iOS fallback
   const getSupportedMimeType = useCallback((): string => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    // For iOS devices, check iOS-specific formats first
+    if (isIOS) {
+      console.log("iOS device detected, checking iOS-specific formats");
+
+      // Check if MediaRecorder is supported at all on iOS
+      if (!window.MediaRecorder) {
+        console.warn("MediaRecorder not supported on this iOS version");
+        return "";
+      }
+
+      // Try iOS-specific formats first
+      for (const type of IOS_SUPPORTED_MIME_TYPES) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          console.log(`iOS: Supported MIME type found: ${type}`);
+          return type;
+        }
+      }
+
+      // If no specific format works, try without codecs
+      const basicFormats = ["video/mp4", "video/quicktime", "video/webm"];
+      for (const type of basicFormats) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          console.log(`iOS: Basic MIME type found: ${type}`);
+          return type;
+        }
+      }
+
+      console.warn("iOS: No supported MIME types found");
+      return "";
+    }
+
+    // For non-iOS devices, use the original logic
     for (const type of SUPPORTED_MIME_TYPES) {
       if (MediaRecorder.isTypeSupported(type)) {
+        console.log(`Non-iOS: Supported MIME type found: ${type}`);
         return type;
       }
     }
+
+    console.warn("No supported MIME types found");
     return "";
   }, []);
 
+  // const getVideoConstraints = useCallback(() => {
+  //   const isMobile =
+  //     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+  //       navigator.userAgent
+  //     );
+
+  //   const config = QUALITY_CONFIGS[quality];
+  //   const constraints: MediaTrackConstraints = {
+  //     ...config,
+  //     // Apply mobile optimizations
+  //     width: isMobile ? { ideal: 640, max: 640 } : config.width,
+  //     height: isMobile ? { ideal: 480, max: 480 } : config.height,
+  //     frameRate: isMobile ? { ideal: 15, max: 30 } : config.frameRate,
+  //     facingMode,
+  //   };
+
+  //   if (selectedCamera) {
+  //     constraints.deviceId = { exact: selectedCamera };
+  //     delete constraints.facingMode;
+  //   }
+
+  //   return constraints;
+  // }, [quality, facingMode, selectedCamera]);
+
+  // Enhanced iOS-specific constraints
   const getVideoConstraints = useCallback(() => {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     const isMobile =
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent
       );
 
     const config = QUALITY_CONFIGS[quality];
-    const constraints: MediaTrackConstraints = {
+
+    let constraints: MediaTrackConstraints = {
       ...config,
-      // Apply mobile optimizations
-      width: isMobile ? { ideal: 640, max: 640 } : config.width,
-      height: isMobile ? { ideal: 480, max: 480 } : config.height,
-      frameRate: isMobile ? { ideal: 15, max: 30 } : config.frameRate,
       facingMode,
     };
+
+    // iOS-specific optimizations
+    if (isIOS) {
+      constraints = {
+        width: { ideal: 640, max: 1280 },
+        height: { ideal: 480, max: 720 },
+        frameRate: { ideal: 15, max: 30 }, // Lower frame rate for iOS
+        facingMode,
+      };
+    } else if (isMobile) {
+      // Other mobile devices
+      constraints = {
+        ...config,
+        width: { ideal: 640, max: 640 },
+        height: { ideal: 480, max: 480 },
+        frameRate: { ideal: 15, max: 30 },
+        facingMode,
+      };
+    }
 
     if (selectedCamera) {
       constraints.deviceId = { exact: selectedCamera };
@@ -262,13 +358,86 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
   }, [selectedCamera]);
 
+  // const startCamera = useCallback(async () => {
+  //   try {
+  //     setState("preparing");
+  //     clearError();
+
+  //     if (!navigator.mediaDevices?.getUserMedia) {
+  //       throw new Error("Camera access not supported in this browser");
+  //     }
+
+  //     // Stop existing stream
+  //     if (stream) {
+  //       stream.getTracks().forEach((track) => track.stop());
+  //     }
+
+  //     if (!isOnline()) {
+  //       throw new Error("No internet connection available");
+  //     }
+
+  //     const videoConstraints = getVideoConstraints();
+  //     const constraints: MediaStreamConstraints = {
+  //       video: videoConstraints,
+  //       audio: true,
+  //     };
+
+  //     const mediaStream = await navigator.mediaDevices.getUserMedia(
+  //       constraints
+  //     );
+
+  //     // Detect the supported MIME type
+  //     const supportedMimeType = getSupportedMimeType();
+  //     if (!supportedMimeType) {
+  //       throw new Error("No supported video format found");
+  //     }
+  //     setMimeType(supportedMimeType);
+
+  //     setStream(mediaStream);
+  //     setState("idle");
+
+  //     toast({
+  //       title: "Camera Ready",
+  //       description: "Camera initialized successfully",
+  //     });
+  //   } catch (err: any) {
+  //     const message =
+  //       err.name === "NotAllowedError"
+  //         ? "Camera access denied. Please allow camera permissions."
+  //         : err.name === "NotFoundError"
+  //         ? "No camera found. Please connect a camera."
+  //         : err.name === "NotReadableError"
+  //         ? "Camera is already in use by another application."
+  //         : `Camera error: ${err.message}`;
+
+  //     handleError(message, err);
+  //   }
+  // }, [
+  //   stream,
+  //   getVideoConstraints,
+  //   getSupportedMimeType,
+  //   handleError,
+  //   clearError,
+  //   toast,
+  // ]);
+
+  // Enhanced camera initialization with iOS-specific handling
   const startCamera = useCallback(async () => {
     try {
       setState("preparing");
       clearError();
 
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error("Camera access not supported in this browser");
+      }
+
+      // Check MediaRecorder support specifically for iOS
+      if (isIOS && !window.MediaRecorder) {
+        throw new Error(
+          "Video recording is not supported on this iOS version. Please update to iOS 14.3 or later."
+        );
       }
 
       // Stop existing stream
@@ -286,6 +455,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
         audio: true,
       };
 
+      console.log("Requesting camera with constraints:", constraints);
       const mediaStream = await navigator.mediaDevices.getUserMedia(
         constraints
       );
@@ -293,8 +463,16 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
       // Detect the supported MIME type
       const supportedMimeType = getSupportedMimeType();
       if (!supportedMimeType) {
-        throw new Error("No supported video format found");
+        if (isIOS) {
+          throw new Error(
+            "Video recording is not supported on this iOS version. Please try using a different browser or update your iOS version."
+          );
+        } else {
+          throw new Error("No supported video format found");
+        }
       }
+
+      console.log(`Using MIME type: ${supportedMimeType}`);
       setMimeType(supportedMimeType);
 
       setStream(mediaStream);
@@ -302,17 +480,28 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
 
       toast({
         title: "Camera Ready",
-        description: "Camera initialized successfully",
+        description: isIOS
+          ? "Camera initialized for iOS"
+          : "Camera initialized successfully",
       });
     } catch (err: any) {
-      const message =
-        err.name === "NotAllowedError"
-          ? "Camera access denied. Please allow camera permissions."
-          : err.name === "NotFoundError"
-          ? "No camera found. Please connect a camera."
-          : err.name === "NotReadableError"
-          ? "Camera is already in use by another application."
-          : `Camera error: ${err.message}`;
+      console.error("Camera initialization error:", err);
+
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      let message = "";
+
+      if (err.name === "NotAllowedError") {
+        message = "Camera access denied. Please allow camera permissions.";
+      } else if (err.name === "NotFoundError") {
+        message = "No camera found. Please connect a camera.";
+      } else if (err.name === "NotReadableError") {
+        message = "Camera is already in use by another application.";
+      } else if (isIOS && err.message.includes("supported")) {
+        message =
+          "Video recording requires iOS 14.3+ and Safari 14+. Please update your device or try Chrome/Firefox.";
+      } else {
+        message = `Camera error: ${err.message}`;
+      }
 
       handleError(message, err);
     }
