@@ -132,6 +132,8 @@ const SUPPORTED_MIME_TYPES = [
   "video/webm;codecs=vp8,opus",
   "video/webm;codecs=h264,opus",
   "video/mp4;codecs=h264,aac",
+  "video/quicktime;codecs=h264,aac", // <-- iPhone .mov (H.264)
+  "video/quicktime;codecs=hevc,aac", // <-- iPhone .mov (HEVC)
   "video/webm",
 ];
 
