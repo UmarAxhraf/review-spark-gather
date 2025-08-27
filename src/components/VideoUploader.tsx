@@ -922,7 +922,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
           )}
 
           {/* Debug Info */}
-          <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
+          {/* <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
             <p>
               <strong>Debug Info:</strong>
             </p>
@@ -941,7 +941,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
             <p>Validation Status: {validationStatus}</p>
             <p>Selected File: {selectedFile ? selectedFile.name : "None"}</p>
             <p>Is Compressing: {isCompressing ? "Yes" : "No"}</p>
-          </div>
+          </div> */}
         </div>
       </CardContent>
     </Card>

@@ -718,6 +718,21 @@ const Reviews = () => {
     }
   };
 
+  // const renderVideoPreview = (review: Review) => {
+  //   if (review.review_type !== "video" || !review.video_url) return null;
+
+  //   return (
+  //     <div className="mt-2">
+  //       <video
+  //         src={review.video_url}
+  //         className="w-32 h-20 object-cover rounded border"
+  //         controls={false}
+  //         poster=""
+  //       />
+  //     </div>
+  //   );
+  // };
+
   const renderVideoPreview = (review: Review) => {
     if (review.review_type !== "video" || !review.video_url) return null;
 
@@ -728,6 +743,15 @@ const Reviews = () => {
           className="w-32 h-20 object-cover rounded border"
           controls={false}
           poster=""
+          preload="metadata"
+          onError={(e) => {
+            console.error("Video loading error:", e);
+            // Fallback: try to reload with different parameters
+            const video = e.target as HTMLVideoElement;
+            if (video.src && !video.src.includes("?t=")) {
+              video.src = video.src + "?t=" + Date.now();
+            }
+          }}
         />
       </div>
     );
