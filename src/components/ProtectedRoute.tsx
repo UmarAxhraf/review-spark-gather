@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { PageLoading } from "@/components/ui/page-loading";
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -7,11 +8,7 @@ const ProtectedRoute = ({ children }) => {
 
   // Show loading spinner while checking authentication
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <PageLoading text="Authenticating..." fullScreen />;
   }
 
   // If not authenticated, redirect to login with the current location

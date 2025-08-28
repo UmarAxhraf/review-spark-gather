@@ -42,6 +42,11 @@ import {
   Area,
   AreaChart,
 } from "recharts";
+import {
+  StatsCardSkeleton,
+  CardSkeleton,
+} from "@/components/ui/skeleton-loaders";
+import { BackButton } from "@/components/ui/back-button";
 
 interface AnalyticsData {
   totalReviews: number;
@@ -283,8 +288,41 @@ const Analytics = () => {
   if (loading) {
     return (
       <TeamLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-8 w-64 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-96 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="h-10 w-40 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+          </div>
+
+          {/* Charts Skeleton */}
+          <div className="space-y-6">
+            <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+              <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-8 w-28 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+          </div>
         </div>
       </TeamLayout>
     );
@@ -293,6 +331,9 @@ const Analytics = () => {
   return (
     <TeamLayout>
       <div className="space-y-6">
+        <div className="mb-6">
+          <BackButton />
+        </div>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

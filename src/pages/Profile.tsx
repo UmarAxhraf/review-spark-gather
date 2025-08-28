@@ -28,6 +28,7 @@ import {
   Edit,
   Loader2,
 } from "lucide-react";
+import { BackButton } from "@/components/ui/back-button";
 
 interface ProfileData {
   id: string;
@@ -125,6 +126,9 @@ const Profile = () => {
   return (
     <TeamLayout>
       <div className="space-y-6">
+        <div className="mb-6">
+          <BackButton />
+        </div>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

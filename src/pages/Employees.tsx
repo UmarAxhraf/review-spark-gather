@@ -10,6 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Users, UserPlus, Download } from "lucide-react";
+import { PageLoading } from "@/components/ui/page-loading";
+import {
+  EmployeeCardSkeleton,
+  StatsCardSkeleton,
+} from "@/components/ui/skeleton-loaders";
+import { Skeleton } from "@/components/ui/skeleton";
+import { BackButton } from "@/components/ui/back-button";
 
 interface Employee {
   id: string;
@@ -392,13 +399,50 @@ const Employees = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  // if (loading) {
+  //   return (
+  //     <TeamLayout>
+  //       <div className="flex items-center justify-center h-64">
+  //         <div className="text-center">
+  //           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+  //           <p className="text-gray-600">Loading employees...</p>
+  //         </div>
+  //       </div>
+  //     </TeamLayout>
+  //   );
+  // }
+
   if (loading) {
     return (
       <TeamLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading employees...</p>
+        <div className="space-y-6">
+          {/* Header skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </div>
+
+          {/* Search skeleton */}
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-10 flex-1" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+
+          {/* Stats skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <StatsCardSkeleton key={i} />
+            ))}
+          </div>
+
+          {/* Employee cards skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <EmployeeCardSkeleton key={i} />
+            ))}
           </div>
         </div>
       </TeamLayout>
@@ -408,6 +452,10 @@ const Employees = () => {
   return (
     <TeamLayout>
       <div className="space-y-6">
+        <div className="mb-6">
+          <BackButton />
+        </div>
+
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>

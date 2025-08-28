@@ -216,11 +216,37 @@ const AddEmployeeDialog = ({
     }
   };
 
+  // const uploadPhoto = async (file: File): Promise<string | null> => {
+  //   try {
+  //     const fileExt = file.name.split(".").pop();
+  //     const fileName = `${Math.random()}.${fileExt}`;
+  //     const filePath = `employee-photos/${fileName}`;
+
+  //     const { error: uploadError } = await supabase.storage
+  //       .from("company-assets")
+  //       .upload(filePath, file);
+
+  //     if (uploadError) {
+  //       console.error("Upload error:", uploadError);
+  //       return null;
+  //     }
+
+  //     const {
+  //       data: { publicUrl },
+  //     } = supabase.storage.from("company-assets").getPublicUrl(filePath);
+
+  //     return publicUrl;
+  //   } catch (error) {
+  //     console.error("Error uploading photo:", error);
+  //     return null;
+  //   }
+  // };
+
   const uploadPhoto = async (file: File): Promise<string | null> => {
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `employee-photos/${fileName}`;
+      const filePath = `${user.id}/employee-photos/${fileName}`; // Fixed: Added user.id as first folder
 
       const { error: uploadError } = await supabase.storage
         .from("company-assets")

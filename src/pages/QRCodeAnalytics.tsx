@@ -12,7 +12,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { QrCode, Scan, Calendar, TrendingUp, BarChart } from "lucide-react";
+import { QrCode, Scan, Calendar, TrendingUp, ChartColumn } from "lucide-react";
+import {
+  StatsCardSkeleton,
+  CardSkeleton,
+} from "@/components/ui/skeleton-loaders";
+import { BackButton } from "@/components/ui/back-button";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
 
 interface ScanData {
   date: string;
@@ -24,6 +42,14 @@ interface EmployeeScanData {
   employee_name: string;
   scan_count: number;
 }
+
+// Add chart configuration before the component
+const chartConfig = {
+  count: {
+    label: "Scans",
+    color: "hsl(var(--chart-1))",
+  },
+};
 
 const QRCodeAnalytics = () => {
   const { user } = useAuth();
@@ -103,11 +129,42 @@ const QRCodeAnalytics = () => {
     return date.toISOString();
   };
 
+  // if (loading) {
+  //   return (
+  //     <TeamLayout>
+  //       <div className="flex items-center justify-center h-64">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  //       </div>
+  //     </TeamLayout>
+  //   );
+  // }
+
   if (loading) {
     return (
       <TeamLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-8 w-56 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-72 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="h-10 w-44 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+          </div>
+
+          {/* Charts Skeleton */}
+          <div className="space-y-6">
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
         </div>
       </TeamLayout>
     );
@@ -116,6 +173,9 @@ const QRCodeAnalytics = () => {
   return (
     <TeamLayout>
       <div className="space-y-6">
+        <div className="mb-6">
+          <BackButton />
+        </div>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -254,50 +314,97 @@ const QRCodeAnalytics = () => {
         {/* Daily Scan Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Daily Scan Activity</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <ChartColumn className="h-5 w-5" />
+              Daily Scan Activity
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              QR code scans per day over the last {timeRange} days
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px]">
+            <div className="h-[400px]">
               {scansByDay.length === 0 ? (
-                <div className="text-center py-8">
-                  <BarChart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <div className="flex flex-col items-center justify-center h-full text-center">
+                  <BarChart className="h-12 w-12 text-gray-400 mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">
                     No scan data available
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 max-w-md">
                     Daily scan data will appear here once your QR codes start
-                    being used
+                    being used. Share your QR codes with customers to begin
+                    tracking scan activity.
                   </p>
                 </div>
               ) : (
-                <div className="flex items-end h-full space-x-2">
-                  {scansByDay.map((day) => {
-                    const maxCount = Math.max(
-                      ...scansByDay.map((d) => d.count)
-                    );
-                    const height =
-                      maxCount > 0 ? (day.count / maxCount) * 100 : 0;
-
-                    return (
-                      <div
-                        key={day.date}
-                        className="flex flex-col items-center flex-1"
-                      >
-                        <div
-                          className="w-full bg-blue-500 rounded-t"
-                          style={{ height: `${Math.max(height, 4)}%` }}
-                          title={`${day.count} scans on ${day.date}`}
-                        />
-                        <div className="text-xs mt-2 transform -rotate-45 origin-top-left truncate w-8">
-                          {new Date(day.date).toLocaleDateString(undefined, {
+                <ChartContainer config={chartConfig}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={scansByDay.map((day) => ({
+                        ...day,
+                        formattedDate: new Date(day.date).toLocaleDateString(
+                          undefined,
+                          {
                             month: "short",
                             day: "numeric",
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                          }
+                        ),
+                      }))}
+                      margin={{
+                        top: 20,
+                        right: 30,
+                        left: 20,
+                        bottom: 60,
+                      }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="opacity-30"
+                      />
+                      <XAxis
+                        dataKey="formattedDate"
+                        tick={{ fontSize: 12 }}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                        interval={0}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 12 }}
+                        label={{
+                          value: "Number of Scans",
+                          angle: -90,
+                          position: "insideLeft",
+                        }}
+                      />
+                      <ChartTooltip
+                        content={<ChartTooltipContent />}
+                        labelFormatter={(value, payload) => {
+                          if (payload && payload[0]) {
+                            const date = new Date(payload[0].payload.date);
+                            return date.toLocaleDateString(undefined, {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            });
+                          }
+                          return value;
+                        }}
+                        formatter={(value, name) => [
+                          `${value} ${value === 1 ? "scan" : "scans"}`,
+                          "Total Scans",
+                        ]}
+                      />
+                      <Bar
+                        dataKey="count"
+                        fill="var(--color-count)"
+                        radius={[4, 4, 0, 0]}
+                        className="hover:opacity-80 transition-opacity"
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
               )}
             </div>
           </CardContent>

@@ -1,349 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import { useAuth } from "@/contexts/AuthContext";
-// import { supabase } from "@/integrations/supabase/client";
-// import { toast } from "sonner";
-// import TeamLayout from "@/components/TeamLayout";
-// import QRCodeCard from "@/components/QRCodeCard";
-// import QRCodeDialog from "@/components/QRCodeDialog";
-// import { Button } from "@/components/ui/button";
-// import { Input } from "@/components/ui/input";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Search, QrCode, Download, Share2, Settings } from "lucide-react";
-// // import { useQRCode } from "@/contexts/QRCodeContext";
-// import { useQRCode } from "../contexts/QRCodeContext";
-// import { QRCodeSVG } from "qrcode.react";
-// import JSZip from "jszip";
-// import { saveAs } from "file-saver";
-// import { Progress } from "@/components/ui/progress";
-
-// interface Employee {
-//   id: string;
-//   name: string;
-//   email?: string;
-//   position?: string;
-//   qr_code_id: string;
-//   is_active: boolean;
-//   created_at: string;
-// }
-
-// const QRCodes = () => {
-//   const { user } = useAuth();
-//   const { settings } = useQRCode();
-//   const [employees, setEmployees] = useState<Employee[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
-//     null
-//   );
-//   const [qrDialogOpen, setQrDialogOpen] = useState(false);
-//   const [downloadProgress, setDownloadProgress] = useState(0);
-//   const [isDownloading, setIsDownloading] = useState(false);
-
-//   useEffect(() => {
-//     if (user) {
-//       fetchEmployees();
-//     }
-//   }, [user]);
-
-//   const fetchEmployees = async () => {
-//     if (!user) return;
-
-//     try {
-//       const { data, error } = await supabase
-//         .from("employees")
-//         .select("*")
-//         .eq("company_id", user.id)
-//         .order("created_at", { ascending: false });
-
-//       if (error) throw error;
-//       setEmployees(data || []);
-//     } catch (error: any) {
-//       console.error("Error fetching employees:", error);
-//       toast.error("Failed to load QR codes");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   const handleViewQR = (employee: Employee) => {
-//     setSelectedEmployee(employee);
-//     setQrDialogOpen(true);
-//   };
-
-//   const generateQRCodeImage = (
-//     employee: Employee
-//   ): Promise<{ name: string; blob: Blob }> => {
-//     return new Promise((resolve) => {
-//       const reviewUrl = `${window.location.origin}/review/${employee.qr_code_id}`;
-//       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-//       const qrCodeContainer = document.createElement("div");
-//       document.body.appendChild(qrCodeContainer);
-
-//       // Render QR code with current settings
-//       import("react-dom/client").then(({ createRoot }) => {
-//         const root = createRoot(qrCodeContainer);
-//         root.render(
-//           <QRCodeSVG
-//             value={reviewUrl}
-//             size={300}
-//             level={settings.errorCorrectionLevel}
-//             fgColor={settings.fgColor}
-//             bgColor={settings.bgColor}
-//             includeMargin={settings.includeMargin}
-//             imageSettings={
-//               settings.logoImage
-//                 ? {
-//                     src: settings.logoImage,
-//                     width: settings.logoWidth,
-//                     height: settings.logoHeight,
-//                     excavate: true,
-//                     opacity: settings.logoOpacity,
-//                   }
-//                 : undefined
-//             }
-//           />
-//         );
-
-//         // Wait for render
-//         setTimeout(() => {
-//           const svgElement = qrCodeContainer.querySelector("svg");
-//           if (!svgElement) {
-//             document.body.removeChild(qrCodeContainer);
-//             resolve({ name: `${employee.name}-qr-code.png`, blob: new Blob() });
-//             return;
-//           }
-
-//           const svgData = new XMLSerializer().serializeToString(svgElement);
-//           const canvas = document.createElement("canvas");
-//           const ctx = canvas.getContext("2d");
-//           const img = new Image();
-
-//           img.onload = () => {
-//             canvas.width = img.width;
-//             canvas.height = img.height;
-//             ctx?.drawImage(img, 0, 0);
-
-//             canvas.toBlob((blob) => {
-//               document.body.removeChild(qrCodeContainer);
-//               if (blob) {
-//                 resolve({ name: `${employee.name}-qr-code.png`, blob });
-//               } else {
-//                 resolve({
-//                   name: `${employee.name}-qr-code.png`,
-//                   blob: new Blob(),
-//                 });
-//               }
-//             });
-//           };
-
-//           img.src = "data:image/svg+xml;base64," + btoa(svgData);
-//         }, 100);
-//       });
-//     });
-//   };
-
-//   const handleBulkDownload = async () => {
-//     if (employees.length === 0) return;
-
-//     setIsDownloading(true);
-//     setDownloadProgress(0);
-
-//     try {
-//       const zip = new JSZip();
-//       const activeEmployees = employees.filter((emp) => emp.is_active);
-
-//       for (let i = 0; i < activeEmployees.length; i++) {
-//         const employee = activeEmployees[i];
-//         const { name, blob } = await generateQRCodeImage(employee);
-//         zip.file(name, blob);
-
-//         // Update progress
-//         const progress = Math.round(((i + 1) / activeEmployees.length) * 100);
-//         setDownloadProgress(progress);
-//       }
-
-//       const zipBlob = await zip.generateAsync({ type: "blob" });
-//       saveAs(zipBlob, "qr-codes.zip");
-//       toast.success("QR codes downloaded successfully");
-//     } catch (error) {
-//       console.error("Error generating ZIP file:", error);
-//       toast.error("Failed to download QR codes");
-//     } finally {
-//       setIsDownloading(false);
-//     }
-//   };
-
-//   const filteredEmployees = employees.filter(
-//     (employee) =>
-//       employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       employee.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//       employee.position?.toLowerCase().includes(searchTerm.toLowerCase())
-//   );
-
-//   const activeQRCodes = employees.filter((emp) => emp.is_active);
-//   const totalQRCodes = employees.length;
-
-//   if (loading) {
-//     return (
-//       <TeamLayout>
-//         <div className="flex items-center justify-center h-64">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-//         </div>
-//       </TeamLayout>
-//     );
-//   }
-
-//   return (
-//     <TeamLayout>
-//       <div className="space-y-6">
-//         {/* Header */}
-//         <div className="flex items-center justify-between">
-//           <div>
-//             <h1 className="text-3xl font-bold text-gray-900">
-//               QR Code Management
-//             </h1>
-//             <p className="text-gray-600">
-//               Generate, manage, and track QR codes for review collection
-//             </p>
-//           </div>
-//           <Button variant="outline" onClick={() => setQrDialogOpen(true)}>
-//             <Settings className="h-4 w-4 mr-2" />
-//             Customize QR Codes
-//           </Button>
-//         </div>
-
-//         {/* Stats Cards */}
-//         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-//           <Card>
-//             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//               <CardTitle className="text-sm font-medium">
-//                 Total QR Codes
-//               </CardTitle>
-//               <QrCode className="h-4 w-4 text-muted-foreground" />
-//             </CardHeader>
-//             <CardContent>
-//               <div className="text-2xl font-bold">{totalQRCodes}</div>
-//               <p className="text-xs text-muted-foreground">
-//                 Generated QR codes
-//               </p>
-//             </CardContent>
-//           </Card>
-//           <Card>
-//             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//               <CardTitle className="text-sm font-medium">
-//                 Active QR Codes
-//               </CardTitle>
-//               <QrCode className="h-4 w-4 text-muted-foreground" />
-//             </CardHeader>
-//             <CardContent>
-//               <div className="text-2xl font-bold">{activeQRCodes.length}</div>
-//               <p className="text-xs text-muted-foreground">Currently active</p>
-//             </CardContent>
-//           </Card>
-//           <Card>
-//             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-//               <CardTitle className="text-sm font-medium">
-//                 Success Rate
-//               </CardTitle>
-//               <Share2 className="h-4 w-4 text-muted-foreground" />
-//             </CardHeader>
-//             <CardContent>
-//               <div className="text-2xl font-bold">
-//                 {totalQRCodes > 0
-//                   ? Math.round((activeQRCodes.length / totalQRCodes) * 100)
-//                   : 0}
-//                 %
-//               </div>
-//               <p className="text-xs text-muted-foreground">Active QR codes</p>
-//             </CardContent>
-//           </Card>
-//         </div>
-
-//         {/* Actions Bar */}
-//         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-//           <div className="flex items-center space-x-2 flex-1 max-w-sm">
-//             <div className="relative flex-1">
-//               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-//               <Input
-//                 placeholder="Search QR codes..."
-//                 value={searchTerm}
-//                 onChange={(e) => setSearchTerm(e.target.value)}
-//                 className="pl-10"
-//               />
-//             </div>
-//           </div>
-
-//           <div className="flex items-center space-x-2">
-//             {employees.length > 0 && (
-//               <Button
-//                 variant="outline"
-//                 size="sm"
-//                 onClick={handleBulkDownload}
-//                 disabled={isDownloading}
-//               >
-//                 <Download className="h-4 w-4 mr-2" />
-//                 {isDownloading ? "Preparing ZIP..." : "Download All as ZIP"}
-//               </Button>
-//             )}
-//           </div>
-//         </div>
-
-//         {/* Download Progress */}
-//         {isDownloading && (
-//           <div className="space-y-2">
-//             <Progress value={downloadProgress} className="h-2" />
-//             <p className="text-xs text-center text-gray-500">
-//               Generating QR codes: {downloadProgress}% complete
-//             </p>
-//           </div>
-//         )}
-
-//         {/* QR Codes Grid */}
-//         {filteredEmployees.length === 0 ? (
-//           <Card>
-//             <CardContent className="text-center py-12">
-//               <QrCode className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-//               <h3 className="text-lg font-medium text-gray-900 mb-2">
-//                 {searchTerm ? "No QR codes found" : "No QR codes yet"}
-//               </h3>
-//               <p className="text-gray-600 mb-4">
-//                 {searchTerm
-//                   ? "Try adjusting your search terms"
-//                   : "Add team members to generate QR codes for review collection"}
-//               </p>
-//               {!searchTerm && (
-//                 <Button onClick={() => (window.location.href = "/employees")}>
-//                   <QrCode className="h-4 w-4 mr-2" />
-//                   Go to Team Management
-//                 </Button>
-//               )}
-//             </CardContent>
-//           </Card>
-//         ) : (
-//           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-//             {filteredEmployees.map((employee) => (
-//               <QRCodeCard
-//                 key={employee.id}
-//                 employee={employee}
-//                 onViewQR={handleViewQR}
-//               />
-//             ))}
-//           </div>
-//         )}
-
-//         {/* QR Code Dialog */}
-//         <QRCodeDialog
-//           employee={selectedEmployee}
-//           open={qrDialogOpen}
-//           onOpenChange={setQrDialogOpen}
-//         />
-//       </div>
-//     </TeamLayout>
-//   );
-// };
-
-// export default QRCodes;
-
 //===================================>>>>>>>>>>>>>>>>>>>>>>>>============================================
 
 import React, { useState, useEffect } from "react";
@@ -393,6 +47,11 @@ import { QRCodeSVG } from "qrcode.react";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import { Progress } from "@/components/ui/progress";
+import {
+  QRCardSkeleton,
+  StatsCardSkeleton,
+} from "@/components/ui/skeleton-loaders";
+import { BackButton } from "@/components/ui/back-button";
 
 interface Employee {
   id: string;
@@ -760,8 +419,39 @@ const QRCodes = () => {
   if (loading) {
     return (
       <TeamLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="space-y-6">
+          {/* Header Skeleton */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-80 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+            <div className="flex space-x-2">
+              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-10 w-28 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+            <StatsCardSkeleton />
+          </div>
+
+          {/* Search and Filters Skeleton */}
+          <div className="flex items-center space-x-4">
+            <div className="h-10 flex-1 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+
+          {/* QR Cards Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <QRCardSkeleton key={i} />
+            ))}
+          </div>
         </div>
       </TeamLayout>
     );
@@ -770,6 +460,9 @@ const QRCodes = () => {
   return (
     <TeamLayout>
       <div className="space-y-6">
+        <div className="mb-6">
+          <BackButton />
+        </div>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

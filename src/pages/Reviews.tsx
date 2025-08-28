@@ -1,352 +1,5 @@
-// import { useState, useEffect } from "react";
-// import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-// import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-// import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
-// import { Star, Check, X, Eye } from "lucide-react";
-// import { supabase } from "@/integrations/supabase/client";
-// import { toast } from "sonner";
-// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-// interface Review {
-//   id: string;
-//   customer_name: string;
-//   customer_email?: string;
-//   rating: number;
-//   comment?: string;
-//   review_type: string;
-//   video_url?: string;
-//   is_approved: boolean;
-//   created_at: string;
-//   employee: {
-//     name: string;
-//     position?: string;
-//   };
-// }
-
-// const Reviews = () => {
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'pending'>('all');
-//   const reviewsPerPage = 10;
-//   const queryClient = useQueryClient();
-
-//   const { data: reviews = [], isLoading, error } = useQuery({
-//     queryKey: ['reviews', filterStatus],
-//     queryFn: async () => {
-//       console.log('Fetching reviews...');
-//       let query = supabase
-//         .from('reviews')
-//         .select(`
-//           *,
-//           employee:employees(name, position)
-//         `)
-//         .order('created_at', { ascending: false });
-
-//       if (filterStatus === 'approved') {
-//         query = query.eq('is_approved', true);
-//       } else if (filterStatus === 'pending') {
-//         query = query.eq('is_approved', false);
-//       }
-
-//       const { data, error } = await query;
-
-//       if (error) {
-//         console.error('Error fetching reviews:', error);
-//         throw error;
-//       }
-
-//       console.log('Reviews fetched:', data);
-//       return data as Review[];
-//     }
-//   });
-
-//   const approveReviewMutation = useMutation({
-//     mutationFn: async (reviewId: string) => {
-//       const { error } = await supabase
-//         .from('reviews')
-//         .update({ is_approved: true })
-//         .eq('id', reviewId);
-
-//       if (error) throw error;
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['reviews'] });
-//       toast.success('Review approved successfully');
-//     },
-//     onError: (error: any) => {
-//       console.error('Error approving review:', error);
-//       toast.error('Failed to approve review');
-//     }
-//   });
-
-//   const rejectReviewMutation = useMutation({
-//     mutationFn: async (reviewId: string) => {
-//       const { error } = await supabase
-//         .from('reviews')
-//         .delete()
-//         .eq('id', reviewId);
-
-//       if (error) throw error;
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['reviews'] });
-//       toast.success('Review rejected and deleted');
-//     },
-//     onError: (error: any) => {
-//       console.error('Error rejecting review:', error);
-//       toast.error('Failed to reject review');
-//     }
-//   });
-
-//   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
-//   const startIndex = (currentPage - 1) * reviewsPerPage;
-//   const paginatedReviews = reviews.slice(startIndex, startIndex + reviewsPerPage);
-
-//   const renderStars = (rating: number) => {
-//     return [...Array(5)].map((_, i) => (
-//       <Star
-//         key={i}
-//         className={`h-4 w-4 ${
-//           i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
-//         }`}
-//       />
-//     ));
-//   };
-
-//   const renderVideoPreview = (review: Review) => {
-//     if (review.review_type !== 'video' || !review.video_url) return null;
-
-//     return (
-//       <div className="mt-2">
-//         <video
-//           src={review.video_url}
-//           className="w-32 h-20 object-cover rounded border"
-//           controls={false}
-//           poster=""
-//         />
-//       </div>
-//     );
-//   };
-
-//   if (error) {
-//     return (
-//       <div className="min-h-screen bg-gray-50 p-6">
-//         <Card>
-//           <CardContent className="pt-6">
-//             <p className="text-center text-red-600">
-//               Error loading reviews: {error.message}
-//             </p>
-//           </CardContent>
-//         </Card>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       {/* Header */}
-//       <header className="bg-white border-b border-gray-200">
-//         <div className="px-6 py-4">
-//           <div className="flex items-center justify-between">
-//             <div>
-//               <h1 className="text-2xl font-bold text-gray-900">Review Management</h1>
-//               <p className="text-gray-600">Manage and moderate customer reviews</p>
-//             </div>
-//             <div className="flex space-x-2">
-//               <Button
-//                 variant={filterStatus === 'all' ? 'default' : 'outline'}
-//                 size="sm"
-//                 onClick={() => setFilterStatus('all')}
-//               >
-//                 All Reviews
-//               </Button>
-//               <Button
-//                 variant={filterStatus === 'pending' ? 'default' : 'outline'}
-//                 size="sm"
-//                 onClick={() => setFilterStatus('pending')}
-//               >
-//                 Pending
-//               </Button>
-//               <Button
-//                 variant={filterStatus === 'approved' ? 'default' : 'outline'}
-//                 size="sm"
-//                 onClick={() => setFilterStatus('approved')}
-//               >
-//                 Approved
-//               </Button>
-//             </div>
-//           </div>
-//         </div>
-//       </header>
-
-//       <div className="p-6">
-//         <Card>
-//           <CardHeader>
-//             <CardTitle>Customer Reviews</CardTitle>
-//             <CardDescription>
-//               {reviews.length} review{reviews.length !== 1 ? 's' : ''} found
-//             </CardDescription>
-//           </CardHeader>
-//           <CardContent>
-//             {isLoading ? (
-//               <div className="text-center py-8">
-//                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-//                 <p className="mt-2 text-gray-600">Loading reviews...</p>
-//               </div>
-//             ) : reviews.length === 0 ? (
-//               <div className="text-center py-8">
-//                 <p className="text-gray-600">No reviews found</p>
-//               </div>
-//             ) : (
-//               <>
-//                 <Table>
-//                   <TableHeader>
-//                     <TableRow>
-//                       <TableHead>Customer</TableHead>
-//                       <TableHead>Employee</TableHead>
-//                       <TableHead>Rating</TableHead>
-//                       <TableHead>Type</TableHead>
-//                       <TableHead>Content</TableHead>
-//                       <TableHead>Status</TableHead>
-//                       <TableHead>Date</TableHead>
-//                       <TableHead>Actions</TableHead>
-//                     </TableRow>
-//                   </TableHeader>
-//                   <TableBody>
-//                     {paginatedReviews.map((review) => (
-//                       <TableRow key={review.id}>
-//                         <TableCell>
-//                           <div>
-//                             <p className="font-medium">{review.customer_name}</p>
-//                             {review.customer_email && (
-//                               <p className="text-sm text-gray-600">{review.customer_email}</p>
-//                             )}
-//                           </div>
-//                         </TableCell>
-//                         <TableCell>
-//                           <div>
-//                             <p className="font-medium">{review.employee.name}</p>
-//                             {review.employee.position && (
-//                               <p className="text-sm text-gray-600">{review.employee.position}</p>
-//                             )}
-//                           </div>
-//                         </TableCell>
-//                         <TableCell>
-//                           <div className="flex items-center space-x-1">
-//                             {renderStars(review.rating)}
-//                             <span className="ml-1 text-sm font-medium">{review.rating}</span>
-//                           </div>
-//                         </TableCell>
-//                         <TableCell>
-//                           <Badge variant={review.review_type === 'video' ? 'default' : 'secondary'}>
-//                             {review.review_type}
-//                           </Badge>
-//                         </TableCell>
-//                         <TableCell className="max-w-xs">
-//                           {review.comment && (
-//                             <p className="text-sm text-gray-600 truncate mb-1">
-//                               {review.comment}
-//                             </p>
-//                           )}
-//                           {renderVideoPreview(review)}
-//                         </TableCell>
-//                         <TableCell>
-//                           <Badge variant={review.is_approved ? 'default' : 'secondary'}>
-//                             {review.is_approved ? 'Approved' : 'Pending'}
-//                           </Badge>
-//                         </TableCell>
-//                         <TableCell>
-//                           {new Date(review.created_at).toLocaleDateString()}
-//                         </TableCell>
-//                         <TableCell>
-//                           <div className="flex space-x-2">
-//                             {!review.is_approved && (
-//                               <Button
-//                                 size="sm"
-//                                 variant="outline"
-//                                 onClick={() => approveReviewMutation.mutate(review.id)}
-//                                 disabled={approveReviewMutation.isPending}
-//                               >
-//                                 <Check className="h-4 w-4" />
-//                               </Button>
-//                             )}
-//                             <Button
-//                               size="sm"
-//                               variant="outline"
-//                               onClick={() => rejectReviewMutation.mutate(review.id)}
-//                               disabled={rejectReviewMutation.isPending}
-//                             >
-//                               <X className="h-4 w-4" />
-//                             </Button>
-//                             {review.review_type === 'video' && review.video_url && (
-//                               <Button
-//                                 size="sm"
-//                                 variant="outline"
-//                                 onClick={() => window.open(review.video_url, '_blank')}
-//                               >
-//                                 <Eye className="h-4 w-4" />
-//                               </Button>
-//                             )}
-//                           </div>
-//                         </TableCell>
-//                       </TableRow>
-//                     ))}
-//                   </TableBody>
-//                 </Table>
-
-//                 {/* Pagination */}
-//                 {totalPages > 1 && (
-//                   <div className="mt-4">
-//                     <Pagination>
-//                       <PaginationContent>
-//                         {currentPage > 1 && (
-//                           <PaginationItem>
-//                             <PaginationPrevious
-//                               onClick={() => setCurrentPage(currentPage - 1)}
-//                               className="cursor-pointer"
-//                             />
-//                           </PaginationItem>
-//                         )}
-
-//                         {[...Array(totalPages)].map((_, i) => (
-//                           <PaginationItem key={i + 1}>
-//                             <PaginationLink
-//                               onClick={() => setCurrentPage(i + 1)}
-//                               isActive={currentPage === i + 1}
-//                               className="cursor-pointer"
-//                             >
-//                               {i + 1}
-//                             </PaginationLink>
-//                           </PaginationItem>
-//                         ))}
-
-//                         {currentPage < totalPages && (
-//                           <PaginationItem>
-//                             <PaginationNext
-//                               onClick={() => setCurrentPage(currentPage + 1)}
-//                               className="cursor-pointer"
-//                             />
-//                           </PaginationItem>
-//                         )}
-//                       </PaginationContent>
-//                     </Pagination>
-//                   </div>
-//                 )}
-//               </>
-//             )}
-//           </CardContent>
-//         </Card>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default Reviews;
-
-//=======================================>>>>>>>>>>>>>>>>>>>>>=======================================
-
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Card,
   CardContent,
@@ -406,6 +59,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { sendReviewResponseEmail } from "../lib/emailService";
+import VideoPreview from "@/components/VideoPreview";
+import {
+  ReviewCardSkeleton,
+  TableRowSkeleton,
+} from "@/components/ui/skeleton-loaders";
+import { BackButton } from "@/components/ui/back-button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Review {
   id: string;
@@ -437,6 +97,8 @@ interface ReviewTemplate {
 }
 
 const Reviews = () => {
+  const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState<
     "all" | "approved" | "pending" | "flagged"
@@ -459,6 +121,8 @@ const Reviews = () => {
   } = useQuery({
     queryKey: ["reviews", filterStatus],
     queryFn: async () => {
+      if (!user) return [];
+      
       let query = supabase
         .from("reviews")
         .select(
@@ -467,6 +131,7 @@ const Reviews = () => {
           employee:employees(name, position)
         `
         )
+        .eq("company_id", user.id)
         .order("created_at", { ascending: false });
 
       if (filterStatus === "approved") {
@@ -482,21 +147,26 @@ const Reviews = () => {
       if (error) throw error;
       return data as Review[];
     },
+    enabled: !!user,
   });
 
   // Fetch review templates
   const { data: templates = [] } = useQuery({
     queryKey: ["review-templates"],
     queryFn: async () => {
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from("review_templates")
         .select("*")
+        .eq("company_id", user.id)
         .eq("is_active", true)
         .order("name");
 
       if (error) throw error;
       return data as ReviewTemplate[];
     },
+    enabled: !!user,
   });
 
   // Email sending function
@@ -728,6 +398,15 @@ const Reviews = () => {
   //         className="w-32 h-20 object-cover rounded border"
   //         controls={false}
   //         poster=""
+  //         preload="metadata"
+  //         onError={(e) => {
+  //           console.error("Video loading error:", e);
+  //           // Fallback: try to reload with different parameters
+  //           const video = e.target as HTMLVideoElement;
+  //           if (video.src && !video.src.includes("?t=")) {
+  //             video.src = video.src + "?t=" + Date.now();
+  //           }
+  //         }}
   //       />
   //     </div>
   //   );
@@ -737,23 +416,11 @@ const Reviews = () => {
     if (review.review_type !== "video" || !review.video_url) return null;
 
     return (
-      <div className="mt-2">
-        <video
-          src={review.video_url}
-          className="w-32 h-20 object-cover rounded border"
-          controls={false}
-          poster=""
-          preload="metadata"
-          onError={(e) => {
-            console.error("Video loading error:", e);
-            // Fallback: try to reload with different parameters
-            const video = e.target as HTMLVideoElement;
-            if (video.src && !video.src.includes("?t=")) {
-              video.src = video.src + "?t=" + Date.now();
-            }
-          }}
-        />
-      </div>
+      <VideoPreview
+        videoUrl={review.video_url}
+        customerName={review.customer_name}
+        reviewId={review.id}
+      />
     );
   };
 
@@ -771,62 +438,278 @@ const Reviews = () => {
     );
   }
 
+  // Add loading state display
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-80 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="flex space-x-2">
+            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-10 w-28 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+        </div>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+
+        {/* Filters Skeleton */}
+        <div className="flex items-center space-x-4">
+          <div className="h-10 w-64 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+
+        {/* Table Skeleton */}
+        <Card>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-6 gap-4 p-4 border-b">
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRowSkeleton key={i} />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Mobile Card Component
+  const ReviewCard = ({ review }: { review: Review }) => (
+    <Card
+      className={`${review.flagged_as_spam ? "border-red-200 bg-red-50" : ""}`}
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={selectedReviews.includes(review.id)}
+              onCheckedChange={(checked) =>
+                handleSelectReview(review.id, checked as boolean)
+              }
+            />
+            <div>
+              <CardTitle className="text-base">
+                {review.customer_name}
+              </CardTitle>
+              {review.customer_email && (
+                <p className="text-sm text-gray-600 flex items-center mt-1">
+                  <Mail className="h-3 w-3 mr-1" />
+                  {review.customer_email}
+                </p>
+              )}
+            </div>
+          </div>
+          <Badge
+            variant={
+              review.moderation_status === "approved"
+                ? "default"
+                : review.moderation_status === "flagged"
+                ? "destructive"
+                : "secondary"
+            }
+          >
+            {review.moderation_status}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Employee Info */}
+        <div>
+          <p className="text-sm font-medium text-gray-700">Employee</p>
+          <p className="font-medium">{review.employee.name}</p>
+          {review.employee.position && (
+            <p className="text-sm text-gray-600">{review.employee.position}</p>
+          )}
+        </div>
+
+        {/* Rating */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-1">Rating</p>
+          <div className="flex items-center space-x-1">
+            {renderStars(review.rating)}
+            <span className="ml-1 text-sm font-medium">{review.rating}</span>
+          </div>
+        </div>
+
+        {/* Review Type */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-1">Type</p>
+          <Badge
+            variant={review.review_type === "video" ? "default" : "secondary"}
+          >
+            {review.review_type}
+          </Badge>
+        </div>
+
+        {/* Content */}
+        {(review.comment || review.video_url) && (
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-1">Content</p>
+            {review.comment && (
+              <p className="text-sm text-gray-600 mb-2">{review.comment}</p>
+            )}
+            {renderVideoPreview(review)}
+          </div>
+        )}
+
+        {/* Sentiment */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-1">Sentiment</p>
+          {getSentimentBadge(review.sentiment_score)}
+        </div>
+
+        {/* Flags and Badges */}
+        <div className="flex flex-wrap gap-2">
+          {review.flagged_as_spam && (
+            <Badge variant="destructive">
+              <Flag className="h-3 w-3 mr-1" />
+              Spam
+            </Badge>
+          )}
+          {review.admin_response && (
+            <Badge variant="outline">
+              <MessageSquare className="h-3 w-3 mr-1" />
+              Responded
+            </Badge>
+          )}
+        </div>
+
+        {/* Date */}
+        <div>
+          <p className="text-sm font-medium text-gray-700 mb-1">Date</p>
+          <p className="text-sm text-gray-600">
+            {new Date(review.created_at).toLocaleDateString()}
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-2 pt-2 border-t">
+          {review.moderation_status === "pending" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => bulkApproveMutation.mutate([review.id])}
+              disabled={bulkApproveMutation.isPending}
+              className="flex-1"
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Approve
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setSelectedReviewForResponse(review);
+              setResponseText(review.admin_response || "");
+              setShowResponseDialog(true);
+            }}
+            className="flex-1"
+          >
+            <MessageSquare className="h-4 w-4 mr-1" />
+            Respond
+          </Button>
+          {review.review_type === "video" && review.video_url && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => window.open(review.video_url, "_blank")}
+              className="flex-1"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Responsive Header */}
       <header className="bg-white border-b border-gray-200">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+        <div className="px-4 sm:px-6 py-4">
+          <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
                 Review Management
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm sm:text-base text-gray-600 mt-1">
                 Manage and moderate customer reviews with advanced tools
               </p>
             </div>
-            <div className="flex space-x-2">
+            
+            {/* Responsive Filter Buttons */}
+            <div className="flex flex-wrap gap-2 lg:flex-nowrap">
               <Button
                 variant={filterStatus === "all" ? "default" : "outline"}
-                size="sm"
+                size={isMobile ? "sm" : "default"}
                 onClick={() => setFilterStatus("all")}
+                className="flex-1 sm:flex-none"
               >
-                All Reviews
+                All
+                {!isMobile && " Reviews"}
               </Button>
               <Button
                 variant={filterStatus === "pending" ? "default" : "outline"}
-                size="sm"
+                size={isMobile ? "sm" : "default"}
                 onClick={() => setFilterStatus("pending")}
+                className="flex-1 sm:flex-none"
               >
                 Pending
               </Button>
               <Button
                 variant={filterStatus === "approved" ? "default" : "outline"}
-                size="sm"
+                size={isMobile ? "sm" : "default"}
                 onClick={() => setFilterStatus("approved")}
+                className="flex-1 sm:flex-none"
               >
                 Approved
               </Button>
               <Button
                 variant={filterStatus === "flagged" ? "default" : "outline"}
-                size="sm"
+                size={isMobile ? "sm" : "default"}
                 onClick={() => setFilterStatus("flagged")}
+                className="flex-1 sm:flex-none"
               >
                 <Flag className="h-4 w-4 mr-1" />
-                Flagged
+                {isMobile ? "Flag" : "Flagged"}
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="p-6">
+      {/* Responsive Main Content */}
+      <div className="px-4 sm:px-6 py-4 sm:py-6">
+        <div className="mb-4 sm:mb-6">
+          <BackButton />
+        </div>
+        
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
               <div>
-                <CardTitle>Customer Reviews</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-lg sm:text-xl">Customer Reviews</CardTitle>
+                <CardDescription className="text-sm">
                   {reviews.length} review{reviews.length !== 1 ? "s" : ""} found
                   {selectedReviews.length > 0 && (
                     <span className="ml-2 text-blue-600">
@@ -836,13 +719,14 @@ const Reviews = () => {
                 </CardDescription>
               </div>
 
-              {/* Bulk Actions */}
+              {/* Responsive Bulk Actions */}
               {selectedReviews.length > 0 && (
-                <div className="flex space-x-2">
+                <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
                   <Button
                     size="sm"
                     onClick={() => bulkApproveMutation.mutate(selectedReviews)}
                     disabled={bulkApproveMutation.isPending}
+                    className="w-full sm:w-auto"
                   >
                     <Check className="h-4 w-4 mr-1" />
                     Approve ({selectedReviews.length})
@@ -852,6 +736,7 @@ const Reviews = () => {
                     variant="outline"
                     onClick={() => bulkRejectMutation.mutate(selectedReviews)}
                     disabled={bulkRejectMutation.isPending}
+                    className="w-full sm:w-auto"
                   >
                     <X className="h-4 w-4 mr-1" />
                     Reject ({selectedReviews.length})
@@ -861,6 +746,7 @@ const Reviews = () => {
                     variant="destructive"
                     onClick={() => bulkDeleteMutation.mutate(selectedReviews)}
                     disabled={bulkDeleteMutation.isPending}
+                    className="w-full sm:w-auto"
                   >
                     Delete ({selectedReviews.length})
                   </Button>
@@ -868,11 +754,29 @@ const Reviews = () => {
               )}
             </div>
           </CardHeader>
+          
           <CardContent>
             {isLoading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600">Loading reviews...</p>
+              <div className="space-y-4">
+                {isMobile ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <ReviewCardSkeleton key={i} />
+                  ))
+                ) : (
+                  <>
+                    <div className="grid grid-cols-6 gap-4 p-4 border-b">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <TableRowSkeleton key={i} />
+                    ))}
+                  </>
+                )}
               </div>
             ) : reviews.length === 0 ? (
               <div className="text-center py-8">
@@ -880,176 +784,187 @@ const Reviews = () => {
               </div>
             ) : (
               <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-12">
-                        <Checkbox
-                          checked={
-                            selectedReviews.length ===
-                              paginatedReviews.length &&
-                            paginatedReviews.length > 0
-                          }
-                          onCheckedChange={handleSelectAll}
-                        />
-                      </TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Rating</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Content</TableHead>
-                      <TableHead>Sentiment</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                {isMobile ? (
+                  // Mobile Card Layout
+                  <div className="space-y-4">
                     {paginatedReviews.map((review) => (
-                      <TableRow
-                        key={review.id}
-                        className={review.flagged_as_spam ? "bg-red-50" : ""}
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedReviews.includes(review.id)}
-                            onCheckedChange={(checked) =>
-                              handleSelectReview(review.id, checked as boolean)
-                            }
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">
-                              {review.customer_name}
-                            </p>
-                            {review.customer_email && (
-                              <p className="text-sm text-gray-600 flex items-center">
-                                <Mail className="h-3 w-3 mr-1" />
-                                {review.customer_email}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">
-                              {review.employee.name}
-                            </p>
-                            {review.employee.position && (
-                              <p className="text-sm text-gray-600">
-                                {review.employee.position}
-                              </p>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-1">
-                            {renderStars(review.rating)}
-                            <span className="ml-1 text-sm font-medium">
-                              {review.rating}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              review.review_type === "video"
-                                ? "default"
-                                : "secondary"
-                            }
+                      <ReviewCard key={review.id} review={review} />
+                    ))}
+                  </div>
+                ) : (
+                  // Desktop Table Layout
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">
+                            <Checkbox
+                              checked={
+                                selectedReviews.length === paginatedReviews.length &&
+                                paginatedReviews.length > 0
+                              }
+                              onCheckedChange={handleSelectAll}
+                            />
+                          </TableHead>
+                          <TableHead>Customer</TableHead>
+                          <TableHead>Employee</TableHead>
+                          <TableHead>Rating</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Content</TableHead>
+                          <TableHead>Sentiment</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedReviews.map((review) => (
+                          <TableRow
+                            key={review.id}
+                            className={review.flagged_as_spam ? "bg-red-50" : ""}
                           >
-                            {review.review_type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="max-w-xs">
-                          {review.comment && (
-                            <p className="text-sm text-gray-600 truncate mb-1">
-                              {review.comment}
-                            </p>
-                          )}
-                          {renderVideoPreview(review)}
-                          {review.flagged_as_spam && (
-                            <Badge variant="destructive" className="mt-1">
-                              <Flag className="h-3 w-3 mr-1" />
-                              Spam
-                            </Badge>
-                          )}
-                          {review.admin_response && (
-                            <Badge variant="outline" className="mt-1">
-                              <MessageSquare className="h-3 w-3 mr-1" />
-                              Responded
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {getSentimentBadge(review.sentiment_score)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              review.moderation_status === "approved"
-                                ? "default"
-                                : review.moderation_status === "flagged"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                          >
-                            {review.moderation_status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(review.created_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            {review.moderation_status === "pending" && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  bulkApproveMutation.mutate([review.id])
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedReviews.includes(review.id)}
+                                onCheckedChange={(checked) =>
+                                  handleSelectReview(review.id, checked as boolean)
                                 }
-                                disabled={bulkApproveMutation.isPending}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">
+                                  {review.customer_name}
+                                </p>
+                                {review.customer_email && (
+                                  <p className="text-sm text-gray-600 flex items-center">
+                                    <Mail className="h-3 w-3 mr-1" />
+                                    {review.customer_email}
+                                  </p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">
+                                  {review.employee.name}
+                                </p>
+                                {review.employee.position && (
+                                  <p className="text-sm text-gray-600">
+                                    {review.employee.position}
+                                  </p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center space-x-1">
+                                {renderStars(review.rating)}
+                                <span className="ml-1 text-sm font-medium">
+                                  {review.rating}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  review.review_type === "video"
+                                    ? "default"
+                                    : "secondary"
+                                }
                               >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedReviewForResponse(review);
-                                setResponseText(review.admin_response || "");
-                                setShowResponseDialog(true);
-                              }}
-                            >
-                              <MessageSquare className="h-4 w-4" />
-                            </Button>
-                            {review.review_type === "video" &&
-                              review.video_url && (
+                                {review.review_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-xs">
+                              {review.comment && (
+                                <p className="text-sm text-gray-600 truncate mb-1">
+                                  {review.comment}
+                                </p>
+                              )}
+                              {renderVideoPreview(review)}
+                              {review.flagged_as_spam && (
+                                <Badge variant="destructive" className="mt-1">
+                                  <Flag className="h-3 w-3 mr-1" />
+                                  Spam
+                                </Badge>
+                              )}
+                              {review.admin_response && (
+                                <Badge variant="outline" className="mt-1">
+                                  <MessageSquare className="h-3 w-3 mr-1" />
+                                  Responded
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {getSentimentBadge(review.sentiment_score)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  review.moderation_status === "approved"
+                                    ? "default"
+                                    : review.moderation_status === "flagged"
+                                    ? "destructive"
+                                    : "secondary"
+                                }
+                              >
+                                {review.moderation_status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {new Date(review.created_at).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                {review.moderation_status === "pending" && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      bulkApproveMutation.mutate([review.id])
+                                    }
+                                    disabled={bulkApproveMutation.isPending}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={() =>
-                                    window.open(review.video_url, "_blank")
-                                  }
+                                  onClick={() => {
+                                    setSelectedReviewForResponse(review);
+                                    setResponseText(review.admin_response || "");
+                                    setShowResponseDialog(true);
+                                  }}
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <MessageSquare className="h-4 w-4" />
                                 </Button>
-                              )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                                {review.review_type === "video" &&
+                                  review.video_url && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() =>
+                                        window.open(review.video_url, "_blank")
+                                      }
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
 
-                {/* Pagination */}
+                {/* Responsive Pagination */}
                 {totalPages > 1 && (
-                  <div className="mt-4">
+                  <div className="mt-6">
                     <Pagination>
-                      <PaginationContent>
+                      <PaginationContent className="flex-wrap justify-center">
                         {currentPage > 1 && (
                           <PaginationItem>
                             <PaginationPrevious
@@ -1059,17 +974,40 @@ const Reviews = () => {
                           </PaginationItem>
                         )}
 
-                        {[...Array(totalPages)].map((_, i) => (
-                          <PaginationItem key={i + 1}>
-                            <PaginationLink
-                              onClick={() => setCurrentPage(i + 1)}
-                              isActive={currentPage === i + 1}
-                              className="cursor-pointer"
-                            >
-                              {i + 1}
-                            </PaginationLink>
-                          </PaginationItem>
-                        ))}
+                        {/* Show fewer page numbers on mobile */}
+                        {isMobile ? (
+                          // Mobile: Show current page and adjacent pages
+                          [...Array(Math.min(3, totalPages))]
+                            .map((_, i) => {
+                              const pageNum = Math.max(1, currentPage - 1) + i;
+                              if (pageNum > totalPages) return null;
+                              return (
+                                <PaginationItem key={pageNum}>
+                                  <PaginationLink
+                                    onClick={() => setCurrentPage(pageNum)}
+                                    isActive={currentPage === pageNum}
+                                    className="cursor-pointer"
+                                  >
+                                    {pageNum}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              );
+                            })
+                            .filter(Boolean)
+                        ) : (
+                          // Desktop: Show all pages
+                          [...Array(totalPages)].map((_, i) => (
+                            <PaginationItem key={i + 1}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(i + 1)}
+                                isActive={currentPage === i + 1}
+                                className="cursor-pointer"
+                              >
+                                {i + 1}
+                              </PaginationLink>
+                            </PaginationItem>
+                          ))
+                        )}
 
                         {currentPage < totalPages && (
                           <PaginationItem>
@@ -1089,11 +1027,11 @@ const Reviews = () => {
         </Card>
       </div>
 
-      {/* Response Dialog with Email Option */}
+      {/* Responsive Response Dialog */}
       <Dialog open={showResponseDialog} onOpenChange={setShowResponseDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center">
+            <DialogTitle className="flex items-center text-lg">
               <MessageSquare className="h-5 w-5 mr-2" />
               Respond to Review
               {selectedReviewForResponse?.admin_response && (
@@ -1105,14 +1043,16 @@ const Reviews = () => {
             <DialogDescription>
               {selectedReviewForResponse && (
                 <div className="mt-2 p-3 bg-gray-50 rounded">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0">
                     <p className="font-medium">
                       {selectedReviewForResponse.customer_name}
                     </p>
                     {selectedReviewForResponse.customer_email && (
                       <div className="flex items-center text-sm text-gray-600">
                         <Mail className="h-3 w-3 mr-1" />
-                        {selectedReviewForResponse.customer_email}
+                        <span className="truncate">
+                          {selectedReviewForResponse.customer_email}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -1173,43 +1113,34 @@ const Reviews = () => {
                 <Checkbox
                   id="send-email"
                   checked={sendEmail}
-                  onCheckedChange={(checked) =>
-                    setSendEmail(checked as boolean)
-                  }
+                  onCheckedChange={setSendEmail}
                 />
                 <label
                   htmlFor="send-email"
-                  className="text-sm font-medium cursor-pointer flex items-center"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  <Mail className="h-4 w-4 mr-1" />
                   Send email notification to customer
                 </label>
               </div>
             )}
-
-            {!selectedReviewForResponse?.customer_email && (
-              <div className="text-sm text-gray-500 flex items-center">
-                <Mail className="h-4 w-4 mr-1" />
-                No email address available for this customer
-              </div>
-            )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <Button
               variant="outline"
-              onClick={() => {
-                setShowResponseDialog(false);
-                setResponseText("");
-                setSelectedTemplate("");
-                setSendEmail(true);
-              }}
+              onClick={() => setShowResponseDialog(false)}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                if (selectedReviewForResponse && responseText.trim()) {
+              onClick={async () => {
+                if (!responseText.trim()) {
+                  toast.error("Please enter a response");
+                  return;
+                }
+
+                if (selectedReviewForResponse) {
                   responseMutation.mutate({
                     reviewId: selectedReviewForResponse.id,
                     response: responseText,
@@ -1219,6 +1150,7 @@ const Reviews = () => {
                 }
               }}
               disabled={!responseText.trim() || responseMutation.isPending}
+              className="w-full sm:w-auto"
             >
               {responseMutation.isPending ? (
                 <div className="flex items-center">
@@ -1244,754 +1176,3 @@ const Reviews = () => {
 };
 
 export default Reviews;
-
-// ========================================>>>>>>>>>>>>>>>>>>>=======================================
-
-// import { useState, useEffect } from "react";
-// import {
-//   Card,
-//   CardContent,
-//   CardDescription,
-//   CardHeader,
-//   CardTitle,
-// } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
-// import {
-//   Pagination,
-//   PaginationContent,
-//   PaginationItem,
-//   PaginationLink,
-//   PaginationNext,
-//   PaginationPrevious,
-// } from "@/components/ui/pagination";
-// import { Checkbox } from "@/components/ui/checkbox";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select";
-// import {
-//   Dialog,
-//   DialogContent,
-//   DialogDescription,
-//   DialogFooter,
-//   DialogHeader,
-//   DialogTitle,
-//   DialogTrigger,
-// } from "@/components/ui/dialog";
-// import { Textarea } from "@/components/ui/textarea";
-// import {
-//   Star,
-//   Check,
-//   X,
-//   Eye,
-//   Flag,
-//   MessageSquare,
-//   Users,
-//   BarChart3,
-//   Filter,
-// } from "lucide-react";
-// import { supabase } from "@/integrations/supabase/client";
-// import { toast } from "sonner";
-// import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-// import { sendReviewResponseEmail } from "../lib/emailService";
-
-// interface Review {
-//   id: string;
-//   customer_name: string;
-//   customer_email?: string;
-//   rating: number;
-//   comment?: string;
-//   review_type: string;
-//   video_url?: string;
-//   is_approved: boolean;
-//   flagged_as_spam: boolean;
-//   moderation_status: "pending" | "approved" | "rejected" | "flagged";
-//   sentiment_score?: number;
-//   assigned_to?: string;
-//   admin_response?: string;
-//   created_at: string;
-//   employee: {
-//     name: string;
-//     position?: string;
-//   };
-// }
-
-// interface ReviewTemplate {
-//   id: string;
-//   name: string;
-//   subject?: string;
-//   content: string;
-//   category: string;
-// }
-
-// const Reviews = () => {
-//   const [currentPage, setCurrentPage] = useState(1);
-//   const [filterStatus, setFilterStatus] = useState<
-//     "all" | "approved" | "pending" | "flagged"
-//   >("all");
-//   const [selectedReviews, setSelectedReviews] = useState<string[]>([]);
-//   const [showResponseDialog, setShowResponseDialog] = useState(false);
-//   const [selectedReviewForResponse, setSelectedReviewForResponse] =
-//     useState<Review | null>(null);
-//   const [responseText, setResponseText] = useState("");
-//   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
-//   const reviewsPerPage = 10;
-//   const queryClient = useQueryClient();
-
-//   // Fetch reviews with enhanced data
-//   const {
-//     data: reviews = [],
-//     isLoading,
-//     error,
-//   } = useQuery({
-//     queryKey: ["reviews", filterStatus],
-//     queryFn: async () => {
-//       let query = supabase
-//         .from("reviews")
-//         .select(
-//           `
-//           *,
-//           employee:employees(name, position)
-//         `
-//         )
-//         .order("created_at", { ascending: false });
-
-//       if (filterStatus === "approved") {
-//         query = query.eq("moderation_status", "approved");
-//       } else if (filterStatus === "pending") {
-//         query = query.eq("moderation_status", "pending");
-//       } else if (filterStatus === "flagged") {
-//         query = query.eq("flagged_as_spam", true);
-//       }
-
-//       const { data, error } = await query;
-
-//       if (error) throw error;
-//       return data as Review[];
-//     },
-//   });
-
-//   // Fetch review templates
-//   const { data: templates = [] } = useQuery({
-//     queryKey: ["review-templates"],
-//     queryFn: async () => {
-//       const { data, error } = await supabase
-//         .from("review_templates")
-//         .select("*")
-//         .eq("is_active", true)
-//         .order("name");
-
-//       if (error) throw error;
-//       return data as ReviewTemplate[];
-//     },
-//   });
-
-//   // Bulk approve mutation
-//   const bulkApproveMutation = useMutation({
-//     mutationFn: async (reviewIds: string[]) => {
-//       const { error } = await supabase
-//         .from("reviews")
-//         .update({ moderation_status: "approved", is_approved: true })
-//         .in("id", reviewIds);
-
-//       if (error) throw error;
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ["reviews"] });
-//       toast.success(`${selectedReviews.length} reviews approved successfully`);
-//       setSelectedReviews([]);
-//     },
-//     onError: (error: any) => {
-//       toast.error("Failed to approve reviews");
-//     },
-//   });
-
-//   // Bulk reject mutation
-//   const bulkRejectMutation = useMutation({
-//     mutationFn: async (reviewIds: string[]) => {
-//       const { error } = await supabase
-//         .from("reviews")
-//         .update({ moderation_status: "rejected" })
-//         .in("id", reviewIds);
-
-//       if (error) throw error;
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ["reviews"] });
-//       toast.success(`${selectedReviews.length} reviews rejected successfully`);
-//       setSelectedReviews([]);
-//     },
-//     onError: (error: any) => {
-//       toast.error("Failed to reject reviews");
-//     },
-//   });
-
-//   // Bulk delete mutation
-//   const bulkDeleteMutation = useMutation({
-//     mutationFn: async (reviewIds: string[]) => {
-//       const { error } = await supabase
-//         .from("reviews")
-//         .delete()
-//         .in("id", reviewIds);
-
-//       if (error) throw error;
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ["reviews"] });
-//       toast.success(`${selectedReviews.length} reviews deleted successfully`);
-//       setSelectedReviews([]);
-//     },
-//     onError: (error: any) => {
-//       toast.error("Failed to delete reviews");
-//     },
-//   });
-
-//   // Response mutation
-//   const responseMutation = useMutation({
-//     mutationFn: async ({
-//       reviewId,
-//       response,
-//     }: {
-//       reviewId: string;
-//       response: string;
-//     }) => {
-//       const { error } = await supabase
-//         .from("reviews")
-//         .update({
-//           admin_response: response,
-//           responded_at: new Date().toISOString(),
-//           responded_by: (await supabase.auth.getUser()).data.user?.id,
-//         })
-//         .eq("id", reviewId);
-
-//       if (error) throw error;
-//     },
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ["reviews"] });
-//       toast.success("Response sent successfully");
-//       setShowResponseDialog(false);
-//       setResponseText("");
-//       setSelectedTemplate("");
-//     },
-//     onError: (error: any) => {
-//       toast.error("Failed to send response");
-//     },
-//   });
-
-//   const totalPages = Math.ceil(reviews.length / reviewsPerPage);
-//   const startIndex = (currentPage - 1) * reviewsPerPage;
-//   const paginatedReviews = reviews.slice(
-//     startIndex,
-//     startIndex + reviewsPerPage
-//   );
-
-//   const handleSelectAll = (checked: boolean) => {
-//     if (checked) {
-//       setSelectedReviews(paginatedReviews.map((review) => review.id));
-//     } else {
-//       setSelectedReviews([]);
-//     }
-//   };
-
-//   const handleSelectReview = (reviewId: string, checked: boolean) => {
-//     if (checked) {
-//       setSelectedReviews((prev) => [...prev, reviewId]);
-//     } else {
-//       setSelectedReviews((prev) => prev.filter((id) => id !== reviewId));
-//     }
-//   };
-
-//   const handleTemplateSelect = (templateId: string) => {
-//     const template = templates.find((t) => t.id === templateId);
-//     if (template) {
-//       setResponseText(template.content);
-//       setSelectedTemplate(templateId);
-//     }
-//   };
-
-//   const renderStars = (rating: number) => {
-//     return [...Array(5)].map((_, i) => (
-//       <Star
-//         key={i}
-//         className={`h-4 w-4 ${
-//           i < rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-//         }`}
-//       />
-//     ));
-//   };
-
-//   const sendEmailResponse = async (reviewData: any, response: string) => {
-//   try {
-//     const result = await sendReviewResponseEmail({
-//       customerEmail: reviewData.customer_email,
-//       customerName: reviewData.customer_name || 'Valued Customer',
-//       reviewText: reviewData.review_text,
-//       adminResponse: response,
-//       companyName: 'Review Spark Gather'
-//     });
-
-//     if (!result.success) {
-//       throw new Error(result.error);
-//     }
-
-//     return result;
-//   } catch (error) {
-//     console.error('Email sending error:', error);
-//     throw error;
-//   }
-// };
-
-//   const getSentimentBadge = (score?: number) => {
-//     if (!score) return null;
-
-//     if (score > 0.1) {
-//       return (
-//         <Badge variant="default" className="bg-green-100 text-green-800">
-//           Positive
-//         </Badge>
-//       );
-//     } else if (score < -0.1) {
-//       return <Badge variant="destructive">Negative</Badge>;
-//     } else {
-//       return <Badge variant="secondary">Neutral</Badge>;
-//     }
-//   };
-
-//   const renderVideoPreview = (review: Review) => {
-//     if (review.review_type !== "video" || !review.video_url) return null;
-
-//     return (
-//       <div className="mt-2">
-//         <video
-//           src={review.video_url}
-//           className="w-32 h-20 object-cover rounded border"
-//           controls={false}
-//           poster=""
-//         />
-//       </div>
-//     );
-//   };
-
-//   if (error) {
-//     return (
-//       <div className="min-h-screen bg-gray-50 p-6">
-//         <Card>
-//           <CardContent className="pt-6">
-//             <p className="text-center text-red-600">
-//               Error loading reviews: {error.message}
-//             </p>
-//           </CardContent>
-//         </Card>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       {/* Header */}
-//       <header className="bg-white border-b border-gray-200">
-//         <div className="px-6 py-4">
-//           <div className="flex items-center justify-between">
-//             <div>
-//               <h1 className="text-2xl font-bold text-gray-900">
-//                 Review Management
-//               </h1>
-//               <p className="text-gray-600">
-//                 Manage and moderate customer reviews with advanced tools
-//               </p>
-//             </div>
-//             <div className="flex space-x-2">
-//               <Button
-//                 variant={filterStatus === "all" ? "default" : "outline"}
-//                 size="sm"
-//                 onClick={() => setFilterStatus("all")}
-//               >
-//                 All Reviews
-//               </Button>
-//               <Button
-//                 variant={filterStatus === "pending" ? "default" : "outline"}
-//                 size="sm"
-//                 onClick={() => setFilterStatus("pending")}
-//               >
-//                 Pending
-//               </Button>
-//               <Button
-//                 variant={filterStatus === "approved" ? "default" : "outline"}
-//                 size="sm"
-//                 onClick={() => setFilterStatus("approved")}
-//               >
-//                 Approved
-//               </Button>
-//               <Button
-//                 variant={filterStatus === "flagged" ? "default" : "outline"}
-//                 size="sm"
-//                 onClick={() => setFilterStatus("flagged")}
-//               >
-//                 <Flag className="h-4 w-4 mr-1" />
-//                 Flagged
-//               </Button>
-//             </div>
-//           </div>
-//         </div>
-//       </header>
-
-//       <div className="p-6">
-//         <Card>
-//           <CardHeader>
-//             <div className="flex items-center justify-between">
-//               <div>
-//                 <CardTitle>Customer Reviews</CardTitle>
-//                 <CardDescription>
-//                   {reviews.length} review{reviews.length !== 1 ? "s" : ""} found
-//                   {selectedReviews.length > 0 && (
-//                     <span className="ml-2 text-blue-600">
-//                       ({selectedReviews.length} selected)
-//                     </span>
-//                   )}
-//                 </CardDescription>
-//               </div>
-
-//               {/* Bulk Actions */}
-//               {selectedReviews.length > 0 && (
-//                 <div className="flex space-x-2">
-//                   <Button
-//                     size="sm"
-//                     onClick={() => bulkApproveMutation.mutate(selectedReviews)}
-//                     disabled={bulkApproveMutation.isPending}
-//                   >
-//                     <Check className="h-4 w-4 mr-1" />
-//                     Approve ({selectedReviews.length})
-//                   </Button>
-//                   <Button
-//                     size="sm"
-//                     variant="outline"
-//                     onClick={() => bulkRejectMutation.mutate(selectedReviews)}
-//                     disabled={bulkRejectMutation.isPending}
-//                   >
-//                     <X className="h-4 w-4 mr-1" />
-//                     Reject ({selectedReviews.length})
-//                   </Button>
-//                   <Button
-//                     size="sm"
-//                     variant="destructive"
-//                     onClick={() => bulkDeleteMutation.mutate(selectedReviews)}
-//                     disabled={bulkDeleteMutation.isPending}
-//                   >
-//                     Delete ({selectedReviews.length})
-//                   </Button>
-//                 </div>
-//               )}
-//             </div>
-//           </CardHeader>
-//           <CardContent>
-//             {isLoading ? (
-//               <div className="text-center py-8">
-//                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-//                 <p className="mt-2 text-gray-600">Loading reviews...</p>
-//               </div>
-//             ) : reviews.length === 0 ? (
-//               <div className="text-center py-8">
-//                 <p className="text-gray-600">No reviews found</p>
-//               </div>
-//             ) : (
-//               <>
-//                 <Table>
-//                   <TableHeader>
-//                     <TableRow>
-//                       <TableHead className="w-12">
-//                         <Checkbox
-//                           checked={
-//                             selectedReviews.length ===
-//                               paginatedReviews.length &&
-//                             paginatedReviews.length > 0
-//                           }
-//                           onCheckedChange={handleSelectAll}
-//                         />
-//                       </TableHead>
-//                       <TableHead>Customer</TableHead>
-//                       <TableHead>Employee</TableHead>
-//                       <TableHead>Rating</TableHead>
-//                       <TableHead>Type</TableHead>
-//                       <TableHead>Content</TableHead>
-//                       <TableHead>Sentiment</TableHead>
-//                       <TableHead>Status</TableHead>
-//                       <TableHead>Date</TableHead>
-//                       <TableHead>Actions</TableHead>
-//                     </TableRow>
-//                   </TableHeader>
-//                   <TableBody>
-//                     {paginatedReviews.map((review) => (
-//                       <TableRow
-//                         key={review.id}
-//                         className={review.flagged_as_spam ? "bg-red-50" : ""}
-//                       >
-//                         <TableCell>
-//                           <Checkbox
-//                             checked={selectedReviews.includes(review.id)}
-//                             onCheckedChange={(checked) =>
-//                               handleSelectReview(review.id, checked as boolean)
-//                             }
-//                           />
-//                         </TableCell>
-//                         <TableCell>
-//                           <div>
-//                             <p className="font-medium">
-//                               {review.customer_name}
-//                             </p>
-//                             {review.customer_email && (
-//                               <p className="text-sm text-gray-600">
-//                                 {review.customer_email}
-//                               </p>
-//                             )}
-//                           </div>
-//                         </TableCell>
-//                         <TableCell>
-//                           <div>
-//                             <p className="font-medium">
-//                               {review.employee.name}
-//                             </p>
-//                             {review.employee.position && (
-//                               <p className="text-sm text-gray-600">
-//                                 {review.employee.position}
-//                               </p>
-//                             )}
-//                           </div>
-//                         </TableCell>
-//                         <TableCell>
-//                           <div className="flex items-center space-x-1">
-//                             {renderStars(review.rating)}
-//                             <span className="ml-1 text-sm font-medium">
-//                               {review.rating}
-//                             </span>
-//                           </div>
-//                         </TableCell>
-//                         <TableCell>
-//                           <Badge
-//                             variant={
-//                               review.review_type === "video"
-//                                 ? "default"
-//                                 : "secondary"
-//                             }
-//                           >
-//                             {review.review_type}
-//                           </Badge>
-//                         </TableCell>
-//                         <TableCell className="max-w-xs">
-//                           {review.comment && (
-//                             <p className="text-sm text-gray-600 truncate mb-1">
-//                               {review.comment}
-//                             </p>
-//                           )}
-//                           {renderVideoPreview(review)}
-//                           {review.flagged_as_spam && (
-//                             <Badge variant="destructive" className="mt-1">
-//                               <Flag className="h-3 w-3 mr-1" />
-//                               Spam
-//                             </Badge>
-//                           )}
-//                         </TableCell>
-//                         <TableCell>
-//                           {getSentimentBadge(review.sentiment_score)}
-//                         </TableCell>
-//                         <TableCell>
-//                           <Badge
-//                             variant={
-//                               review.moderation_status === "approved"
-//                                 ? "default"
-//                                 : review.moderation_status === "flagged"
-//                                 ? "destructive"
-//                                 : "secondary"
-//                             }
-//                           >
-//                             {review.moderation_status}
-//                           </Badge>
-//                         </TableCell>
-//                         <TableCell>
-//                           {new Date(review.created_at).toLocaleDateString()}
-//                         </TableCell>
-//                         <TableCell>
-//                           <div className="flex space-x-2">
-//                             {review.moderation_status === "pending" && (
-//                               <Button
-//                                 size="sm"
-//                                 variant="outline"
-//                                 onClick={() =>
-//                                   bulkApproveMutation.mutate([review.id])
-//                                 }
-//                                 disabled={bulkApproveMutation.isPending}
-//                               >
-//                                 <Check className="h-4 w-4" />
-//                               </Button>
-//                             )}
-//                             <Button
-//                               size="sm"
-//                               variant="outline"
-//                               onClick={() => {
-//                                 setSelectedReviewForResponse(review);
-//                                 setShowResponseDialog(true);
-//                               }}
-//                             >
-//                               <MessageSquare className="h-4 w-4" />
-//                             </Button>
-//                             {review.review_type === "video" &&
-//                               review.video_url && (
-//                                 <Button
-//                                   size="sm"
-//                                   variant="outline"
-//                                   onClick={() =>
-//                                     window.open(review.video_url, "_blank")
-//                                   }
-//                                 >
-//                                   <Eye className="h-4 w-4" />
-//                                 </Button>
-//                               )}
-//                           </div>
-//                         </TableCell>
-//                       </TableRow>
-//                     ))}
-//                   </TableBody>
-//                 </Table>
-
-//                 {/* Pagination */}
-//                 {totalPages > 1 && (
-//                   <div className="mt-4">
-//                     <Pagination>
-//                       <PaginationContent>
-//                         {currentPage > 1 && (
-//                           <PaginationItem>
-//                             <PaginationPrevious
-//                               onClick={() => setCurrentPage(currentPage - 1)}
-//                               className="cursor-pointer"
-//                             />
-//                           </PaginationItem>
-//                         )}
-
-//                         {[...Array(totalPages)].map((_, i) => (
-//                           <PaginationItem key={i + 1}>
-//                             <PaginationLink
-//                               onClick={() => setCurrentPage(i + 1)}
-//                               isActive={currentPage === i + 1}
-//                               className="cursor-pointer"
-//                             >
-//                               {i + 1}
-//                             </PaginationLink>
-//                           </PaginationItem>
-//                         ))}
-
-//                         {currentPage < totalPages && (
-//                           <PaginationItem>
-//                             <PaginationNext
-//                               onClick={() => setCurrentPage(currentPage + 1)}
-//                               className="cursor-pointer"
-//                             />
-//                           </PaginationItem>
-//                         )}
-//                       </PaginationContent>
-//                     </Pagination>
-//                   </div>
-//                 )}
-//               </>
-//             )}
-//           </CardContent>
-//         </Card>
-//       </div>
-
-//       {/* Response Dialog */}
-//       <Dialog open={showResponseDialog} onOpenChange={setShowResponseDialog}>
-//         <DialogContent className="max-w-2xl">
-//           <DialogHeader>
-//             <DialogTitle>Respond to Review</DialogTitle>
-//             <DialogDescription>
-//               {selectedReviewForResponse && (
-//                 <div className="mt-2 p-3 bg-gray-50 rounded">
-//                   <p className="font-medium">
-//                     {selectedReviewForResponse.customer_name}
-//                   </p>
-//                   <div className="flex items-center mt-1">
-//                     {renderStars(selectedReviewForResponse.rating)}
-//                     <span className="ml-2 text-sm">
-//                       {selectedReviewForResponse.rating} stars
-//                     </span>
-//                   </div>
-//                   {selectedReviewForResponse.comment && (
-//                     <p className="text-sm text-gray-600 mt-2">
-//                       {selectedReviewForResponse.comment}
-//                     </p>
-//                   )}
-//                 </div>
-//               )}
-//             </DialogDescription>
-//           </DialogHeader>
-
-//           <div className="space-y-4">
-//             <div>
-//               <label className="text-sm font-medium">Use Template</label>
-//               <Select
-//                 value={selectedTemplate}
-//                 onValueChange={handleTemplateSelect}
-//               >
-//                 <SelectTrigger>
-//                   <SelectValue placeholder="Choose a response template" />
-//                 </SelectTrigger>
-//                 <SelectContent>
-//                   {templates.map((template) => (
-//                     <SelectItem key={template.id} value={template.id}>
-//                       {template.name} ({template.category})
-//                     </SelectItem>
-//                   ))}
-//                 </SelectContent>
-//               </Select>
-//             </div>
-
-//             <div>
-//               <label className="text-sm font-medium">Response</label>
-//               <Textarea
-//                 value={responseText}
-//                 onChange={(e) => setResponseText(e.target.value)}
-//                 placeholder="Write your response to this review..."
-//                 rows={6}
-//                 className="mt-1"
-//               />
-//             </div>
-//           </div>
-
-//           <DialogFooter>
-//             <Button
-//               variant="outline"
-//               onClick={() => setShowResponseDialog(false)}
-//             >
-//               Cancel
-//             </Button>
-//             <Button
-//               onClick={() => {
-//                 if (selectedReviewForResponse && responseText.trim()) {
-//                   responseMutation.mutate({
-//                     reviewId: selectedReviewForResponse.id,
-//                     response: responseText,
-//                   });
-//                 }
-//               }}
-//               disabled={!responseText.trim() || responseMutation.isPending}
-//             >
-//               Send Response
-//             </Button>
-//           </DialogFooter>
-//         </DialogContent>
-//       </Dialog>
-//     </div>
-//   );
-// };
-
-// export default Reviews;

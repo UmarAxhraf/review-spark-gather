@@ -13,6 +13,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Star, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -116,7 +117,14 @@ const Login = () => {
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
               disabled={isLoading}
             >
-              {isLoading ? "Signing in..." : "Sign In"}
+              {isLoading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <LoadingSpinner size="sm" className="text-white" />
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                "Sign In"
+              )}
             </Button>
           </form>
           <div className="mt-4 text-center">

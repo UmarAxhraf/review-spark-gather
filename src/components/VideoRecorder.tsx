@@ -181,6 +181,10 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   const startTimeRef = useRef<number>(0);
   const pausedTimeRef = useRef<number>(0); // Track total paused time
 
+  // Keyboard navigation refs
+  const controlsContainerRef = useRef<HTMLDivElement>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
   const { toast } = useToast();
 
   // Utility functions
@@ -829,6 +833,118 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
   }, [recordedBlob, mimeType, handleError, toast]);
 
+  // Enhanced keyboard navigation handler
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      // Don't interfere with form inputs
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
+      switch (e.key) {
+        case " ": // Spacebar
+          e.preventDefault();
+          if (state === "idle" && stream) {
+            startRecording();
+          } else if (state === "recording") {
+            pauseRecording();
+          } else if (state === "paused") {
+            pauseRecording(); // Resume
+          }
+          break;
+
+        case "Enter":
+          e.preventDefault();
+          if (state === "idle" && !stream) {
+            startCamera();
+          } else if (state === "idle" && stream) {
+            startRecording();
+          }
+          break;
+
+        case "Escape":
+          e.preventDefault();
+          if (state === "recording" || state === "paused") {
+            setShowStopDialog(true);
+          } else if (showSettings) {
+            setShowSettings(false);
+          }
+          break;
+
+        case "s":
+        case "S":
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (state === "recording" || state === "paused") {
+              setShowStopDialog(true);
+            }
+          } else if (stream && state === "idle") {
+            e.preventDefault();
+            setShowSettings(!showSettings);
+          }
+          break;
+
+        case "c":
+        case "C":
+          if (stream && state === "idle" && cameras.length > 1) {
+            e.preventDefault();
+            switchCamera();
+          }
+          break;
+
+        case "m":
+        case "M":
+          if (stream) {
+            e.preventDefault();
+            setIsMuted(!isMuted);
+          }
+          break;
+
+        case "d":
+        case "D":
+          if (state === "completed" && recordedBlob) {
+            e.preventDefault();
+            downloadVideo();
+          }
+          break;
+
+        case "r":
+        case "R":
+          if (state === "completed") {
+            e.preventDefault();
+            resetRecording();
+          }
+          break;
+      }
+    },
+    [
+      state,
+      stream,
+      cameras.length,
+      isMuted,
+      recordedBlob,
+      showSettings,
+      startRecording,
+      pauseRecording,
+      startCamera,
+      switchCamera,
+      downloadVideo,
+      resetRecording,
+    ]
+  );
+
+  // Add keyboard event listeners
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
   // Effects
   useEffect(() => {
     enumerateCameras();
@@ -970,6 +1086,8 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
                 variant="outline"
                 className="bg-black/50 border-white/20 text-white hover:bg-black/70"
                 onClick={() => setIsMuted(!isMuted)}
+                aria-label={isMuted ? "Unmute audio (M)" : "Mute audio (M)"}
+                title={isMuted ? "Unmute audio (M)" : "Mute audio (M)"}
               >
                 {isMuted ? (
                   <VolumeX className="h-4 w-4" />
@@ -979,7 +1097,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{isMuted ? "Unmute" : "Mute"} Audio</p>
+              <p>{isMuted ? "Unmute" : "Mute"} Audio (M)</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -1024,12 +1142,25 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   const renderMainControls = () => {
     if (state === "completed" && recordedBlob) {
       return (
-        <div className="flex flex-wrap justify-center gap-3">
-          <Button onClick={resetRecording} variant="outline">
+        <div
+          className="flex flex-wrap justify-center gap-3"
+          ref={controlsContainerRef}
+        >
+          <Button
+            onClick={resetRecording}
+            variant="outline"
+            aria-label="Record again (R)"
+            title="Record again (R)"
+          >
             <RefreshCw className="h-4 w-4 mr-2" />
             Record Again
           </Button>
-          <Button onClick={downloadVideo} variant="outline">
+          <Button
+            onClick={downloadVideo}
+            variant="outline"
+            aria-label="Download video (D)"
+            title="Download video (D)"
+          >
             <Download className="h-4 w-4 mr-2" />
             Download
           </Button>
@@ -1039,11 +1170,21 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
 
     if (!stream) {
       return (
-        <div className="flex justify-center">
+        <div className="flex justify-center" ref={controlsContainerRef}>
           <Button
             onClick={startCamera}
             disabled={state === "preparing"}
             className="bg-blue-600 hover:bg-blue-700"
+            aria-label={
+              state === "preparing"
+                ? "Starting camera..."
+                : "Start camera (Enter)"
+            }
+            title={
+              state === "preparing"
+                ? "Starting camera..."
+                : "Start camera (Enter)"
+            }
           >
             {state === "preparing" ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1057,12 +1198,17 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     }
 
     return (
-      <div className="flex flex-wrap justify-center gap-3">
+      <div
+        className="flex flex-wrap justify-center gap-3"
+        ref={controlsContainerRef}
+      >
         {state === "idle" && (
           <Button
             onClick={startRecording}
             className="bg-red-600 hover:bg-red-700"
             disabled={!stream}
+            aria-label="Start recording (Space or Enter)"
+            title="Start recording (Space or Enter)"
           >
             <Play className="h-4 w-4 mr-2" />
             Start Recording
@@ -1075,6 +1221,16 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
               onClick={pauseRecording}
               variant="outline"
               className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+              aria-label={
+                state === "paused"
+                  ? "Resume recording (Space)"
+                  : "Pause recording (Space)"
+              }
+              title={
+                state === "paused"
+                  ? "Resume recording (Space)"
+                  : "Pause recording (Space)"
+              }
             >
               {state === "paused" ? (
                 <Play className="h-4 w-4 mr-2" />
@@ -1087,6 +1243,8 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
             <Button
               onClick={() => setShowStopDialog(true)}
               className="bg-red-600 hover:bg-red-700"
+              aria-label="Stop recording (Escape or Ctrl+S)"
+              title="Stop recording (Escape or Ctrl+S)"
             >
               <Square className="h-4 w-4 mr-2" />
               Stop Recording
@@ -1104,12 +1262,14 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
                     variant="outline"
                     size="icon"
                     disabled={cameras.length < 2}
+                    aria-label="Switch camera (C)"
+                    title="Switch camera (C)"
                   >
                     <SwitchCamera className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Switch Camera</p>
+                  <p>Switch Camera (C)</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -1121,17 +1281,23 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
                     onClick={() => setShowSettings(!showSettings)}
                     variant="outline"
                     size="icon"
+                    aria-label="Settings (S)"
+                    title="Settings (S)"
                   >
                     <Settings className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Settings</p>
+                  <p>Settings (S)</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
 
-            <Button onClick={stopCamera} variant="outline">
+            <Button
+              onClick={stopCamera}
+              variant="outline"
+              aria-label="Stop camera"
+            >
               Stop Camera
             </Button>
           </>
@@ -1144,11 +1310,14 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     if (!showSettings) return null;
 
     return (
-      <Card className="mt-4">
+      <Card className="mt-4" ref={settingsRef}>
         <CardContent className="pt-6">
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">
+              <label
+                className="text-sm font-medium mb-2 block"
+                htmlFor="quality-select"
+              >
                 Video Quality
               </label>
               <Select
@@ -1156,7 +1325,10 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
                 onValueChange={(value: VideoQuality) => setQuality(value)}
                 disabled={state === "recording" || state === "paused"}
               >
-                <SelectTrigger>
+                <SelectTrigger
+                  id="quality-select"
+                  aria-label="Select video quality"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1171,13 +1343,18 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
 
             {cameras.length > 1 && (
               <div>
-                <label className="text-sm font-medium mb-2 block">Camera</label>
+                <label
+                  className="text-sm font-medium mb-2 block"
+                  htmlFor="camera-select"
+                >
+                  Camera
+                </label>
                 <Select
                   value={selectedCamera}
                   onValueChange={setSelectedCamera}
                   disabled={state === "recording" || state === "paused"}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="camera-select" aria-label="Select camera">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -1196,6 +1373,8 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
                 onClick={() => setShowSettings(false)}
                 variant="outline"
                 size="sm"
+                aria-label="Close settings (Escape)"
+                title="Close settings (Escape)"
               >
                 Close Settings
               </Button>
@@ -1281,7 +1460,18 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div
+      className={`space-y-4 ${className}`}
+      role="region"
+      aria-label="Video recorder"
+    >
+      {/* Keyboard shortcuts help */}
+      <div className="sr-only" aria-live="polite">
+        Keyboard shortcuts: Space to start/pause recording, Enter to start
+        camera/recording, Escape to stop recording, S for settings, C to switch
+        camera, M to mute/unmute, D to download, R to record again
+      </div>
+
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
