@@ -72,9 +72,13 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({
           customerName={customerName}
           reviewId={reviewId}
           trigger={
-            <Button variant="ghost" size="sm" className="h-8 px-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-2 rounded-full"
+            >
               <Play className="h-3 w-3 mr-1" />
-              Watch
+              Watch Video
             </Button>
           }
         />

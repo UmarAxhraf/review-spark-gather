@@ -122,7 +122,7 @@ const Reviews = () => {
     queryKey: ["reviews", filterStatus],
     queryFn: async () => {
       if (!user) return [];
-      
+
       let query = supabase
         .from("reviews")
         .select(
@@ -155,7 +155,7 @@ const Reviews = () => {
     queryKey: ["review-templates"],
     queryFn: async () => {
       if (!user) return [];
-      
+
       const { data, error } = await supabase
         .from("review_templates")
         .select("*")
@@ -656,7 +656,7 @@ const Reviews = () => {
                 Manage and moderate customer reviews with advanced tools
               </p>
             </div>
-            
+
             {/* Responsive Filter Buttons */}
             <div className="flex flex-wrap gap-2 lg:flex-nowrap">
               <Button
@@ -703,12 +703,14 @@ const Reviews = () => {
         <div className="mb-4 sm:mb-6">
           <BackButton />
         </div>
-        
+
         <Card>
           <CardHeader>
             <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
               <div>
-                <CardTitle className="text-lg sm:text-xl">Customer Reviews</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">
+                  Customer Reviews
+                </CardTitle>
                 <CardDescription className="text-sm">
                   {reviews.length} review{reviews.length !== 1 ? "s" : ""} found
                   {selectedReviews.length > 0 && (
@@ -754,7 +756,7 @@ const Reviews = () => {
               )}
             </div>
           </CardHeader>
-          
+
           <CardContent>
             {isLoading ? (
               <div className="space-y-4">
@@ -800,7 +802,8 @@ const Reviews = () => {
                           <TableHead className="w-12">
                             <Checkbox
                               checked={
-                                selectedReviews.length === paginatedReviews.length &&
+                                selectedReviews.length ===
+                                  paginatedReviews.length &&
                                 paginatedReviews.length > 0
                               }
                               onCheckedChange={handleSelectAll}
@@ -821,13 +824,18 @@ const Reviews = () => {
                         {paginatedReviews.map((review) => (
                           <TableRow
                             key={review.id}
-                            className={review.flagged_as_spam ? "bg-red-50" : ""}
+                            className={
+                              review.flagged_as_spam ? "bg-red-50" : ""
+                            }
                           >
                             <TableCell>
                               <Checkbox
                                 checked={selectedReviews.includes(review.id)}
                                 onCheckedChange={(checked) =>
-                                  handleSelectReview(review.id, checked as boolean)
+                                  handleSelectReview(
+                                    review.id,
+                                    checked as boolean
+                                  )
                                 }
                               />
                             </TableCell>
@@ -933,7 +941,9 @@ const Reviews = () => {
                                   variant="outline"
                                   onClick={() => {
                                     setSelectedReviewForResponse(review);
-                                    setResponseText(review.admin_response || "");
+                                    setResponseText(
+                                      review.admin_response || ""
+                                    );
                                     setShowResponseDialog(true);
                                   }}
                                 >
@@ -975,39 +985,38 @@ const Reviews = () => {
                         )}
 
                         {/* Show fewer page numbers on mobile */}
-                        {isMobile ? (
-                          // Mobile: Show current page and adjacent pages
-                          [...Array(Math.min(3, totalPages))]
-                            .map((_, i) => {
-                              const pageNum = Math.max(1, currentPage - 1) + i;
-                              if (pageNum > totalPages) return null;
-                              return (
-                                <PaginationItem key={pageNum}>
-                                  <PaginationLink
-                                    onClick={() => setCurrentPage(pageNum)}
-                                    isActive={currentPage === pageNum}
-                                    className="cursor-pointer"
-                                  >
-                                    {pageNum}
-                                  </PaginationLink>
-                                </PaginationItem>
-                              );
-                            })
-                            .filter(Boolean)
-                        ) : (
-                          // Desktop: Show all pages
-                          [...Array(totalPages)].map((_, i) => (
-                            <PaginationItem key={i + 1}>
-                              <PaginationLink
-                                onClick={() => setCurrentPage(i + 1)}
-                                isActive={currentPage === i + 1}
-                                className="cursor-pointer"
-                              >
-                                {i + 1}
-                              </PaginationLink>
-                            </PaginationItem>
-                          ))
-                        )}
+                        {isMobile
+                          ? // Mobile: Show current page and adjacent pages
+                            [...Array(Math.min(3, totalPages))]
+                              .map((_, i) => {
+                                const pageNum =
+                                  Math.max(1, currentPage - 1) + i;
+                                if (pageNum > totalPages) return null;
+                                return (
+                                  <PaginationItem key={pageNum}>
+                                    <PaginationLink
+                                      onClick={() => setCurrentPage(pageNum)}
+                                      isActive={currentPage === pageNum}
+                                      className="cursor-pointer"
+                                    >
+                                      {pageNum}
+                                    </PaginationLink>
+                                  </PaginationItem>
+                                );
+                              })
+                              .filter(Boolean)
+                          : // Desktop: Show all pages
+                            [...Array(totalPages)].map((_, i) => (
+                              <PaginationItem key={i + 1}>
+                                <PaginationLink
+                                  onClick={() => setCurrentPage(i + 1)}
+                                  isActive={currentPage === i + 1}
+                                  className="cursor-pointer"
+                                >
+                                  {i + 1}
+                                </PaginationLink>
+                              </PaginationItem>
+                            ))}
 
                         {currentPage < totalPages && (
                           <PaginationItem>
