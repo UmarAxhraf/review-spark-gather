@@ -47,6 +47,7 @@ import {
   CardSkeleton,
 } from "@/components/ui/skeleton-loaders";
 import { BackButton } from "@/components/ui/back-button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AnalyticsData {
   totalReviews: number;
@@ -67,6 +68,7 @@ interface AnalyticsData {
 
 const Analytics = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState("30");
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
@@ -334,19 +336,22 @@ const Analytics = () => {
         <div className="mb-6">
           <BackButton />
         </div>
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        
+        {/* Responsive Header */}
+        <div className={`${isMobile ? 'space-y-4' : 'flex items-center justify-between'}`}>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900`}>
               Analytics Dashboard
             </h1>
             <p className="text-gray-600">
               Comprehensive insights into your review performance
             </p>
           </div>
-          <div className="flex items-center space-x-2">
+          
+          {/* Responsive Controls */}
+          <div className={`${isMobile ? 'flex flex-col space-y-3 w-full' : 'flex items-center space-x-2'}`}>
             <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className={`${isMobile ? 'w-full' : 'w-40'}`}>
                 <SelectValue placeholder="Select period" />
               </SelectTrigger>
               <SelectContent>
@@ -356,7 +361,11 @@ const Analytics = () => {
                 <SelectItem value="365">Last year</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size={isMobile ? "default" : "sm"}
+              className={isMobile ? "w-full" : ""}
+            >
               <Download className="h-4 w-4 mr-2" />
               Export Report
             </Button>
@@ -435,14 +444,37 @@ const Analytics = () => {
           </Card>
         </div>
 
-        {/* Charts */}
+        {/* Responsive Charts */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="reviews">Reviews</TabsTrigger>
-            <TabsTrigger value="team">Team Performance</TabsTrigger>
-            <TabsTrigger value="qrcodes">QR Codes</TabsTrigger>
-          </TabsList>
+          {/* Responsive TabsList */}
+          <div className={`${isMobile ? 'overflow-x-auto' : ''}`}>
+            <TabsList className={`${isMobile ? 'flex w-max min-w-full' : 'grid w-full grid-cols-4'}`}>
+              <TabsTrigger 
+                value="overview" 
+                className={`${isMobile ? 'flex-shrink-0 px-4' : ''}`}
+              >
+                {isMobile ? 'Overview' : 'Overview'}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="reviews" 
+                className={`${isMobile ? 'flex-shrink-0 px-4' : ''}`}
+              >
+                {isMobile ? 'Reviews' : 'Reviews'}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="team" 
+                className={`${isMobile ? 'flex-shrink-0 px-4' : ''}`}
+              >
+                {isMobile ? 'Team' : 'Team Performance'}
+              </TabsTrigger>
+              <TabsTrigger 
+                value="qrcodes" 
+                className={`${isMobile ? 'flex-shrink-0 px-4' : ''}`}
+              >
+                {isMobile ? 'QR Codes' : 'QR Codes'}
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -590,5 +622,3 @@ const Analytics = () => {
 };
 
 export default Analytics;
-
-//===================================================>>>>>>>>>>>>>>>>>>>>>==========================================

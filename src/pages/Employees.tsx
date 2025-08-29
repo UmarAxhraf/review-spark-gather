@@ -138,43 +138,10 @@ const Employees = () => {
     }
   }, [user]);
 
-  // const fetchEmployees = async () => {
-  //   if (!user) return;
-
-  //   try {
-  //     console.log("Fetching employees data...");
-
-  //     const { data, error } = await supabase
-  //       .from("employees")
-  //       .select("*")
-  //       .eq("company_id", user.id)
-  //       .order("created_at", { ascending: false });
-
-  //     if (error) throw error;
-
-  //     // Simple mapping without reviews for now
-  //     const employeesWithStats = (data || []).map((employee) => ({
-  //       ...employee,
-  //       reviews_count: 0,
-  //       avg_rating: undefined,
-  //     }));
-
-  //     setEmployees(employeesWithStats);
-  //     console.log("Employees updated:", employeesWithStats.length);
-  //   } catch (error: any) {
-  //     console.error("Error fetching employees:", error);
-  //     toast.error("Failed to load employees");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const fetchEmployees = async () => {
     if (!user) return;
 
     try {
-      //console.log("Fetching employees data...");
-
       // First, try the simple query without joins to ensure basic functionality
       const { data, error } = await supabase
         .from("employees")
@@ -271,61 +238,6 @@ const Employees = () => {
     }
   };
 
-  // const fetchEmployees = async () => {
-  //   if (!user) return;
-
-  //   try {
-  //     console.log("Fetching employees data...");
-
-  //     const { data, error } = await supabase
-  //       .from("employees")
-  //       .select(
-  //         `
-  //         *,
-  //         department:departments(name),
-  //         position_data:positions(title),
-  //         reviews:reviews!employee_id(
-  //           id,
-  //           rating
-  //         )
-  //       `
-  //       )
-  //       .eq("company_id", user.id)
-  //       .order("created_at", { ascending: false });
-
-  //     if (error) throw error;
-
-  //     // Calculate review statistics for each employee
-  //     const employeesWithStats = (data || []).map((employee) => {
-  //       const reviews = employee.reviews || [];
-  //       const reviewsCount = reviews.length;
-  //       const avgRating =
-  //         reviewsCount > 0
-  //           ? reviews.reduce(
-  //               (sum: number, review: any) => sum + review.rating,
-  //               0
-  //             ) / reviewsCount
-  //           : 0;
-
-  //       return {
-  //         ...employee,
-  //         reviews_count: reviewsCount,
-  //         avg_rating:
-  //           avgRating > 0 ? Math.round(avgRating * 10) / 10 : undefined,
-  //         reviews: undefined,
-  //       };
-  //     });
-
-  //     setEmployees(employeesWithStats);
-  //     console.log("Employees updated:", employeesWithStats.length);
-  //   } catch (error: any) {
-  //     console.error("Error fetching employees:", error);
-  //     toast.error("Failed to load employees");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
   const handleToggleEmployeeStatus = async (
     employeeId: string,
     newStatus: boolean
@@ -398,19 +310,6 @@ const Employees = () => {
     a.click();
     window.URL.revokeObjectURL(url);
   };
-
-  // if (loading) {
-  //   return (
-  //     <TeamLayout>
-  //       <div className="flex items-center justify-center h-64">
-  //         <div className="text-center">
-  //           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-  //           <p className="text-gray-600">Loading employees...</p>
-  //         </div>
-  //       </div>
-  //     </TeamLayout>
-  //   );
-  // }
 
   if (loading) {
     return (

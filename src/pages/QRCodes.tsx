@@ -1,5 +1,3 @@
-//===================================>>>>>>>>>>>>>>>>>>>>>>>>============================================
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +50,7 @@ import {
   StatsCardSkeleton,
 } from "@/components/ui/skeleton-loaders";
 import { BackButton } from "@/components/ui/back-button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Employee {
   id: string;
@@ -83,6 +82,7 @@ interface QRAnalytics {
 const QRCodes = () => {
   const { user } = useAuth();
   const { settings } = useQRCode();
+  const isMobile = useIsMobile();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -271,8 +271,6 @@ const QRCodes = () => {
       toast.error(`Failed to perform bulk ${action}`);
     }
   };
-
-  // ... existing code ...
 
   const generateQRCodeImage = (
     employee: Employee
@@ -464,7 +462,11 @@ const QRCodes = () => {
           <BackButton />
         </div>
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div
+          className={`flex ${
+            isMobile ? "flex-col space-y-4" : "items-center justify-between"
+          }`}
+        >
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
               QR Code Management
@@ -473,12 +475,24 @@ const QRCodes = () => {
               Generate, manage, and track QR codes for review collection
             </p>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={handleViewAnalytics}>
+          <div
+            className={`flex ${
+              isMobile ? "flex-col space-y-2 w-full" : "items-center space-x-2"
+            }`}
+          >
+            <Button
+              variant="outline"
+              onClick={handleViewAnalytics}
+              className={isMobile ? "w-full justify-center" : ""}
+            >
               <BarChart3 className="h-4 w-4 mr-2" />
               Analytics
             </Button>
-            <Button variant="outline" onClick={() => setQrDialogOpen(true)}>
+            <Button
+              variant="outline"
+              onClick={() => setQrDialogOpen(true)}
+              className={isMobile ? "w-full justify-center" : ""}
+            >
               <Settings className="h-4 w-4 mr-2" />
               Customize QR Codes
             </Button>
@@ -875,88 +889,6 @@ const QRCodes = () => {
             )}
           </DialogContent>
         </Dialog>
-        {/* <Dialog
-          open={analyticsDialogOpen}
-          onOpenChange={setAnalyticsDialogOpen}
-        >
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>QR Code Analytics</DialogTitle>
-            </DialogHeader>
-            {qrAnalytics && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-2xl font-bold">
-                        {qrAnalytics.total_scans}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Total Scans
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-2xl font-bold">
-                        {qrAnalytics.unique_scans}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Unique Scans
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-2xl font-bold">
-                        {qrAnalytics.conversion_rate}%
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Conversion Rate
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-semibold mb-3">Top Devices</h4>
-                    <div className="space-y-2">
-                      {qrAnalytics.top_devices.map((device, index) => (
-                        <div
-                          key={index}
-                          className="flex justify-between items-center"
-                        >
-                          <span className="text-sm">{device.device_type}</span>
-                          <Badge variant="secondary">{device.count}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold mb-3">Recent Scans</h4>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {qrAnalytics.recent_scans.map((scan, index) => (
-                        <div key={index} className="text-sm">
-                          <div className="flex justify-between">
-                            <span>{scan.device_type}</span>
-                            <span className="text-muted-foreground">
-                              {new Date(scan.scan_date).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {scan.location_country}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog> */}
 
         {/* QR Code Dialog */}
         <QRCodeDialog

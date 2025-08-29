@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Play, Video, AlertCircle } from "lucide-react";
+import { Video, AlertCircle, Play } from "lucide-react";
 import VideoDialog from "@/components/VideoDialog";
 import { Badge } from "@/components/ui/badge";
 
@@ -67,50 +66,38 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({
           <Video className="h-3 w-3 mr-1" />
           Video Review
         </Badge>
-        <VideoDialog
-          videoUrl={videoUrl}
-          customerName={customerName}
-          reviewId={reviewId}
-          trigger={
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 px-2 rounded-full"
-            >
-              <Play className="h-3 w-3 mr-1" />
-              Watch Video
-            </Button>
-          }
-        />
       </div>
 
-      {/* Thumbnail preview */}
+      {/* Clickable Thumbnail preview */}
       <div className="mt-2 relative">
         {!shouldShowFallback ? (
-          <div className="relative w-32 h-20">
-            <video
-              src={videoUrl}
-              className="w-32 h-20 object-cover rounded border cursor-pointer"
-              controls={false}
-              preload="metadata"
-              onError={handleVideoError}
-              onLoadedData={handleVideoLoad}
-              onLoadedMetadata={handleVideoLoad}
-              onClick={(e) => {
-                e.preventDefault();
-                // The VideoDialog will handle the click
-              }}
-              style={{ display: hasError ? "none" : "block" }}
-            />
+          <VideoDialog
+            videoUrl={videoUrl}
+            customerName={customerName}
+            reviewId={reviewId}
+            trigger={
+              <div className="relative w-32 h-20 cursor-pointer group">
+                <video
+                  src={videoUrl}
+                  className="w-32 h-20 object-cover rounded border"
+                  controls={false}
+                  preload="metadata"
+                  onError={handleVideoError}
+                  onLoadedData={handleVideoLoad}
+                  onLoadedMetadata={handleVideoLoad}
+                  style={{ display: hasError ? "none" : "block" }}
+                />
 
-            {/* Play button overlay */}
-            <div className="absolute inset-0 flex items-center justify-center rounded bg-black/30">
-              <Play className="h-6 w-6 text-white" />
-            </div>
-          </div>
+                {/* Play button overlay */}
+                <div className="absolute inset-0 flex items-center justify-center rounded bg-black/30 group-hover:bg-black/50 transition-colors">
+                  <Play className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            }
+          />
         ) : (
           // Fallback UI when video fails to load or URL is invalid
-          <div className="w-32 h-20 bg-gray-100 dark:bg-gray-800 rounded border cursor-pointer flex flex-col items-center justify-center">
+          <div className="w-32 h-20 bg-gray-100 dark:bg-gray-800 rounded border cursor-not-allowed flex flex-col items-center justify-center">
             <AlertCircle className="h-4 w-4 text-gray-400 mb-1" />
             <span className="text-xs text-gray-500">Video unavailable</span>
           </div>

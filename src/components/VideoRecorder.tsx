@@ -48,6 +48,7 @@ import {
   isOnline,
   waitForOnline,
 } from "@/utils/networkUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Types
 interface VideoRecorderProps {
@@ -152,6 +153,8 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   autoStart = false,
   className = "",
 }) => {
+  const isMobile = useIsMobile();
+
   // Core state
   const [state, setState] = useState<RecordingState>("idle");
   const [quality, setQuality] = useState<VideoQuality>(initialQuality);
@@ -1021,7 +1024,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
       return (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white">
           <div className="text-center p-6">
-            <Camera className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+            <Camera className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 mx-auto mb-3 mt-1 text-gray-400" />
             <h3 className="text-lg font-semibold mb-2">Camera Not Started</h3>
             <p className="text-sm text-gray-300 mb-4">
               Click "Start Camera" below to begin
@@ -1143,7 +1146,11 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     if (state === "completed" && recordedBlob) {
       return (
         <div
-          className="flex flex-wrap justify-center gap-3"
+          className={`${
+            isMobile
+              ? "flex flex-col space-y-3 w-full"
+              : "flex flex-wrap justify-center gap-3"
+          }`}
           ref={controlsContainerRef}
         >
           <Button
@@ -1151,6 +1158,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
             variant="outline"
             aria-label="Record again (R)"
             title="Record again (R)"
+            className={isMobile ? "w-full" : ""}
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Record Again
@@ -1160,6 +1168,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
             variant="outline"
             aria-label="Download video (D)"
             title="Download video (D)"
+            className={isMobile ? "w-full" : ""}
           >
             <Download className="h-4 w-4 mr-2" />
             Download

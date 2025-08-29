@@ -1,5 +1,3 @@
-//==========================================>>>>>>>>>>>>>>>>>>>>==========================
-
 import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -217,99 +215,6 @@ const ReviewSubmission = () => {
     }
   };
 
-  // const uploadVideo = async (file: Blob | File): Promise<string> => {
-  //   if (!isOnline()) {
-  //     await waitForOnline();
-  //   }
-
-  //   return retryWithBackoff(
-  //     async () => {
-  //       const fileName = `review-${Date.now()}-${Math.random()
-  //         .toString(36)
-  //         .substring(2)}.webm`;
-
-  //       // Debug logging to see what we're working with
-  //       console.log("Original file type:", file.type);
-  //       console.log("File size:", file.size);
-
-  //       // Force correct content type - create a new blob if needed
-  //       let contentType = "video/webm";
-  //       let uploadFile: Blob | File = file;
-
-  //       if (file.type) {
-  //         // Validate and use the file's content type if it's a valid video type
-  //         const validVideoTypes = [
-  //           "video/webm",
-  //           "video/mp4",
-  //           "video/webm;codecs=vp9,opus",
-  //           "video/webm;codecs=vp8,opus",
-  //           "video/webm;codecs=h264,opus",
-  //           "video/mp4;codecs=h264,aac",
-  //         ];
-
-  //         if (
-  //           validVideoTypes.some((type) =>
-  //             file.type.startsWith(type.split(";")[0])
-  //           )
-  //         ) {
-  //           contentType = file.type;
-  //         } else {
-  //           // If the file type is not valid, create a new blob with correct type
-  //           console.warn(
-  //             "Invalid file type detected:",
-  //             file.type,
-  //             "forcing to video/webm"
-  //           );
-  //           uploadFile = new Blob([file], { type: "video/webm" });
-  //           contentType = "video/webm";
-  //         }
-  //       } else {
-  //         // If no file type, create a new blob with correct type
-  //         console.warn("No file type detected, forcing to video/webm");
-  //         uploadFile = new Blob([file], { type: "video/webm" });
-  //         contentType = "video/webm";
-  //       }
-
-  //       console.log("Final content type:", contentType);
-  //       console.log("Upload file type:", uploadFile.type);
-
-  //       // Upload to the correct bucket with explicit content type
-  //       const { data, error } = await publicSupabase.storage
-  //         .from("video-reviews")
-  //         .upload(fileName, uploadFile, {
-  //           contentType,
-  //           upsert: false,
-  //           cacheControl: "3600",
-  //           // Add metadata to ensure proper handling
-  //           metadata: {
-  //             "content-type": contentType,
-  //             "file-type": "video",
-  //             "original-type": file.type || "unknown",
-  //           },
-  //         });
-
-  //       if (error) {
-  //         console.error("Upload error:", error);
-  //         throw new Error(`Upload failed: ${error.message}`);
-  //       }
-
-  //       console.log("Upload successful:", data);
-
-  //       // Generate and return the public URL
-  //       const {
-  //         data: { publicUrl },
-  //       } = publicSupabase.storage
-  //         .from("video-reviews")
-  //         .getPublicUrl(data.path);
-
-  //       console.log("Generated public URL:", publicUrl);
-  //       return publicUrl;
-  //     },
-  //     3,
-  //     2000
-  //   );
-  // };
-
   // Update the uploadVideo function
   const uploadVideo = async (file: Blob | File): Promise<string> => {
     if (!file) {
@@ -518,42 +423,6 @@ const ReviewSubmission = () => {
           throw uploadError;
         }
       }
-
-      // Insert review with retry logic
-      // const reviewData = await retryWithBackoff(
-      //   async () => {
-      //     const { data, error } = await publicSupabase
-      //       .from("reviews")
-      //       .insert({
-      //         employee_id: employee.id,
-      //         company_id: employee.company_id,
-      //         customer_name: customerName.trim(),
-      //         customer_email: customerEmail.trim() || null,
-      //         customer_phone: customerPhone.trim() || null,
-      //         rating,
-      //         comment: comment.trim() || null,
-      //         review_type: reviewType,
-      //         video_url: videoUrl,
-      //         allow_follow_up: !!customerEmail,
-      //         share_permission: true,
-      //       })
-      //       .select("id")
-      //       .single();
-
-      //     if (error) {
-      //       if (error.code === "23505") {
-      //         throw new Error(
-      //           "You have already submitted a review for this employee today."
-      //         );
-      //       }
-      //       throw new Error(`Submission failed: ${error.message}`);
-      //     }
-
-      //     return data;
-      //   },
-      //   3,
-      //   1000
-      // );
 
       const reviewData = await retryWithBackoff(
         async () => {

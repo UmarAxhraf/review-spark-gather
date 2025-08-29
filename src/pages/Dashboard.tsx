@@ -970,8 +970,8 @@ const Dashboard = () => {
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <Skeleton className="h-8 w-8 rounded-lg" />
                 <div className="space-y-2">
-                  <Skeleton className={`h-6 ${isMobile ? 'w-32' : 'w-48'}`} />
-                  <Skeleton className={`h-4 ${isMobile ? 'w-40' : 'w-64'}`} />
+                  <Skeleton className={`h-6 ${isMobile ? "w-32" : "w-48"}`} />
+                  <Skeleton className={`h-4 ${isMobile ? "w-40" : "w-64"}`} />
                 </div>
               </div>
               {!isMobile && (
@@ -1033,10 +1033,12 @@ const Dashboard = () => {
                 <Star className="h-5 w-5 text-white" />
               </div>
               <div className="min-w-0">
-                <h1 className={`font-bold text-gray-900 truncate ${
-                  isMobile ? 'text-lg' : 'text-2xl'
-                }`}>
-                  {isMobile ? 'Dashboard' : 'Enhanced Dashboard'}
+                <h1
+                  className={`font-bold text-gray-900 truncate ${
+                    isMobile ? "text-lg" : "text-2xl"
+                  }`}
+                >
+                  {isMobile ? "Dashboard" : "Enhanced Dashboard"}
                 </h1>
                 {!isMobile && (
                   <p className="text-gray-600 truncate">
@@ -1128,12 +1130,16 @@ const Dashboard = () => {
                       <Eye className="mr-2 h-4 w-4" />
                       <span>Reviews</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/notifications")}>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/notifications")}
+                    >
                       <Bell className="mr-2 h-4 w-4" />
                       <span>Notifications</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/export-reports")}>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/export-reports")}
+                    >
                       <Download className="mr-2 h-4 w-4" />
                       <span>Export Reports</span>
                     </DropdownMenuItem>
@@ -1212,9 +1218,7 @@ const Dashboard = () => {
             {/* Mobile Controls */}
             {isMobile && (
               <div className="flex items-center space-x-2">
-                <NotificationBell />
-                
-                {/* Mobile Menu */}
+                {/* Consolidated Mobile Menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm">
@@ -1222,6 +1226,55 @@ const Dashboard = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-64" align="end">
+                    {/* Quick Actions Section */}
+                    <div className="p-3 border-b">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-500">
+                            Quick Actions
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate("/analytics")}
+                            className="h-8 text-xs"
+                          >
+                            <BarChart3 className="h-3 w-3 mr-1" />
+                            Analytics
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate("/notifications")}
+                            className="h-8 text-xs"
+                          >
+                            <Bell className="h-3 w-3 mr-1" />
+                            Notifications
+                          </Button>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRefresh}
+                          disabled={isLoading("refreshing")}
+                          className="w-full h-8 text-xs"
+                        >
+                          {isLoading("refreshing") ? (
+                            <LoadingSpinner size="sm" />
+                          ) : (
+                            <RefreshCw
+                              className={`h-3 w-3 mr-1 ${
+                                refreshing ? "animate-spin" : ""
+                              }`}
+                            />
+                          )}
+                          Refresh
+                        </Button>
+                      </div>
+                    </div>
+
                     {/* Mobile Filters Section */}
                     <div className="p-3 border-b">
                       <div className="space-y-3">
@@ -1229,7 +1282,10 @@ const Dashboard = () => {
                           <label className="text-xs font-medium text-gray-500 mb-1 block">
                             Time Range
                           </label>
-                          <Select value={timeRange} onValueChange={handleTimeRangeChange}>
+                          <Select
+                            value={timeRange}
+                            onValueChange={handleTimeRangeChange}
+                          >
                             <SelectTrigger className="w-full h-8">
                               <SelectValue />
                             </SelectTrigger>
@@ -1240,7 +1296,7 @@ const Dashboard = () => {
                             </SelectContent>
                           </Select>
                         </div>
-                        
+
                         <div>
                           <label className="text-xs font-medium text-gray-500 mb-1 block">
                             Department
@@ -1253,7 +1309,9 @@ const Dashboard = () => {
                               <SelectValue placeholder="All Departments" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="all">All Departments</SelectItem>
+                              <SelectItem value="all">
+                                All Departments
+                              </SelectItem>
                               {dropdownDepartments.map((dept) => (
                                 <SelectItem key={dept.id} value={dept.id}>
                                   {dept.name}
@@ -1262,36 +1320,19 @@ const Dashboard = () => {
                             </SelectContent>
                           </Select>
                         </div>
-                        
+
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-500">Real-time</span>
+                          <span className="text-xs font-medium text-gray-500">
+                            Real-time
+                          </span>
                           <Switch
                             checked={realTimeEnabled}
                             onCheckedChange={setRealTimeEnabled}
                           />
                         </div>
-                        
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleRefresh}
-                          disabled={isLoading("refreshing")}
-                          className="w-full"
-                        >
-                          {isLoading("refreshing") ? (
-                            <LoadingSpinner size="sm" />
-                          ) : (
-                            <RefreshCw
-                              className={`h-4 w-4 mr-2 ${
-                                refreshing ? "animate-spin" : ""
-                              }`}
-                            />
-                          )}
-                          Refresh
-                        </Button>
                       </div>
                     </div>
-                    
+
                     {/* Navigation Items */}
                     <DropdownMenuItem onClick={() => navigate("/employees")}>
                       <Users className="mr-2 h-4 w-4" />
@@ -1305,16 +1346,10 @@ const Dashboard = () => {
                       <Eye className="mr-2 h-4 w-4" />
                       <span>Reviews</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/analytics")}>
-                      <BarChart3 className="mr-2 h-4 w-4" />
-                      <span>Analytics</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/notifications")}>
-                      <Bell className="mr-2 h-4 w-4" />
-                      <span>Notifications</span>
-                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/export-reports")}>
+                    <DropdownMenuItem
+                      onClick={() => navigate("/export-reports")}
+                    >
                       <Download className="mr-2 h-4 w-4" />
                       <span>Export Reports</span>
                     </DropdownMenuItem>
@@ -1329,7 +1364,7 @@ const Dashboard = () => {
                       <span>Data Management</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    
+
                     {/* User Section */}
                     <div className="p-3 border-t">
                       <div className="flex items-center space-x-2 mb-2">
@@ -1440,9 +1475,11 @@ const Dashboard = () => {
               <Award className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className={`font-bold truncate ${
-                isMobile ? 'text-lg' : 'text-lg'
-              }`}>
+              <div
+                className={`font-bold truncate ${
+                  isMobile ? "text-lg" : "text-lg"
+                }`}
+              >
                 {stats.topRatedEmployee}
               </div>
               <p className="text-xs text-muted-foreground">
@@ -1472,17 +1509,19 @@ const Dashboard = () => {
 
         {/* Enhanced Tabs - Responsive */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className={`grid w-full ${
-            isMobile ? 'grid-cols-3' : 'grid-cols-5'
-          }`}>
-            <TabsTrigger value="overview" className={isMobile ? 'text-xs' : ''}>
-              {isMobile ? 'Overview' : 'Overview'}
+          <TabsList
+            className={`grid w-full ${
+              isMobile ? "grid-cols-3" : "grid-cols-5"
+            }`}
+          >
+            <TabsTrigger value="overview" className={isMobile ? "text-xs" : ""}>
+              {isMobile ? "Overview" : "Overview"}
             </TabsTrigger>
-            <TabsTrigger value="reviews" className={isMobile ? 'text-xs' : ''}>
-              {isMobile ? 'Reviews' : 'Reviews'}
+            <TabsTrigger value="reviews" className={isMobile ? "text-xs" : ""}>
+              {isMobile ? "Reviews" : "Reviews"}
             </TabsTrigger>
-            <TabsTrigger value="team" className={isMobile ? 'text-xs' : ''}>
-              {isMobile ? 'Team' : 'Team'}
+            <TabsTrigger value="team" className={isMobile ? "text-xs" : ""}>
+              {isMobile ? "Team" : "Team"}
             </TabsTrigger>
             {!isMobile && (
               <>

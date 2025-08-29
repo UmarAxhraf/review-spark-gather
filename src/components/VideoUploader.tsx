@@ -8,6 +8,7 @@ import {
   Settings,
   Download,
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Mock shadcn/ui components - replace with actual imports in your project
 const Button = ({
@@ -269,6 +270,7 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
   ],
   enableCompression = true,
 }) => {
+  const isMobile = useIsMobile();
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isValidating, setIsValidating] = useState(false);
@@ -625,8 +627,8 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6">
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardContent className="p-6">
         <div className="space-y-4">
           {/* Drop Zone */}
           <div
@@ -728,14 +730,21 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
           {/* Selected file info */}
           {selectedFile && (
             <div
-              className={`rounded-lg p-4 ${
+              className={`rounded-lg p-4 relative ${
                 validationStatus === "success"
                   ? "bg-green-50 border border-green-200"
                   : "bg-gray-50"
               }`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+              {/* File info section */}
+              <div
+                className={`${
+                  isMobile ? "space-y-4" : "flex items-center justify-between"
+                }`}
+              >
+                <div className={`flex items-center space-x-3 ${
+                  !isMobile ? "flex-1 min-w-0" : ""
+                }`}>
                   <div className="flex items-center space-x-2">
                     <File
                       className={`h-5 w-5 ${
@@ -746,8 +755,8 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
                     />
                     {getStatusIcon()}
                   </div>
-                  <div>
-                    <p className="font-medium text-sm">{selectedFile.name}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{selectedFile.name}</p>
                     <p className="text-xs text-gray-600">
                       {formatFileSize(selectedFile.size)} •{" "}
                       {getFileExtension(selectedFile.name)}
@@ -766,17 +775,28 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  {/* Fixed: Show settings button when file is selected and validation is successful */}
+                {/* Action buttons - below file info on mobile, to the right on desktop */}
+                <div
+                  className={`${
+                    isMobile
+                      ? "flex justify-center space-x-4 pt-4"
+                      : "flex items-center space-x-2 flex-shrink-0"
+                  }`}
+                >
+                  {/* Settings Button */}
                   {enableCompression && validationStatus === "success" && (
                     <Dialog>
                       <DialogTrigger>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-blue-600 hover:text-blue-700"
+                          className={`text-blue-600 hover:text-blue-700 ${
+                            isMobile ? "flex items-center px-3 py-2" : ""
+                          }`}
+                          title="Compression Settings"
                         >
                           <Settings className="h-4 w-4" />
+                          {/* {isMobile && <span className="ml-1 text-xs">Settings</span>} */}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -884,9 +904,12 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
                           onClick={downloadFile}
                           variant="ghost"
                           size="sm"
-                          className="text-blue-600 hover:text-blue-700"
+                          className={`text-blue-600 hover:text-blue-700 ${
+                            isMobile ? "flex items-center px-3 py-2" : ""
+                          }`}
                         >
                           <Download className="h-4 w-4" />
+                          {/* {isMobile && <span className="ml-1 text-xs">Download</span>} */}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
@@ -899,9 +922,12 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
                     onClick={clearSelection}
                     variant="ghost"
                     size="sm"
-                    className="text-red-600 hover:text-red-700"
+                    className={`text-red-600 hover:text-red-700 ${
+                      isMobile ? "flex items-center px-3 py-2" : ""
+                    }`}
                   >
                     <X className="h-4 w-4" />
+                    {/* {isMobile && <span className="ml-1 text-xs">Remove</span>} */}
                   </Button>
                 </div>
               </div>
@@ -949,5 +975,3 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
 };
 
 export default VideoUploader;
-
-//==========================>>>>>>>>>>>>>>>>>=====================================>>>>>>>>>>>>>.

@@ -47,7 +47,7 @@ import {
   Star,
   Check,
   X,
-  Eye,
+  Download,
   Flag,
   MessageSquare,
   Users,
@@ -67,6 +67,32 @@ import {
 import { BackButton } from "@/components/ui/back-button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+// Add custom hook for better breakpoint detection
+const useResponsiveLayout = () => {
+  const [screenSize, setScreenSize] = useState<"mobile" | "tablet" | "desktop">(
+    "desktop"
+  );
+
+  useEffect(() => {
+    const updateScreenSize = () => {
+      const width = window.innerWidth;
+      if (width < 768) {
+        setScreenSize("mobile");
+      } else if (width < 1024) {
+        setScreenSize("tablet");
+      } else {
+        setScreenSize("desktop");
+      }
+    };
+
+    updateScreenSize();
+    window.addEventListener("resize", updateScreenSize);
+    return () => window.removeEventListener("resize", updateScreenSize);
+  }, []);
+
+  return screenSize;
+};
+
 interface Review {
   id: string;
   customer_name: string;
@@ -83,9 +109,24 @@ interface Review {
   admin_response?: string;
   created_at: string;
   employee: {
+    id: string;
     name: string;
     position?: string;
+    department_id?: string;
   };
+}
+
+interface Employee {
+  id: string;
+  name: string;
+  position?: string;
+  department_id?: string;
+}
+
+interface Department {
+  id: string;
+  name: string;
+  description?: string;
 }
 
 interface ReviewTemplate {
@@ -99,10 +140,13 @@ interface ReviewTemplate {
 const Reviews = () => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const screenSize = useResponsiveLayout();
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState<
     "all" | "approved" | "pending" | "flagged"
   >("all");
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("all");
   const [selectedReviews, setSelectedReviews] = useState<string[]>([]);
   const [showResponseDialog, setShowResponseDialog] = useState(false);
   const [selectedReviewForResponse, setSelectedReviewForResponse] =
@@ -113,13 +157,88 @@ const Reviews = () => {
   const reviewsPerPage = 10;
   const queryClient = useQueryClient();
 
+  // Add this helper function for video downloads
+  const handleVideoDownload = async (
+    videoUrl: string,
+    customerName: string
+  ) => {
+    try {
+      const response = await fetch(videoUrl);
+      if (!response.ok) {
+        throw new Error("Failed to fetch video");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+
+      // Extract file extension from URL or default to mp4
+      const urlObj = new URL(videoUrl);
+      const pathParts = urlObj.pathname.split(".");
+      const extension =
+        pathParts.length > 1 ? pathParts[pathParts.length - 1] : "mp4";
+
+      link.download = `${customerName.replace(
+        /[^a-z0-9]/gi,
+        "_"
+      )}_video_review.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Video download started");
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Failed to download video. Please try again.");
+    }
+  };
+
+  // Fetch employees
+  const { data: employees = [] } = useQuery({
+    queryKey: ["employees"],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("employees")
+        .select("id, name, position, department_id")
+        .eq("company_id", user.id)
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      return data as Employee[];
+    },
+    enabled: !!user,
+  });
+
+  // Fetch departments
+  const { data: departments = [] } = useQuery({
+    queryKey: ["departments"],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("departments")
+        .select("id, name, description")
+        .eq("company_id", user.id)
+        .order("name");
+
+      if (error) throw error;
+      return data as Department[];
+    },
+    enabled: !!user,
+  });
+
   // Fetch reviews with enhanced data
   const {
     data: reviews = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["reviews", filterStatus],
+    queryKey: ["reviews", filterStatus, selectedEmployee, selectedDepartment],
     queryFn: async () => {
       if (!user) return [];
 
@@ -128,7 +247,7 @@ const Reviews = () => {
         .select(
           `
           *,
-          employee:employees(name, position)
+          employee:employees(id, name, position, department_id)
         `
         )
         .eq("company_id", user.id)
@@ -145,7 +264,27 @@ const Reviews = () => {
       const { data, error } = await query;
 
       if (error) throw error;
-      return data as Review[];
+
+      let filteredData = data as Review[];
+
+      // Apply employee filter
+      if (selectedEmployee !== "all") {
+        filteredData = filteredData.filter(
+          (review) => review.employee?.id === selectedEmployee
+        );
+      }
+
+      // Apply department filter
+      if (selectedDepartment !== "all") {
+        filteredData = filteredData.filter((review) => {
+          const employee = employees.find(
+            (emp) => emp.id === review.employee?.id
+          );
+          return employee?.department_id === selectedDepartment;
+        });
+      }
+
+      return filteredData;
     },
     enabled: !!user,
   });
@@ -361,6 +500,13 @@ const Reviews = () => {
     }
   };
 
+  // Add reset filters function
+  const resetFilters = () => {
+    setFilterStatus("all");
+    setSelectedEmployee("all");
+    setSelectedDepartment("all");
+  };
+
   const renderStars = (rating: number) => {
     return [...Array(5)].map((_, i) => (
       <Star
@@ -373,18 +519,19 @@ const Reviews = () => {
   };
 
   const getSentimentBadge = (score?: number) => {
-    if (!score) return null;
+    // Fix: Check for undefined/null, but allow 0 to display
+    if (score === undefined || score === null) return null;
 
     if (score > 0.1) {
       return (
         <Badge variant="default" className="bg-green-100 text-green-800">
-          Positive
+          Positive ({score.toFixed(2)})
         </Badge>
       );
     } else if (score < -0.1) {
-      return <Badge variant="destructive">Negative</Badge>;
+      return <Badge variant="destructive">Negative ({score.toFixed(2)})</Badge>;
     } else {
-      return <Badge variant="secondary">Neutral</Badge>;
+      return <Badge variant="secondary">Neutral ({score.toFixed(2)})</Badge>;
     }
   };
 
@@ -490,153 +637,178 @@ const Reviews = () => {
     );
   }
 
-  // Mobile Card Component
+  // Enhanced ReviewCard component for better mobile/tablet layout
   const ReviewCard = ({ review }: { review: Review }) => (
-    <Card
-      className={`${review.flagged_as_spam ? "border-red-200 bg-red-50" : ""}`}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-2">
+    <Card className="w-full hover:shadow-md transition-shadow duration-200">
+      <CardContent className="p-4 sm:p-6">
+        {/* Header with customer info and selection */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-start space-x-3 flex-1">
             <Checkbox
               checked={selectedReviews.includes(review.id)}
               onCheckedChange={(checked) =>
                 handleSelectReview(review.id, checked as boolean)
               }
+              className="mt-1"
             />
-            <div>
-              <CardTitle className="text-base">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-gray-900 text-base sm:text-lg">
                 {review.customer_name}
-              </CardTitle>
+              </h3>
               {review.customer_email && (
                 <p className="text-sm text-gray-600 flex items-center mt-1">
-                  <Mail className="h-3 w-3 mr-1" />
-                  {review.customer_email}
+                  <Mail className="h-3 w-3 mr-1 flex-shrink-0" />
+                  <span className="truncate">{review.customer_email}</span>
                 </p>
               )}
             </div>
           </div>
-          <Badge
-            variant={
-              review.moderation_status === "approved"
-                ? "default"
-                : review.moderation_status === "flagged"
-                ? "destructive"
-                : "secondary"
-            }
-          >
-            {review.moderation_status}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Employee Info */}
-        <div>
-          <p className="text-sm font-medium text-gray-700">Employee</p>
-          <p className="font-medium">{review.employee.name}</p>
-          {review.employee.position && (
-            <p className="text-sm text-gray-600">{review.employee.position}</p>
-          )}
-        </div>
 
-        {/* Rating */}
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-1">Rating</p>
-          <div className="flex items-center space-x-1">
-            {renderStars(review.rating)}
-            <span className="ml-1 text-sm font-medium">{review.rating}</span>
-          </div>
-        </div>
-
-        {/* Review Type */}
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-1">Type</p>
-          <Badge
-            variant={review.review_type === "video" ? "default" : "secondary"}
-          >
-            {review.review_type}
-          </Badge>
-        </div>
-
-        {/* Content */}
-        {(review.comment || review.video_url) && (
-          <div>
-            <p className="text-sm font-medium text-gray-700 mb-1">Content</p>
-            {review.comment && (
-              <p className="text-sm text-gray-600 mb-2">{review.comment}</p>
-            )}
-            {renderVideoPreview(review)}
-          </div>
-        )}
-
-        {/* Sentiment */}
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-1">Sentiment</p>
-          {getSentimentBadge(review.sentiment_score)}
-        </div>
-
-        {/* Flags and Badges */}
-        <div className="flex flex-wrap gap-2">
-          {review.flagged_as_spam && (
-            <Badge variant="destructive">
-              <Flag className="h-3 w-3 mr-1" />
-              Spam
+          {/* Status badges */}
+          <div className="flex flex-col items-end space-y-1">
+            <Badge
+              variant={
+                review.moderation_status === "approved"
+                  ? "default"
+                  : review.moderation_status === "flagged"
+                  ? "destructive"
+                  : "secondary"
+              }
+              className="text-xs"
+            >
+              {review.moderation_status}
             </Badge>
+            {review.flagged_as_spam && (
+              <Badge variant="destructive" className="text-xs">
+                <Flag className="h-3 w-3 mr-1" />
+                Spam
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Employee and Rating Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-1">Employee</p>
+            <div>
+              <p className="font-medium text-gray-900">
+                {review.employee.name}
+              </p>
+              {review.employee.position && (
+                <p className="text-sm text-gray-600">
+                  {review.employee.position}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-gray-700 mb-1">Rating</p>
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1">
+                {renderStars(review.rating)}
+              </div>
+              <span className="text-sm font-medium text-gray-900">
+                {review.rating}/5
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Content Section */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-medium text-gray-700">Review Content</p>
+            <div className="flex items-center space-x-2">
+              <Badge
+                variant={
+                  review.review_type === "video" ? "default" : "secondary"
+                }
+                className="text-xs"
+              >
+                {review.review_type}
+              </Badge>
+              {getSentimentBadge(review.sentiment_score)}
+            </div>
+          </div>
+
+          {review.comment && (
+            <div className="bg-gray-50 rounded-lg p-3 mb-3">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {review.comment}
+              </p>
+            </div>
           )}
+
+          {renderVideoPreview(review)}
+        </div>
+
+        {/* Additional badges */}
+        <div className="flex flex-wrap gap-2 mb-4">
           {review.admin_response && (
-            <Badge variant="outline">
+            <Badge variant="outline" className="text-xs">
               <MessageSquare className="h-3 w-3 mr-1" />
               Responded
             </Badge>
           )}
         </div>
 
-        {/* Date */}
-        <div>
-          <p className="text-sm font-medium text-gray-700 mb-1">Date</p>
-          <p className="text-sm text-gray-600">
-            {new Date(review.created_at).toLocaleDateString()}
-          </p>
-        </div>
+        {/* Date and Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-gray-200 space-y-3 sm:space-y-0">
+          <div>
+            <p className="text-sm text-gray-600">
+              {new Date(review.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          </div>
 
-        {/* Actions */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
-          {review.moderation_status === "pending" && (
+          {/* Action buttons */}
+          <div className="flex flex-wrap gap-2">
+            {review.moderation_status === "pending" && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => bulkApproveMutation.mutate([review.id])}
+                disabled={bulkApproveMutation.isPending}
+                className="flex-1 sm:flex-none"
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Approve
+              </Button>
+            )}
             <Button
               size="sm"
               variant="outline"
-              onClick={() => bulkApproveMutation.mutate([review.id])}
-              disabled={bulkApproveMutation.isPending}
-              className="flex-1"
+              onClick={() => {
+                setSelectedReviewForResponse(review);
+                setResponseText(review.admin_response || "");
+                setShowResponseDialog(true);
+              }}
+              className="flex-1 sm:flex-none"
             >
-              <Check className="h-4 w-4 mr-1" />
-              Approve
+              <MessageSquare className="h-4 w-4 mr-1" />
+              Respond
             </Button>
-          )}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setSelectedReviewForResponse(review);
-              setResponseText(review.admin_response || "");
-              setShowResponseDialog(true);
-            }}
-            className="flex-1"
-          >
-            <MessageSquare className="h-4 w-4 mr-1" />
-            Respond
-          </Button>
-          {review.review_type === "video" && review.video_url && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => window.open(review.video_url, "_blank")}
-              className="flex-1"
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              View
-            </Button>
-          )}
+            {review.review_type === "video" && review.video_url && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  handleVideoDownload(review.video_url!, review.customer_name)
+                }
+                className="flex-1 sm:flex-none"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -644,12 +816,12 @@ const Reviews = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Responsive Header */}
+      {/* Enhanced Responsive Header */}
       <header className="bg-white border-b border-gray-200">
-        <div className="px-4 sm:px-6 py-4">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
             <div className="flex-1">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                 Review Management
               </h1>
               <p className="text-sm sm:text-base text-gray-600 mt-1">
@@ -657,49 +829,98 @@ const Reviews = () => {
               </p>
             </div>
 
-            {/* Responsive Filter Buttons */}
+            {/* Enhanced Filter Buttons */}
             <div className="flex flex-wrap gap-2 lg:flex-nowrap">
-              <Button
-                variant={filterStatus === "all" ? "default" : "outline"}
-                size={isMobile ? "sm" : "default"}
-                onClick={() => setFilterStatus("all")}
-                className="flex-1 sm:flex-none"
-              >
-                All
-                {!isMobile && " Reviews"}
-              </Button>
-              <Button
-                variant={filterStatus === "pending" ? "default" : "outline"}
-                size={isMobile ? "sm" : "default"}
-                onClick={() => setFilterStatus("pending")}
-                className="flex-1 sm:flex-none"
-              >
-                Pending
-              </Button>
-              <Button
-                variant={filterStatus === "approved" ? "default" : "outline"}
-                size={isMobile ? "sm" : "default"}
-                onClick={() => setFilterStatus("approved")}
-                className="flex-1 sm:flex-none"
-              >
-                Approved
-              </Button>
-              <Button
-                variant={filterStatus === "flagged" ? "default" : "outline"}
-                size={isMobile ? "sm" : "default"}
-                onClick={() => setFilterStatus("flagged")}
-                className="flex-1 sm:flex-none"
-              >
-                <Flag className="h-4 w-4 mr-1" />
-                {isMobile ? "Flag" : "Flagged"}
-              </Button>
+              {[
+                { key: "all", label: "All", icon: null },
+                { key: "pending", label: "Pending", icon: null },
+                { key: "approved", label: "Approved", icon: null },
+                { key: "flagged", label: "Flagged", icon: Flag },
+              ].map(({ key, label, icon: Icon }) => (
+                <Button
+                  key={key}
+                  variant={filterStatus === key ? "default" : "outline"}
+                  size={screenSize === "mobile" ? "sm" : "default"}
+                  onClick={() => setFilterStatus(key as any)}
+                  className={`${
+                    screenSize === "mobile" ? "flex-1" : "flex-none"
+                  } ${screenSize === "tablet" ? "min-w-[100px]" : ""}`}
+                >
+                  {Icon && <Icon className="h-4 w-4 mr-1" />}
+                  {screenSize === "mobile" && key === "flagged"
+                    ? "Flag"
+                    : label}
+                  {screenSize !== "mobile" && key === "all" && " Reviews"}
+                </Button>
+              ))}
             </div>
+          </div>
+
+          {/* Enhanced Additional Filters */}
+          <div className="mt-4 flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:space-x-4">
+            {/* Employee Filter */}
+            <div className="flex items-center space-x-2 flex-1 md:flex-none">
+              <Users className="h-4 w-4 text-gray-500 flex-shrink-0" />
+              <Select
+                value={selectedEmployee}
+                onValueChange={setSelectedEmployee}
+              >
+                <SelectTrigger className="w-full md:w-48 lg:w-56">
+                  <SelectValue placeholder="Filter by employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Employees</SelectItem>
+                  {employees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.name}
+                      {employee.position && ` (${employee.position})`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Department Filter */}
+            <div className="flex items-center space-x-2 flex-1 md:flex-none">
+              <BarChart3 className="h-4 w-4 text-gray-500 flex-shrink-0" />
+              <Select
+                value={selectedDepartment}
+                onValueChange={setSelectedDepartment}
+              >
+                <SelectTrigger className="w-full md:w-48 lg:w-56">
+                  <SelectValue placeholder="Filter by department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Reset Filters Button */}
+            {(selectedEmployee !== "all" ||
+              selectedDepartment !== "all" ||
+              filterStatus !== "all") && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetFilters}
+                className="flex items-center space-x-1 w-full md:w-auto"
+              >
+                <Filter className="h-4 w-4" />
+                <span>Reset Filters</span>
+              </Button>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Responsive Main Content */}
-      <div className="px-4 sm:px-6 py-4 sm:py-6">
+      {/* Enhanced Main Content */}
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         <div className="mb-4 sm:mb-6">
           <BackButton />
         </div>
@@ -708,20 +929,20 @@ const Reviews = () => {
           <CardHeader>
             <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
               <div>
-                <CardTitle className="text-lg sm:text-xl">
+                <CardTitle className="text-lg sm:text-xl lg:text-2xl">
                   Customer Reviews
                 </CardTitle>
-                <CardDescription className="text-sm">
+                <CardDescription className="text-sm sm:text-base">
                   {reviews.length} review{reviews.length !== 1 ? "s" : ""} found
                   {selectedReviews.length > 0 && (
-                    <span className="ml-2 text-blue-600">
+                    <span className="ml-2 text-blue-600 font-medium">
                       ({selectedReviews.length} selected)
                     </span>
                   )}
                 </CardDescription>
               </div>
 
-              {/* Responsive Bulk Actions */}
+              {/* Enhanced Bulk Actions */}
               {selectedReviews.length > 0 && (
                 <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-2">
                   <Button
@@ -760,7 +981,7 @@ const Reviews = () => {
           <CardContent>
             {isLoading ? (
               <div className="space-y-4">
-                {isMobile ? (
+                {screenSize === "mobile" || screenSize === "tablet" ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <ReviewCardSkeleton key={i} />
                   ))
@@ -781,14 +1002,28 @@ const Reviews = () => {
                 )}
               </div>
             ) : reviews.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-600">No reviews found</p>
+              <div className="text-center py-12">
+                <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <MessageSquare className="h-8 w-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No reviews found
+                </h3>
+                <p className="text-gray-600">
+                  Try adjusting your filters to see more results.
+                </p>
               </div>
             ) : (
               <>
-                {isMobile ? (
-                  // Mobile Card Layout
-                  <div className="space-y-4">
+                {screenSize === "mobile" || screenSize === "tablet" ? (
+                  // Enhanced Card Layout for Mobile and Tablet
+                  <div
+                    className={`grid gap-4 ${
+                      screenSize === "tablet"
+                        ? "md:grid-cols-2 lg:grid-cols-1"
+                        : "grid-cols-1"
+                    }`}
+                  >
                     {paginatedReviews.map((review) => (
                       <ReviewCard key={review.id} review={review} />
                     ))}
@@ -955,10 +1190,14 @@ const Reviews = () => {
                                       size="sm"
                                       variant="outline"
                                       onClick={() =>
-                                        window.open(review.video_url, "_blank")
+                                        handleVideoDownload(
+                                          review.video_url!,
+                                          review.customer_name
+                                        )
                                       }
+                                      title="Download video"
                                     >
-                                      <Eye className="h-4 w-4" />
+                                      <Download className="h-4 w-4" />
                                     </Button>
                                   )}
                               </div>
@@ -970,10 +1209,15 @@ const Reviews = () => {
                   </div>
                 )}
 
-                {/* Responsive Pagination */}
+                {/* Enhanced Pagination */}
                 {totalPages > 1 && (
-                  <div className="mt-6">
-                    <Pagination>
+                  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
+                    <div className="text-sm text-gray-600 order-2 sm:order-1">
+                      Showing {(currentPage - 1) * reviewsPerPage + 1} to{" "}
+                      {Math.min(currentPage * reviewsPerPage, reviews.length)}{" "}
+                      of {reviews.length} reviews
+                    </div>
+                    <Pagination className="order-1 sm:order-2">
                       <PaginationContent className="flex-wrap justify-center">
                         {currentPage > 1 && (
                           <PaginationItem>
