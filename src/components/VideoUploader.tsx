@@ -303,8 +303,6 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
     setVideoInfo(null);
 
     try {
-      //console.log("Validating file:", file.name, file.type, file.size);
-
       // Check file extension against accepted formats
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
       const acceptedExtensions = acceptedFormats.map((format) =>
@@ -375,12 +373,6 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
         video.onloadedmetadata = () => {
           clearTimeout(timeout);
 
-          // console.log(
-          //   "Video validation successful:",
-          //   video.duration,
-          //   video.videoWidth,
-          //   video.videoHeight
-          // );
           if (video.duration > 0) {
             // Store video information for potential compression
             setVideoInfo({
@@ -481,12 +473,6 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
         webkitRelativePath: "",
       });
 
-      // console.log(
-      //   `Compressed video: ${compressedSizeMB.toFixed(
-      //     2
-      //   )}MB (from ${originalSizeMB.toFixed(2)}MB)`
-      // );
-
       setIsCompressing(false);
       setCompressionProgress(0);
 
@@ -510,8 +496,6 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
 
   // Handle file selection
   const handleFileSelect = async (file: File) => {
-    //console.log("File selected:", file.name, file.type, file.size);
-
     const isValid = await validateFile(file);
     if (isValid) {
       let fileToUse = file;
@@ -538,7 +522,6 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
     setIsDragOver(false);
 
     const files = Array.from(e.dataTransfer.files);
-    // console.log("Files dropped:", files.length);
 
     if (files.length > 0) {
       handleFileSelect(files[0]);
@@ -559,7 +542,6 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    //console.log("File input changed:", files?.length);
 
     if (files && files.length > 0) {
       handleFileSelect(files[0]);
@@ -742,9 +724,11 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
                   isMobile ? "space-y-4" : "flex items-center justify-between"
                 }`}
               >
-                <div className={`flex items-center space-x-3 ${
-                  !isMobile ? "flex-1 min-w-0" : ""
-                }`}>
+                <div
+                  className={`flex items-center space-x-3 ${
+                    !isMobile ? "flex-1 min-w-0" : ""
+                  }`}
+                >
                   <div className="flex items-center space-x-2">
                     <File
                       className={`h-5 w-5 ${
@@ -756,7 +740,9 @@ const VideoUploader: React.FC<VideoUploaderProps> = ({
                     {getStatusIcon()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{selectedFile.name}</p>
+                    <p className="font-medium text-sm truncate">
+                      {selectedFile.name}
+                    </p>
                     <p className="text-xs text-gray-600">
                       {formatFileSize(selectedFile.size)} •{" "}
                       {getFileExtension(selectedFile.name)}

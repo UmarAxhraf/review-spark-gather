@@ -101,8 +101,6 @@ const AddEmployeeDialog = ({
   // Fetch departments and positions data
   const fetchDepartmentsAndPositions = useCallback(async () => {
     try {
-      //console.log("Fetching departments and positions...");
-
       // Fetch departments with explicit distinct query
       const { data: departmentsData, error: deptError } = await supabase
         .from("departments")
@@ -117,7 +115,6 @@ const AddEmployeeDialog = ({
 
       // Remove duplicates from departments data
       const uniqueDepartments = removeDuplicates(departmentsData || []);
-      // console.log("Departments fetched:", uniqueDepartments);
       setDepartments(uniqueDepartments);
 
       // Fetch positions with explicit distinct query
@@ -134,7 +131,6 @@ const AddEmployeeDialog = ({
 
       // Remove duplicates from positions data
       const uniquePositions = removeDuplicates(positionsData || []);
-      //console.log("Positions fetched:", uniquePositions);
       setPositions(uniquePositions);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -155,12 +151,7 @@ const AddEmployeeDialog = ({
       const filtered = positions.filter(
         (position) => position.department_id === formData.department_id
       );
-      // console.log(
-      //   "Filtered positions for department",
-      //   formData.department_id,
-      //   ":",
-      //   filtered
-      // );
+
       setFilteredPositions(filtered);
 
       // Reset position if it doesn't belong to the selected department
@@ -309,8 +300,6 @@ const AddEmployeeDialog = ({
         company_id: user.id,
       };
 
-      // console.log("Submitting employee data:", employeeData);
-
       if (employee?.id) {
         // Update existing employee
         const { error } = await supabase
@@ -340,73 +329,13 @@ const AddEmployeeDialog = ({
     }
   };
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   if (!user) return;
-
-  //   setIsLoading(true);
-
-  //   try {
-  //     let photoUrl = formData.photo_url;
-
-  //     if (photoFile) {
-  //       const uploadedUrl = await uploadPhoto(photoFile);
-  //       if (uploadedUrl) {
-  //         photoUrl = uploadedUrl;
-  //       }
-  //     }
-
-  //     const employeeData = {
-  //       name: formData.name,
-  //       email: formData.email || null,
-  //       position: formData.position || null,
-  //       department_id: formData.department_id || null,
-  //       position_id: formData.position_id || null,
-  //       is_active: formData.is_active,
-  //       photo_url: photoUrl || null,
-  //       company_id: user.id,
-  //     };
-
-  //     console.log("Submitting employee data:", employeeData);
-
-  //     if (employee?.id) {
-  //       // Update existing employee
-  //       const { error } = await supabase
-  //         .from("employees")
-  //         .update(employeeData)
-  //         .eq("id", employee.id);
-
-  //       if (error) throw error;
-  //       toast.success("Employee updated successfully!");
-  //     } else {
-  //       // Create new employee
-  //       const { error } = await supabase
-  //         .from("employees")
-  //         .insert([employeeData]);
-
-  //       if (error) throw error;
-  //       toast.success("Employee added successfully!");
-  //     }
-
-  //     setOpen(false);
-  //     onEmployeeAdded();
-  //   } catch (error: any) {
-  //     console.error("Error saving employee:", error);
-  //     toast.error(error.message || "Failed to save employee");
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
-
   // Handle department selection with explicit value checking
   const handleDepartmentChange = (value: string) => {
-    // console.log("Department selected:", value);
     setFormData({ ...formData, department_id: value, position_id: "" });
   };
 
   // Handle position selection with explicit value checking
   const handlePositionChange = (value: string) => {
-    // console.log("Position selected:", value);
     setFormData({ ...formData, position_id: value });
   };
 
@@ -594,5 +523,3 @@ const AddEmployeeDialog = ({
 };
 
 export default AddEmployeeDialog;
-
-// //=================================>>>>>>>>>>>>>>>>>>======================================

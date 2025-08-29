@@ -81,7 +81,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const timeSinceLastActivity = Date.now() - lastActivityRef.current;
 
     if (timeSinceLastActivity >= SESSION_TIMEOUT) {
-      console.log("Session timed out due to inactivity");
       await signOut();
     } else if (
       timeSinceLastActivity >= SESSION_TIMEOUT - WARNING_TIME &&
@@ -113,7 +112,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!error) {
         setSessionTimeoutWarning(false);
         updateActivity();
-        console.log("Session extended successfully");
       } else {
         console.error("Failed to extend session:", error);
       }
@@ -160,8 +158,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const handleAuthStateChange = (event: string, session: Session | null) => {
       if (!mounted) return;
-
-      console.log("Auth event:", event, "Session exists:", !!session);
 
       setSession(session);
       setUser(session?.user ?? null);

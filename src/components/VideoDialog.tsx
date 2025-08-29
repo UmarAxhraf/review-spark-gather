@@ -58,9 +58,9 @@ const VideoDialog: React.FC<VideoDialogProps> = ({
             controls={true}
             className="w-full"
             onError={handleVideoError}
-            onPlay={() => {
-              console.log(`Playing video review ${reviewId}`);
-            }}
+            // onPlay={() => {
+            //   console.log(`Playing video review ${reviewId}`);
+            // }}
           />
         </div>
       </DialogContent>

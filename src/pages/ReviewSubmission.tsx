@@ -227,10 +227,6 @@ const ReviewSubmission = () => {
           .toString(36)
           .substring(2)}.webm`;
 
-        // Debug logging
-        console.log("Original file type:", file.type);
-        console.log("File size:", file.size);
-
         // Force correct content type
         let contentType = "video/webm";
         let uploadFile: Blob | File = file;
@@ -266,9 +262,6 @@ const ReviewSubmission = () => {
           contentType = "video/webm";
         }
 
-        console.log("Final content type:", contentType);
-        console.log("Upload file type:", uploadFile.type);
-
         // Upload to storage
         const { data, error } = await publicSupabase.storage
           .from("video-reviews")
@@ -288,8 +281,6 @@ const ReviewSubmission = () => {
           throw new Error(`Upload failed: ${error.message}`);
         }
 
-        console.log("Upload successful:", data);
-
         // Generate signed URL for better security and access
         const { data: signedUrlData, error: urlError } =
           await publicSupabase.storage
@@ -308,11 +299,8 @@ const ReviewSubmission = () => {
             .from("video-reviews")
             .getPublicUrl(data.path);
 
-          console.log("Generated public URL:", publicUrl);
           return publicUrl;
         }
-
-        console.log("Generated signed URL:", signedUrlData.signedUrl);
         return signedUrlData.signedUrl;
       },
       3,

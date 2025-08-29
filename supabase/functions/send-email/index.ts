@@ -129,8 +129,6 @@ async function sendEmailViaSMTP(
         return { success: false, error: `Resend API error: ${error}` };
       }
     } else {
-      // Fallback: Use a simple HTTP-to-SMTP service or return success for development
-      // console.log("Email would be sent:", emailData);
       return { success: true, messageId: `dev-${Date.now()}` };
     }
   } catch (error) {

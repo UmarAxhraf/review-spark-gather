@@ -211,7 +211,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
 
     // For iOS devices, check iOS-specific formats first
     if (isIOS) {
-      console.log("iOS device detected, checking iOS-specific formats");
+      // console.log("iOS device detected, checking iOS-specific formats");
 
       // Check if MediaRecorder is supported at all on iOS
       if (!window.MediaRecorder) {
@@ -222,7 +222,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
       // Try iOS-specific formats first
       for (const type of IOS_SUPPORTED_MIME_TYPES) {
         if (MediaRecorder.isTypeSupported(type)) {
-          console.log(`iOS: Supported MIME type found: ${type}`);
+          // console.log(`iOS: Supported MIME type found: ${type}`);
           return type;
         }
       }
@@ -231,7 +231,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
       const basicFormats = ["video/mp4", "video/quicktime", "video/webm"];
       for (const type of basicFormats) {
         if (MediaRecorder.isTypeSupported(type)) {
-          console.log(`iOS: Basic MIME type found: ${type}`);
+          //console.log(`iOS: Basic MIME type found: ${type}`);
           return type;
         }
       }
@@ -243,7 +243,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     // For non-iOS devices, use the original logic
     for (const type of SUPPORTED_MIME_TYPES) {
       if (MediaRecorder.isTypeSupported(type)) {
-        console.log(`Non-iOS: Supported MIME type found: ${type}`);
+        // console.log(`Non-iOS: Supported MIME type found: ${type}`);
         return type;
       }
     }
@@ -462,7 +462,6 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
         audio: true,
       };
 
-      console.log("Requesting camera with constraints:", constraints);
       const mediaStream = await navigator.mediaDevices.getUserMedia(
         constraints
       );
@@ -479,7 +478,6 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
         }
       }
 
-      console.log(`Using MIME type: ${supportedMimeType}`);
       setMimeType(supportedMimeType);
 
       setStream(mediaStream);
@@ -633,11 +631,6 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
 
           // Ensure the blob has the correct MIME type
           const blob = new Blob(chunksRef.current, { type: mimeType });
-
-          // Debug logging
-          console.log("Created blob with type:", blob.type);
-          console.log("Original mimeType:", mimeType);
-          console.log("Blob size:", blob.size);
 
           if (blob.size === 0) {
             throw new Error("Recorded video is empty");

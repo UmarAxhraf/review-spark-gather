@@ -97,7 +97,6 @@ const NotificationBell = () => {
           filter: `company_id=eq.${user.id}`,
         },
         (payload) => {
-          //console.log("New notification received:", payload);
           const newNotification = payload.new as Notification;
 
           setNotifications((prev) => [newNotification, ...prev]);
