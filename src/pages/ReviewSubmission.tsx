@@ -59,6 +59,7 @@ interface FormErrors {
   customerEmail?: string;
   customerPhone?: string;
   video?: string;
+  comment?: string;
 }
 
 const ReviewSubmission = () => {
@@ -311,12 +312,23 @@ const ReviewSubmission = () => {
   const validateForm = (): boolean => {
     const errors: FormErrors = {};
 
-    if (rating === 0) {
-      errors.rating = "Please provide a rating";
+    if (!rating) {
+      errors.rating = "Please select a rating";
     }
 
     if (!customerName.trim()) {
       errors.customerName = "Name is required";
+    }
+
+    // Make email required
+    if (!customerEmail.trim()) {
+      errors.customerEmail = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+      errors.customerEmail = "Please enter a valid email address";
+    }
+
+    if (reviewType === "text" && !comment.trim()) {
+      errors.comment = "Review comment is required";
     }
 
     if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
@@ -333,7 +345,10 @@ const ReviewSubmission = () => {
 
   const checkDuplicateSubmission = async (): Promise<boolean> => {
     try {
-      if (!employee || !customerEmail) return false;
+      if (!employee) return false;
+
+      // If no email provided, allow submission (anonymous reviews)
+      if (!customerEmail?.trim()) return false;
 
       const twentyFourHoursAgo = new Date(
         Date.now() - 24 * 60 * 60 * 1000
@@ -343,7 +358,7 @@ const ReviewSubmission = () => {
         .from("reviews")
         .select("id")
         .eq("employee_id", employee.id)
-        .eq("customer_email", customerEmail)
+        .eq("customer_email", customerEmail.toLowerCase().trim()) // Normalize email
         .gte("created_at", twentyFourHoursAgo)
         .limit(1);
 
@@ -709,9 +724,7 @@ const ReviewSubmission = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="customerEmail">
-                      Email <span className="text-gray-500">(optional)</span>
-                    </Label>
+                    <Label htmlFor="customerEmail">Email *</Label>
                     <Input
                       id="customerEmail"
                       type="email"
@@ -752,14 +765,27 @@ const ReviewSubmission = () => {
                 {/* Review Content */}
                 <TabsContent value="text" className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="comment">Your Review</Label>
+                    <Label htmlFor="comment">Your Review *</Label>
                     <Textarea
                       id="comment"
                       value={comment}
-                      onChange={(e) => setComment(e.target.value)}
+                      onChange={(e) => {
+                        setComment(e.target.value);
+                        setFormErrors((prev) => ({
+                          ...prev,
+                          comment: undefined,
+                        }));
+                      }}
                       placeholder="Tell us about your experience..."
                       rows={4}
+                      className={formErrors.comment ? "border-red-500" : ""}
+                      required
                     />
+                    {formErrors.comment && (
+                      <p className="text-sm text-red-600">
+                        {formErrors.comment}
+                      </p>
+                    )}
                   </div>
                 </TabsContent>
 

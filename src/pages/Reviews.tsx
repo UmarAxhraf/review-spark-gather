@@ -54,6 +54,7 @@ import {
   BarChart3,
   Filter,
   Mail,
+  Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -218,12 +219,9 @@ const Reviews = () => {
   const { data: departments = [] } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
-      if (!user) return [];
-
       const { data, error } = await supabase
         .from("departments")
         .select("id, name, description")
-        .eq("company_id", user.id)
         .order("name");
 
       if (error) throw error;
@@ -408,6 +406,25 @@ const Reviews = () => {
     },
     onError: (error: any) => {
       toast.error("Failed to delete reviews");
+    },
+  });
+
+  // Add individual delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (reviewId: string) => {
+      const { error } = await supabase
+        .from("reviews")
+        .delete()
+        .eq("id", reviewId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
+      toast.success("Review deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error("Failed to delete review");
     },
   });
 
@@ -808,6 +825,16 @@ const Reviews = () => {
                 Download
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => deleteMutation.mutate(review.id)}
+              disabled={deleteMutation.isPending}
+              className="flex-1 sm:flex-none"
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
           </div>
         </div>
       </CardContent>
@@ -1200,6 +1227,15 @@ const Reviews = () => {
                                       <Download className="h-4 w-4" />
                                     </Button>
                                   )}
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => deleteMutation.mutate(review.id)}
+                                  disabled={deleteMutation.isPending}
+                                  title="Delete review"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </TableCell>
                           </TableRow>
