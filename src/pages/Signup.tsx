@@ -12,7 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { Star, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { validateAndSanitize, validationRules } from "../lib/validation";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -25,24 +28,67 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signUp, user } = useAuth();
+  const { createSubscription } = useSubscription();
   const navigate = useNavigate();
+
+  // Updated Stripe checkout handler using SubscriptionContext
+  const handleStripeCheckout = async (
+    planType: "starter" | "professional" | "enterprise"
+  ) => {
+    try {
+      if (!user) {
+        toast.error("Please complete signup first");
+        return;
+      }
+
+      await createSubscription(planType);
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+      toast.error("Failed to start checkout process. Please try again.");
+    }
+  };
 
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      // Check for stored plan after successful signup/login
+      const selectedPlan = sessionStorage.getItem("selectedPlan");
+      if (selectedPlan) {
+        sessionStorage.removeItem("selectedPlan");
+        // Trigger checkout for the stored plan using SubscriptionContext
+        handleStripeCheckout(
+          selectedPlan as "starter" | "professional" | "enterprise"
+        );
+      } else {
+        navigate("/dashboard");
+      }
     }
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
+    const rules = {
+      email: validationRules.email,
+      password: validationRules.password,
+      confirmPassword: { required: true },
+      companyName: validationRules.companyName,
+    };
+
+    const validation = validateAndSanitize(formData, rules);
+
+    if (!validation.isValid) {
+      Object.entries(validation.errors).forEach(([field, error]) => {
+        toast.error(error);
+      });
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters long");
+    // Password confirmation check
+    if (
+      validation.sanitizedData.password !==
+      validation.sanitizedData.confirmPassword
+    ) {
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -50,9 +96,9 @@ const Signup = () => {
 
     try {
       const { error } = await signUp(
-        formData.email,
-        formData.password,
-        formData.companyName
+        validation.sanitizedData.email,
+        validation.sanitizedData.password,
+        validation.sanitizedData.companyName
       );
 
       if (error) {
@@ -67,6 +113,13 @@ const Signup = () => {
         toast.success(
           "Account created successfully! Please check your email to confirm your account."
         );
+        // Check if there's a stored plan to redirect to login with plan info
+        const selectedPlan = sessionStorage.getItem("selectedPlan");
+        if (selectedPlan) {
+          toast.info(
+            "After confirming your email, you'll be redirected to complete your subscription."
+          );
+        }
         navigate("/login");
       }
     } catch (error) {

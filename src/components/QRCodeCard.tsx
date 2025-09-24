@@ -2,20 +2,29 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { QRCodeSVG } from "qrcode.react";
 import {
   QrCode,
-  Eye,
   Download,
   Share,
   Copy,
+  Eye,
   Calendar,
   BarChart3,
   Globe,
   AlertTriangle,
+  Settings,
+  MoreHorizontal,
 } from "lucide-react";
-import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import { useQRCode } from "@/contexts/QRCodeContext";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Employee {
   id: string;
@@ -34,19 +43,39 @@ interface Employee {
 
 interface QRCodeCardProps {
   employee: Employee;
-  onViewQR: (employee: Employee) => void;
+  onViewQR: () => void;
+  onSelect: (checked: boolean) => void;
+  isSelected: boolean;
+  onAddTag: (tag: string) => void;
+  onRemoveTag: (tag: string) => void;
+  onUpdateCategory: (category: string) => void;
+  onEditQRCode?: (employee: Employee) => void;  // Add this missing prop
+  onToggleActive?: (employeeId: string, isActive: boolean) => Promise<void>;
+  onRegenerateQR?: (employeeId: string) => Promise<void>;
+  availableCategories: string[];
+  availableTags: string[];
 }
 
-const QRCodeCard = ({ employee, onViewQR }: QRCodeCardProps) => {
+const QRCodeCard: React.FC<QRCodeCardProps> = ({
+  employee,
+  onViewQR,
+  onSelect,
+  isSelected,
+  onAddTag,
+  onRemoveTag,
+  onUpdateCategory,
+  onEditQRCode,
+  onToggleActive,
+  onRegenerateQR,
+  availableCategories,
+  availableTags,
+}) => {
   const { settings } = useQRCode();
-  const reviewUrl =
-    employee.qr_redirect_url ||
-    `${window.location.origin}/review/${employee.qr_code_id}`;
-
-  const isExpired =
-    employee.qr_expires_at && new Date(employee.qr_expires_at) <= new Date();
+  const reviewUrl = `${window.location.origin}/review/${employee.qr_code_id}`;
+  const isExpired = employee.qr_expires_at
+    ? new Date(employee.qr_expires_at) <= new Date()
+    : false;
   const isActive = employee.qr_is_active && !isExpired;
-
   const daysUntilExpiry = employee.qr_expires_at
     ? Math.ceil(
         (new Date(employee.qr_expires_at).getTime() - new Date().getTime()) /
@@ -125,10 +154,36 @@ const QRCodeCard = ({ employee, onViewQR }: QRCodeCardProps) => {
     return <Badge variant="default">Active</Badge>;
   };
 
+  const handleEditSettings = () => {
+    // Open edit dialog for this specific QR code
+    onEditQRCode?.(employee);
+  };
+
+  const handleToggleActive = async () => {
+    try {
+      // Toggle QR code active status
+      await onToggleActive?.(employee.id, !employee.qr_is_active);
+      toast.success(`QR code ${employee.qr_is_active ? 'deactivated' : 'activated'} successfully`);
+    } catch (error) {
+      toast.error('Failed to update QR code status');
+    }
+  };
+
+  const handleRegenerateQR = async () => {
+    try {
+      await onRegenerateQR?.(employee.id);
+      toast.success('QR code regenerated successfully');
+    } catch (error) {
+      toast.error('Failed to regenerate QR code');
+    }
+  };
+
   return (
     <Card
       className={`w-full hover:shadow-lg transition-shadow ${
         !isActive ? "opacity-75" : ""
+      } ${
+        isExpired ? "border-red-200 bg-red-50/30" : ""
       }`}
     >
       <CardHeader className="pb-3">
@@ -137,10 +192,49 @@ const QRCodeCard = ({ employee, onViewQR }: QRCodeCardProps) => {
             <QrCode className="h-5 w-5" />
             {employee.name}
           </CardTitle>
-          {getStatusBadge()}
+          <div className="flex items-center gap-2">
+            {getStatusBadge()}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleEditSettings}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Edit Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleToggleActive}>
+                  <AlertTriangle className="mr-2 h-4 w-4" />
+                  {employee.qr_is_active ? 'Deactivate' : 'Activate'}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleRegenerateQR}>
+                  <QrCode className="mr-2 h-4 w-4" />
+                  Regenerate QR Code
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Enhanced status information for expired QR codes */}
+        {isExpired && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="flex items-center gap-2 text-red-700">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="text-sm font-medium">
+                This QR code has expired and cannot receive new reviews
+              </span>
+            </div>
+            <p className="text-xs text-red-600 mt-1">
+              Expired on {new Date(employee.qr_expires_at!).toLocaleDateString()}
+            </p>
+          </div>
+        )}
+
         <div className="space-y-2">
           {employee.position && (
             <p className="text-sm text-gray-600">
@@ -223,46 +317,50 @@ const QRCodeCard = ({ employee, onViewQR }: QRCodeCardProps) => {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onViewQR(employee)}
-            className="flex items-center gap-1"
-          >
-            <Eye className="h-3 w-3" />
-            View
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownload}
-            className="flex items-center gap-1"
-            disabled={!isActive}
-          >
-            <Download className="h-3 w-3" />
-            Download
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleShare}
-            className="flex items-center gap-1"
-            disabled={!isActive}
-          >
-            <Share className="h-3 w-3" />
-            Share
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopyUrl}
-            className="flex items-center gap-1"
-            disabled={!isActive}
-          >
-            <Copy className="h-3 w-3" />
-            Copy URL
-          </Button>
+        {/* Quick action buttons */}
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewQR(employee)}
+              className="flex items-center gap-1"
+            >
+              <Eye className="h-3 w-3" />
+              View
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleEditSettings}
+              className="flex items-center gap-1"
+            >
+              <Settings className="h-3 w-3" />
+              Edit
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              className="flex items-center gap-1"
+              disabled={!isActive}
+            >
+              <Download className="h-3 w-3" />
+              Download
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopyUrl}
+              className="flex items-center gap-1"
+              disabled={!isActive}
+            >
+              <Copy className="h-3 w-3" />
+              Copy URL
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

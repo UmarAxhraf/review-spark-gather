@@ -15,10 +15,34 @@ export const supabase = createClient<Database>(
       storage: window.localStorage,
       storageKey: "supabase.auth.token",
     },
+    realtime: {
+      params: {
+        eventsPerSecond: 0.5, // Reduced from 1 to 0.5
+      },
+      heartbeatIntervalMs: 180000, // Increased from 120000 to 180000
+      reconnectAfterMs: (tries) => {
+        // More gradual backoff with higher max delay
+        const baseDelay = 2000; // Start with 2 seconds (increased from 1000)
+        const maxDelay = 120000; // Max 2 minutes delay (increased from 60000)
+        return Math.min(baseDelay * Math.pow(1.3, tries), maxDelay);
+      },
+      maxReconnectAttempts: 30, // Increased from 20 to 30
+    },
     global: {
       headers: {
-        // Removed Content-Type to allow storage uploads to set their own MIME types
         Accept: "application/json",
+      },
+      // Add fetch options with timeout
+      fetch: (url, options) => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
+        return fetch(url, {
+          ...options,
+          signal: controller.signal,
+        }).finally(() => {
+          clearTimeout(timeoutId);
+        });
       },
     },
   }

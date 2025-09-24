@@ -3,6 +3,26 @@ project_id = "uiszftfrxbqjqdgybbmk"
 [functions.send-email]
 verify_jwt = false
 
-[functions.send-email.env]
-GMAIL_USER = "env(EMAIL_USER)"
-GMAIL_APP_PASSWORD = "env(EMAIL_PASS)"
+[functions.stripe-checkout]
+enabled = true
+verify_jwt = true
+import_map = "./functions/stripe-checkout/deno.json"
+entrypoint = "./functions/stripe-checkout/index.ts"
+
+[functions.stripe-webhook]
+enabled = true
+verify_jwt = false  # Webhooks use signature verification, not JWT
+import_map = "./functions/stripe-webhook/deno.json"
+entrypoint = "./functions/stripe-webhook/index.ts"
+
+[functions.create-portal-session]
+enabled = true
+verify_jwt = true
+import_map = "./functions/deno.json"
+entrypoint = "./functions/create-portal-session/index.ts"
+
+[functions.verify-session]
+enabled = true
+verify_jwt = true
+import_map = "./functions/verify-session/deno.json"
+entrypoint = "./functions/verify-session/index.ts"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -84,14 +84,12 @@ const Analytics = () => {
     qrCodeScans: [],
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchAnalyticsData();
-    }
-  }, [user, dateRange]);
+  // Memoize user ID to prevent unnecessary re-renders
+  const userId = useMemo(() => user?.id, [user?.id]);
 
-  const fetchAnalyticsData = async () => {
-    if (!user) return;
+  // Memoize the fetch function to prevent recreation on every render
+  const fetchAnalyticsData = useCallback(async () => {
+    if (!userId) return;
 
     try {
       setLoading(true);
@@ -100,14 +98,14 @@ const Analytics = () => {
       const { data: reviews, error: reviewsError } = await supabase
         .from("reviews")
         .select("*")
-        .eq("company_id", user.id);
+        .eq("company_id", userId);
 
       const { data: employees, error: employeesError } = await supabase
         .from("employees")
         .select("*")
-        .eq("company_id", user.id);
+        .eq("company_id", userId);
 
-      // Fetch QR code scans - NEW CODE
+      // Fetch QR code scans
       const daysAgo = parseInt(dateRange);
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysAgo);
@@ -115,7 +113,7 @@ const Analytics = () => {
       const { data: qrScans, error: qrScansError } = await supabase
         .from("qr_code_scans")
         .select("*")
-        .eq("company_id", user.id)
+        .eq("company_id", userId)
         .gte("created_at", startDate.toISOString());
 
       if (reviewsError) throw reviewsError;
@@ -268,7 +266,14 @@ const Analytics = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, dateRange]);
+
+  // Optimized useEffect with stable dependencies
+  useEffect(() => {
+    if (userId) {
+      fetchAnalyticsData();
+    }
+  }, [userId, fetchAnalyticsData]);
 
   const chartConfig = {
     reviews: {
@@ -544,25 +549,14 @@ const Analytics = () => {
               <CardContent>
                 <ChartContainer config={chartConfig}>
                   <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={analyticsData.reviewsByMonth}>
+                    <BarChart data={analyticsData.reviewsByMonth}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
-                      <YAxis yAxisId="left" />
-                      <YAxis yAxisId="right" orientation="right" />
+                      <YAxis />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar
-                        yAxisId="left"
-                        dataKey="reviews"
-                        fill="var(--color-reviews)"
-                      />
-                      <Line
-                        yAxisId="right"
-                        type="monotone"
-                        dataKey="rating"
-                        stroke="var(--color-rating)"
-                        strokeWidth={2}
-                      />
-                    </LineChart>
+                      <Bar dataKey="reviews" fill="var(--color-reviews)" name="Reviews" />
+                      <Bar dataKey="rating" fill="var(--color-rating)" name="Avg Rating" />
+                    </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
               </CardContent>

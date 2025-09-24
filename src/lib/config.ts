@@ -1,6 +1,6 @@
-// Environment configuration helper
+// Secure Environment configuration - FRONTEND SAFE
 export const config = {
-  // Supabase
+  // Supabase - Public keys only
   supabase: {
     url: import.meta.env.VITE_SUPABASE_URL,
     anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
@@ -11,6 +11,31 @@ export const config = {
     name: import.meta.env.VITE_APP_NAME || "Review Spark Gather",
     url: import.meta.env.VITE_APP_URL || "http://localhost:8080",
     environment: import.meta.env.VITE_APP_ENVIRONMENT || "development",
+  },
+
+  // Stripe Configuration - PUBLIC KEYS ONLY
+  stripe: {
+    mode: import.meta.env.VITE_STRIPE_MODE || "test",
+    publishableKey:
+      import.meta.env.VITE_STRIPE_MODE === "live"
+        ? import.meta.env.VITE_STRIPE_LIVE_PUBLISHABLE_KEY
+        : import.meta.env.VITE_STRIPE_TEST_PUBLISHABLE_KEY,
+    // REMOVED: secretKey, webhookKey - moved to server-side
+    priceIds: {
+      starter:
+        import.meta.env.VITE_STRIPE_MODE === "live"
+          ? import.meta.env.VITE_STRIPE_LIVE_STARTER_PRICE_ID
+          : import.meta.env.VITE_STRIPE_TEST_STARTER_PRICE_ID,
+      professional:
+        import.meta.env.VITE_STRIPE_MODE === "live"
+          ? import.meta.env.VITE_STRIPE_LIVE_PROFESSIONAL_PRICE_ID
+          : import.meta.env.VITE_STRIPE_TEST_PROFESSIONAL_PRICE_ID,
+      enterprise:
+        import.meta.env.VITE_STRIPE_MODE === "live"
+          ? import.meta.env.VITE_STRIPE_LIVE_ENTERPRISE_PRICE_ID
+          : import.meta.env.VITE_STRIPE_TEST_ENTERPRISE_PRICE_ID,
+    },
+    isTestMode: import.meta.env.VITE_STRIPE_MODE !== "live",
   },
 
   // Storage
@@ -32,10 +57,11 @@ export const config = {
       import.meta.env.VITE_QR_CODE_BASE_URL || "http://localhost:8080/review",
   },
 
-  // Email
+  // Email - PUBLIC INFO ONLY
   email: {
     supportEmail:
       import.meta.env.VITE_SUPPORT_EMAIL || "support@reviewsparkgather.com",
+    // REMOVED: EmailJS keys - moved to server-side
   },
 
   // Analytics
@@ -51,9 +77,31 @@ export const config = {
   isProduction: import.meta.env.PROD,
 } as const;
 
-// Validation function to ensure required environment variables are set
+// Validation function - ONLY for public keys
 export const validateConfig = () => {
-  const requiredVars = ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"];
+  const requiredVars = [
+    "VITE_SUPABASE_URL",
+    "VITE_SUPABASE_ANON_KEY",
+    "VITE_STRIPE_MODE",
+  ];
+
+  // Add Stripe publishable key validation
+  const stripeMode = import.meta.env.VITE_STRIPE_MODE || "test";
+  if (stripeMode === "live") {
+    requiredVars.push(
+      "VITE_STRIPE_LIVE_PUBLISHABLE_KEY",
+      "VITE_STRIPE_LIVE_STARTER_PRICE_ID",
+      "VITE_STRIPE_LIVE_PROFESSIONAL_PRICE_ID",
+      "VITE_STRIPE_LIVE_ENTERPRISE_PRICE_ID"
+    );
+  } else {
+    requiredVars.push(
+      "VITE_STRIPE_TEST_PUBLISHABLE_KEY",
+      "VITE_STRIPE_TEST_STARTER_PRICE_ID",
+      "VITE_STRIPE_TEST_PROFESSIONAL_PRICE_ID",
+      "VITE_STRIPE_TEST_ENTERPRISE_PRICE_ID"
+    );
+  }
 
   const missing = requiredVars.filter((varName) => !import.meta.env[varName]);
 
@@ -63,4 +111,18 @@ export const validateConfig = () => {
         "Please check your .env.local file."
     );
   }
+
+  // console.log(
+  //   `🔧 Stripe Mode: ${config.stripe.mode} (Test Mode: ${config.stripe.isTestMode})`
+  // );
+};
+
+// Helper function to get Stripe configuration - PUBLIC ONLY
+export const getStripeConfig = () => {
+  return {
+    publishableKey: config.stripe.publishableKey,
+    priceIds: config.stripe.priceIds,
+    isTestMode: config.stripe.isTestMode,
+    mode: config.stripe.mode,
+  };
 };

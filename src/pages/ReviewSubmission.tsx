@@ -31,6 +31,12 @@ import {
   isOnline,
   waitForOnline,
 } from "@/utils/networkUtils";
+import {
+  validateAndSanitize,
+  validationRules,
+  createRateLimiter,
+} from "../lib/validation";
+import { useCSRF } from "../lib/csrf";
 
 interface Employee {
   id: string;
@@ -38,6 +44,11 @@ interface Employee {
   position?: string;
   company_id: string;
   email?: string;
+  qr_expires_at?: string;
+  qr_is_active: boolean;
+  qr_scan_limit?: number;
+  custom_landing_page?: string;
+  qr_redirect_url?: string;
 }
 
 interface Company {
@@ -64,6 +75,7 @@ interface FormErrors {
 
 const ReviewSubmission = () => {
   const { qrCodeId } = useParams<{ qrCodeId: string }>();
+  const { token: csrfToken, loading: csrfLoading } = useCSRF();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,7 +99,6 @@ const ReviewSubmission = () => {
   useEffect(() => {
     if (qrCodeId) {
       fetchEmployeeAndCompany();
-      recordQRCodeScan();
     }
   }, [qrCodeId]);
 
@@ -97,14 +108,15 @@ const ReviewSubmission = () => {
         await waitForOnline();
       }
 
-      // Fetch employee data with retry logic
+      // Fetch employee data with retry logic - Fix column selection
       const employeeData = await retryWithBackoff(
         async () => {
           const { data, error } = await publicSupabase
             .from("employees")
-            .select("id, name, position, company_id, email")
+            .select(
+              "id, name, position, company_id, email, is_active, qr_code_id, qr_redirect_url, custom_landing_page, created_at, updated_at"
+            )
             .eq("qr_code_id", qrCodeId)
-            .eq("is_active", true)
             .single();
 
           if (error) {
@@ -118,13 +130,16 @@ const ReviewSubmission = () => {
 
       setEmployee(employeeData);
 
-      // Fetch company settings with fallback
+      // Record the scan after successful fetch
+      await recordQRScan(employeeData);
+
+      // Fetch company settings with correct column selection
       try {
         const { data: companyData, error: companyError } = await publicSupabase
           .from("profiles")
           .select("id, company_name, logo_url, primary_color")
           .eq("id", employeeData.company_id)
-          .maybeSingle(); // Use maybeSingle instead of single to handle no results
+          .maybeSingle();
 
         if (companyError && companyError.code !== "PGRST116") {
           console.warn("Company settings error:", companyError);
@@ -148,6 +163,7 @@ const ReviewSubmission = () => {
         setCompany({
           id: employeeData.company_id,
           company_name: "Company",
+          logo_url: undefined,
           primary_color: "#3b82f6",
           thank_you_message: "Thank you for your feedback!",
           incentive_enabled: false,
@@ -159,6 +175,45 @@ const ReviewSubmission = () => {
       toast.error("Failed to load employee information");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkScanLimit = async (employee: Employee): Promise<boolean> => {
+    try {
+      if (!employee.qr_scan_limit) {
+        return true; // No limit set, allow access
+      }
+
+      const { data, error } = await publicSupabase
+        .from("qr_code_scans")
+        .select("id")
+        .eq("qr_code_id", qrCodeId)
+        .eq("employee_id", employee.id);
+
+      if (error) {
+        console.error("Error checking scan limit:", error);
+        return true; // Allow access on error to avoid blocking legitimate users
+      }
+
+      const currentScans = data?.length || 0;
+      return currentScans < employee.qr_scan_limit;
+    } catch (error) {
+      console.error("Error in checkScanLimit:", error);
+      return true; // Allow access on error
+    }
+  };
+
+  const recordQRScan = async (employee: Employee) => {
+    try {
+      await publicSupabase.from("qr_code_scans").insert({
+        qr_code_id: qrCodeId,
+        company_id: employee.company_id,
+        employee_id: employee.id,
+        ip_address: null, // Could be obtained from a service
+        user_agent: navigator.userAgent,
+      });
+    } catch (error) {
+      console.error("Failed to record QR scan:", error);
     }
   };
 
@@ -196,6 +251,7 @@ const ReviewSubmission = () => {
 
       await retryWithBackoff(
         async () => {
+          // Make sure this line has the proper property key
           const { error } = await publicSupabase.from("qr_code_scans").insert({
             qr_code_id: qrCodeId,
             employee_id: employeeData.id,
@@ -216,7 +272,6 @@ const ReviewSubmission = () => {
     }
   };
 
-  // Update the uploadVideo function
   const uploadVideo = async (file: Blob | File): Promise<string> => {
     if (!file) {
       throw new Error("No file provided");
@@ -309,6 +364,9 @@ const ReviewSubmission = () => {
     );
   };
 
+  // Create rate limiter for review submissions
+  const reviewRateLimiter = createRateLimiter(3, 60000); // 3 attempts per minute
+
   const validateForm = (): boolean => {
     const errors: FormErrors = {};
 
@@ -377,16 +435,38 @@ const ReviewSubmission = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (formSubmittedRef.current || submitting) {
+    if (formSubmittedRef.current) {
       return;
     }
 
-    if (!validateForm()) {
+    const errors = validateForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       return;
     }
 
     if (!employee) {
       toast.error("Employee information not found");
+      return;
+    }
+
+    // Add expiration check here
+    const isExpired = employee.qr_expires_at
+      ? new Date(employee.qr_expires_at) <= new Date()
+      : false;
+
+    if (isExpired) {
+      toast.error(
+        "This QR code has expired and can no longer accept new reviews. Please contact the business for an updated QR code."
+      );
+      return;
+    }
+
+    // Also check if QR code is active
+    if (!employee.is_active) {
+      toast.error(
+        "This QR code is currently inactive and cannot accept reviews. Please contact the business."
+      );
       return;
     }
 
@@ -412,6 +492,17 @@ const ReviewSubmission = () => {
     formSubmittedRef.current = true;
 
     try {
+      // Add CSRF token to form data (for future API calls if needed)
+      const formDataWithCSRF = {
+        csrfToken,
+        customerName: customerName.trim(),
+        customerEmail: customerEmail.trim(),
+        customerPhone: customerPhone.trim(),
+        rating,
+        comment: comment.trim(),
+        reviewType,
+      };
+
       let videoUrl: string | null = null;
 
       // Upload video if provided
@@ -474,7 +565,7 @@ const ReviewSubmission = () => {
 
       setUploadProgress(100);
 
-      // Safely access the id with null check
+      // Update the success handling
       if (reviewData && reviewData.id) {
         setSubmissionId(reviewData.id);
         setSubmissionStatus("success");
@@ -485,8 +576,13 @@ const ReviewSubmission = () => {
         }
 
         toast.success("Review submitted successfully!");
-      } else {
-        throw new Error("Review submission failed - invalid response data");
+
+        // Handle redirect URL
+        if (employee?.qr_redirect_url) {
+          setTimeout(() => {
+            window.location.href = employee.qr_redirect_url!;
+          }, 3000); // Redirect after 3 seconds
+        }
       }
     } catch (error: any) {
       console.error("Error submitting review:", error);
@@ -541,65 +637,82 @@ const ReviewSubmission = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading employee information...</p>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading review form...</p>
+        </div>
       </div>
     );
   }
 
   if (!employee) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-100 flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Employee Not Found
-            </h2>
-            <p className="text-gray-600 mb-4">
-              The QR code you scanned is not associated with an active employee.
-            </p>
-            <Button onClick={() => window.location.reload()} variant="outline">
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 py-8 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-red-800 mb-2">
+            QR Code Not Found
+          </h2>
+          <p className="text-red-600 mb-4">
+            The QR code you scanned is not valid or has been removed.
+          </p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
       </div>
     );
   }
 
   if (submissionStatus === "success") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 flex items-center justify-center">
-        <Card className="w-full max-w-md">
+      <div
+        className="min-h-screen py-8 px-4 flex items-center justify-center"
+        style={{
+          background: company?.primary_color
+            ? `linear-gradient(to bottom right, ${company.primary_color}20, ${company.primary_color}10)`
+            : "linear-gradient(to bottom right, #3b82f620, #3b82f610)",
+        }}
+      >
+        <Card className="max-w-2xl w-full shadow-xl">
           <CardContent className="p-8 text-center">
-            <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              {company?.thank_you_message || "Thank you for your feedback!"}
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Your review has been submitted successfully and will help us
-              improve our service.
-            </p>
+            <div className="mb-6">
+              <CheckCircle2 className="h-20 w-20 text-green-500 mx-auto mb-4" />
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Thank You!
+              </h2>
+              <p className="text-gray-600 text-lg">
+                {company?.thank_you_message ||
+                  "Your review has been submitted successfully!"}
+              </p>
+            </div>
 
             {showIncentive && company?.incentive_enabled && (
-              <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-lg mb-6">
-                <Gift className="h-8 w-8 mx-auto mb-2" />
-                <h3 className="font-semibold mb-1">Special Offer!</h3>
-                <p className="text-sm">
-                  {company.incentive_value || "Thank you for your feedback!"}
+              <div className="mb-6 p-4 bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-lg border border-yellow-300">
+                <Gift className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+                <h3 className="font-semibold text-yellow-800 mb-2">
+                  Special Offer!
+                </h3>
+                <p className="text-yellow-700">
+                  {company.incentive_type === "discount"
+                    ? `Get ${company.incentive_value} off your next purchase!`
+                    : company.incentive_type === "points"
+                    ? `You earned ${company.incentive_value} loyalty points!`
+                    : "Thank you for your feedback - check with us for your special offer!"}
                 </p>
               </div>
             )}
 
-            <Button onClick={resetForm} className="w-full">
-              Submit Another Review
-            </Button>
+            <div className="space-y-4">
+              <Button onClick={resetForm} className="w-full" variant="outline">
+                Submit Another Review
+              </Button>
+
+              {employee?.qr_redirect_url && (
+                <p className="text-sm text-gray-500">
+                  You will be redirected automatically in a few seconds...
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -608,11 +721,11 @@ const ReviewSubmission = () => {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4"
+      className="min-h-screen py-8 px-4"
       style={{
         background: company?.primary_color
           ? `linear-gradient(to bottom right, ${company.primary_color}20, ${company.primary_color}10)`
-          : undefined,
+          : "linear-gradient(to bottom right, #3b82f620, #3b82f610)",
       }}
     >
       <div className="max-w-2xl mx-auto">
@@ -636,6 +749,16 @@ const ReviewSubmission = () => {
             )}
           </p>
         </div>
+
+        {/* Custom Landing Page Content */}
+        {employee?.custom_landing_page && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div
+              className="text-sm text-blue-800"
+              dangerouslySetInnerHTML={{ __html: employee.custom_landing_page }}
+            />
+          </div>
+        )}
 
         <Card className="shadow-xl">
           <CardHeader>

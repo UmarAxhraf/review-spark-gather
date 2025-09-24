@@ -56,6 +56,12 @@ import {
   Trash2,
   RefreshCw,
 } from "lucide-react";
+import {
+  validateAndSanitize,
+  validationRules,
+  sanitizeInput,
+} from "../lib/validation";
+import { useCSRF } from "../lib/csrf";
 
 const companyFormSchema = z.object({
   company_name: z
@@ -139,6 +145,7 @@ interface CompanyProfile {
 const CompanySettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { token: csrfToken, loading: csrfLoading } = useCSRF();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -240,11 +247,42 @@ const CompanySettings = () => {
   const onSubmit = async (values: CompanyFormValues) => {
     if (!user) return;
 
+    if (csrfLoading || !csrfToken) {
+      toast({
+        title: "Security Validation",
+        description: "Security validation in progress. Please wait.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const rules = {
+      companyName: validationRules.companyName,
+      email: validationRules.email,
+      phone: { ...validationRules.phone, required: false },
+      website: { required: false, maxLength: 255 },
+      address: { required: false, maxLength: 500 },
+      description: { required: false, maxLength: 1000 },
+    };
+
+    const validation = validateAndSanitize(values, rules);
+
+    if (!validation.isValid) {
+      Object.entries(validation.errors).forEach(([field, error]) => {
+        form.setError(field as keyof CompanyFormValues, { message: error });
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
+      // Use sanitized data for submission
+      const sanitizedValues = validation.sanitizedData;
+
       const updateData = {
-        ...values,
+        ...sanitizedValues,
+        csrf_token: csrfToken,
         updated_at: new Date().toISOString(),
       };
 
@@ -280,17 +318,18 @@ const CompanySettings = () => {
     const file = event.target.files?.[0];
     if (!file || !user) return;
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
+    // Enhanced file validation
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
       toast({
-        title: "Invalid File",
-        description: "Please select an image file.",
+        title: "Invalid File Type",
+        description: "Please select a JPEG, PNG, WebP, or GIF image.",
         variant: "destructive",
       });
       return;
     }
 
-    // Validate file size (max 5MB)
+    // File size validation (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "File Too Large",
@@ -300,13 +339,31 @@ const CompanySettings = () => {
       return;
     }
 
+    // Check image dimensions
+    const img = new Image();
+    img.onload = () => {
+      if (img.width > 2048 || img.height > 2048) {
+        toast({
+          title: "Image Too Large",
+          description: "Please select an image smaller than 2048x2048 pixels.",
+          variant: "destructive",
+        });
+        return;
+      }
+      // Proceed with upload
+      uploadFile(file);
+    };
+    img.src = URL.createObjectURL(file);
+  };
+
+  const uploadFile = async (file: File) => {
     setIsUploading(true);
     setUploadProgress(0);
 
     try {
       // Create unique filename
       const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/logo.${fileExt}`;
+      const fileName = `${user!.id}/logo.${fileExt}`;
 
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -410,6 +467,8 @@ const CompanySettings = () => {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Hidden CSRF token field */}
+            <input type="hidden" name="csrfToken" value={csrfToken} />
             {/* Company Information */}
             <Card>
               <CardHeader>

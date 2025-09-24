@@ -1,3 +1,34 @@
+import { useState, useEffect } from 'react';
+
+// Add this hook to the file
+export const useNetworkStatus = (onStatusChange?: (isOnline: boolean) => void) => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      if (onStatusChange) onStatusChange(true);
+      // Trigger data refresh when coming back online
+      window.dispatchEvent(new Event('online'));
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      if (onStatusChange) onStatusChange(false);
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [onStatusChange]);
+
+  return isOnline;
+};
+
 export const isOnline = () => {
   return navigator.onLine;
 };

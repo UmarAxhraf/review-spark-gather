@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -19,10 +20,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Upload, User, UserPlus } from "lucide-react";
+import { Upload, User, UserPlus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+
+// ============================================================================
+// INTERFACES & TYPES
+// ============================================================================
 
 interface Employee {
   id?: string;
@@ -31,6 +36,7 @@ interface Employee {
   position?: string;
   department_id?: string;
   position_id?: string;
+  category_id?: string;
   is_active: boolean;
   photo_url?: string;
 }
@@ -38,51 +44,98 @@ interface Employee {
 interface Department {
   id: string;
   name: string;
+  company_id?: string;
 }
 
 interface Position {
   id: string;
   title: string;
   department_id: string;
+  company_id?: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  color: string;
+  company_id?: string;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  color: string;
+  company_id?: string;
 }
 
 interface AddEmployeeDialogProps {
   employee?: Employee;
+  editingEmployee?: Employee | null;
   onEmployeeAdded: () => void;
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-const AddEmployeeDialog = ({
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
+
+const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
   employee,
+  editingEmployee,
   onEmployeeAdded,
   trigger,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
-}: AddEmployeeDialogProps) => {
+}) => {
+  // ============================================================================
+  // HOOKS & STATE
+  // ============================================================================
+
   const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Photo handling
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  // Data state
   const [departments, setDepartments] = useState<Department[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [filteredPositions, setFilteredPositions] = useState<Position[]>([]);
+
+  // Selection state
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
+    null
+  );
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
 
   // Use controlled or internal state for dialog open/close
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = controlledOnOpenChange || setInternalOpen;
 
+  // Current employee (prioritize editingEmployee over employee prop)
+  const currentEmployee = editingEmployee || employee;
+
+  // Form data state
   const [formData, setFormData] = useState<Employee>({
     name: "",
     email: "",
     position: "",
     department_id: "",
     position_id: "",
+    category_id: "",
     is_active: true,
     photo_url: "",
   });
+
+  // ============================================================================
+  // UTILITY FUNCTIONS
+  // ============================================================================
 
   // Memoized function to remove duplicates and ensure data integrity
   const removeDuplicates = useCallback(
@@ -98,60 +151,128 @@ const AddEmployeeDialog = ({
     []
   );
 
-  // Fetch departments and positions data
-  const fetchDepartmentsAndPositions = useCallback(async () => {
+  // ============================================================================
+  // DATA FETCHING FUNCTIONS
+  // ============================================================================
+
+  const fetchDepartments = useCallback(async () => {
     try {
-      // Fetch departments with explicit distinct query
-      const { data: departmentsData, error: deptError } = await supabase
+      const { data, error } = await supabase
         .from("departments")
         .select("id, name")
+        .eq("company_id", user?.id)
         .order("name");
 
-      if (deptError) {
-        console.error("Error fetching departments:", deptError);
+      if (error) {
+        console.error("Error fetching departments:", error);
         toast.error("Failed to load departments");
         return;
       }
 
-      // Remove duplicates from departments data
-      const uniqueDepartments = removeDuplicates(departmentsData || []);
+      const uniqueDepartments = removeDuplicates(data || []);
       setDepartments(uniqueDepartments);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      toast.error("Failed to load departments");
+    }
+  }, [user?.id, removeDuplicates]);
 
-      // Fetch positions with explicit distinct query
-      const { data: positionsData, error: posError } = await supabase
+  const fetchPositions = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
         .from("positions")
         .select("id, title, department_id")
+        .eq("company_id", user?.id)
         .order("title");
 
-      if (posError) {
-        console.error("Error fetching positions:", posError);
+      if (error) {
+        console.error("Error fetching positions:", error);
         toast.error("Failed to load positions");
         return;
       }
 
-      // Remove duplicates from positions data
-      const uniquePositions = removeDuplicates(positionsData || []);
+      const uniquePositions = removeDuplicates(data || []);
       setPositions(uniquePositions);
     } catch (error) {
-      console.error("Error fetching data:", error);
-      toast.error("Failed to load dropdown data");
+      console.error("Error fetching positions:", error);
+      toast.error("Failed to load positions");
     }
-  }, [removeDuplicates]);
+  }, [user?.id, removeDuplicates]);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("company_id", user?.id)
+        .order("name");
+
+      if (error) {
+        console.error("Error fetching categories:", error);
+        toast.error("Failed to load categories");
+        return;
+      }
+
+      setCategories(data || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      toast.error("Failed to load categories");
+    }
+  }, [user?.id]);
+
+  const fetchTags = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("tags")
+        .select("*")
+        .eq("company_id", user?.id)
+        .order("name");
+
+      if (error) {
+        console.error("Error fetching tags:", error);
+        toast.error("Failed to load tags");
+        return;
+      }
+
+      setTags(data || []);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      toast.error("Failed to load tags");
+    }
+  }, [user?.id]);
+
+  const fetchAllData = useCallback(async () => {
+    await Promise.all([
+      fetchDepartments(),
+      fetchPositions(),
+      fetchCategories(),
+      fetchTags(),
+    ]);
+  }, [fetchDepartments, fetchPositions, fetchCategories, fetchTags]);
+
+  // ============================================================================
+  // EFFECTS
+  // ============================================================================
 
   // Fetch data when dialog opens
   useEffect(() => {
-    if (open) {
-      fetchDepartmentsAndPositions();
+    if (open && user?.id) {
+      fetchAllData();
     }
-  }, [open, fetchDepartmentsAndPositions]);
+  }, [open, user?.id, fetchAllData]);
 
   // Filter positions based on selected department
+  // Add debugging to the useEffect
   useEffect(() => {
+    //console.log('Department changed:', formData.department_id);
+    //console.log('Available positions:', positions);
+
     if (formData.department_id && positions.length > 0) {
       const filtered = positions.filter(
         (position) => position.department_id === formData.department_id
       );
 
+      //console.log('Filtered positions:', filtered);
       setFilteredPositions(filtered);
 
       // Reset position if it doesn't belong to the selected department
@@ -163,37 +284,65 @@ const AddEmployeeDialog = ({
       }
     } else {
       setFilteredPositions([]);
-      setFormData((prev) => ({ ...prev, position_id: "" }));
     }
   }, [formData.department_id, positions]);
 
   // Initialize form data when employee prop changes or dialog opens
   useEffect(() => {
-    if (employee) {
+    if (currentEmployee) {
       setFormData({
-        name: employee.name || "",
-        email: employee.email || "",
-        position: employee.position || "",
-        department_id: employee.department_id || "",
-        position_id: employee.position_id || "",
-        is_active: employee.is_active ?? true,
-        photo_url: employee.photo_url || "",
+        name: currentEmployee.name || "",
+        email: currentEmployee.email || "",
+        position: currentEmployee.position || "",
+        department_id: currentEmployee.department_id || "",
+        position_id: currentEmployee.position_id || "",
+        category_id: currentEmployee.category_id || "",
+        is_active: currentEmployee.is_active ?? true,
+        photo_url: currentEmployee.photo_url || "",
       });
-      setPhotoPreview(employee.photo_url || null);
+      setPhotoPreview(currentEmployee.photo_url || null);
+      setSelectedCategoryId(currentEmployee.category_id || null);
+
+      // TODO: Fetch employee tags if editing
+      if (currentEmployee.id) {
+        fetchEmployeeTags(currentEmployee.id);
+      }
     } else {
+      // Reset form for new employee
       setFormData({
         name: "",
         email: "",
         position: "",
         department_id: "",
         position_id: "",
+        category_id: "",
         is_active: true,
         photo_url: "",
       });
       setPhotoPreview(null);
+      setSelectedCategoryId(null);
+      setSelectedTagIds([]);
     }
     setPhotoFile(null);
-  }, [employee, open]);
+  }, [currentEmployee, open]);
+
+  // ============================================================================
+  // EVENT HANDLERS
+  // ============================================================================
+
+  const fetchEmployeeTags = async (employeeId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("employee_tags")
+        .select("tag_id")
+        .eq("employee_id", employeeId);
+
+      if (error) throw error;
+      setSelectedTagIds(data?.map((item) => item.tag_id) || []);
+    } catch (error) {
+      console.error("Error fetching employee tags:", error);
+    }
+  };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -207,37 +356,11 @@ const AddEmployeeDialog = ({
     }
   };
 
-  // const uploadPhoto = async (file: File): Promise<string | null> => {
-  //   try {
-  //     const fileExt = file.name.split(".").pop();
-  //     const fileName = `${Math.random()}.${fileExt}`;
-  //     const filePath = `employee-photos/${fileName}`;
-
-  //     const { error: uploadError } = await supabase.storage
-  //       .from("company-assets")
-  //       .upload(filePath, file);
-
-  //     if (uploadError) {
-  //       console.error("Upload error:", uploadError);
-  //       return null;
-  //     }
-
-  //     const {
-  //       data: { publicUrl },
-  //     } = supabase.storage.from("company-assets").getPublicUrl(filePath);
-
-  //     return publicUrl;
-  //   } catch (error) {
-  //     console.error("Error uploading photo:", error);
-  //     return null;
-  //   }
-  // };
-
   const uploadPhoto = async (file: File): Promise<string | null> => {
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${user.id}/employee-photos/${fileName}`; // Fixed: Added user.id as first folder
+      const filePath = `${user!.id}/employee-photos/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("company-assets")
@@ -259,6 +382,34 @@ const AddEmployeeDialog = ({
     }
   };
 
+  const handleDepartmentChange = (value: string) => {
+    setFormData({ ...formData, department_id: value, position_id: "" });
+  };
+
+  const handlePositionChange = (value: string) => {
+    // Only update position_id, don't touch the legacy position field
+    setFormData({
+      ...formData,
+      position_id: value,
+    });
+  };
+
+  const handleCategoryChange = (value: string) => {
+    const categoryId = value === "none" ? null : value;
+    setSelectedCategoryId(categoryId);
+    setFormData((prev) => ({ ...prev, category_id: categoryId || "" }));
+  };
+
+  const addTag = (tagId: string) => {
+    if (!selectedTagIds.includes(tagId)) {
+      setSelectedTagIds((prev) => [...prev, tagId]);
+    }
+  };
+
+  const removeTag = (tagId: string) => {
+    setSelectedTagIds((prev) => prev.filter((id) => id !== tagId));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -268,6 +419,7 @@ const AddEmployeeDialog = ({
     try {
       let photoUrl = formData.photo_url;
 
+      // Upload photo if a new one was selected
       if (photoFile) {
         const uploadedUrl = await uploadPhoto(photoFile);
         if (uploadedUrl) {
@@ -280,43 +432,77 @@ const AddEmployeeDialog = ({
       if (formData.position_id) {
         const { data: positionData } = await supabase
           .from("positions")
-          .select("title")
+          .select("title")  // ✅ FIXED: Only select 'title' column
           .eq("id", formData.position_id)
           .single();
-
+      
         if (positionData) {
-          positionTitle = positionData.title;
+          positionTitle = positionData.title;  // ✅ FIXED: Only use 'title'
         }
       }
 
       const employeeData = {
         name: formData.name,
         email: formData.email || null,
-        position: positionTitle || null, // Keep for backward compatibility
+        position: positionTitle || null,
         department_id: formData.department_id || null,
         position_id: formData.position_id || null,
+        category_id: selectedCategoryId || null,
         is_active: formData.is_active,
         photo_url: photoUrl || null,
         company_id: user.id,
       };
 
-      if (employee?.id) {
+      let employeeId: string;
+
+      if (currentEmployee?.id) {
         // Update existing employee
         const { error } = await supabase
           .from("employees")
           .update(employeeData)
-          .eq("id", employee.id);
+          .eq("id", currentEmployee.id);
 
         if (error) throw error;
+        employeeId = currentEmployee.id;
         toast.success("Employee updated successfully!");
       } else {
         // Create new employee
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("employees")
-          .insert([employeeData]);
+          .insert([employeeData])
+          .select("id")
+          .single();
 
         if (error) throw error;
+        employeeId = data.id;
         toast.success("Employee added successfully!");
+      }
+
+      // Handle tag assignments
+      if (currentEmployee?.id) {
+        // Remove existing tags
+        await supabase
+          .from("employee_tags")
+          .delete()
+          .eq("employee_id", employeeId);
+      }
+
+      // Add new tags
+      if (selectedTagIds.length > 0) {
+        const tagInserts = selectedTagIds.map((tagId) => ({
+          employee_id: employeeId,
+          tag_id: tagId,
+          assigned_by: user.id,
+        }));
+
+        const { error: tagError } = await supabase
+          .from("employee_tags")
+          .insert(tagInserts);
+
+        if (tagError) {
+          console.error("Error assigning tags:", tagError);
+          toast.error("Employee saved but failed to assign tags");
+        }
       }
 
       setOpen(false);
@@ -329,31 +515,70 @@ const AddEmployeeDialog = ({
     }
   };
 
-  // Handle department selection with explicit value checking
-  const handleDepartmentChange = (value: string) => {
-    setFormData({ ...formData, department_id: value, position_id: "" });
-  };
+  // ============================================================================
+  // RENDER HELPERS
+  // ============================================================================
 
-  // Handle position selection with explicit value checking
-  const handlePositionChange = (value: string) => {
-    setFormData({ ...formData, position_id: value });
-  };
+  const renderSelectedTags = () => (
+    <div className="flex flex-wrap gap-2 mb-2">
+      {selectedTagIds.map((tagId) => {
+        const tag = tags.find((t) => t.id === tagId);
+        if (!tag) return null;
+        return (
+          <Badge
+            key={tagId}
+            variant="secondary"
+            className="flex items-center gap-1"
+            style={{ backgroundColor: tag.color + "20", color: tag.color }}
+          >
+            {tag.name}
+            <X
+              className="h-3 w-3 cursor-pointer"
+              onClick={() => removeTag(tagId)}
+            />
+          </Badge>
+        );
+      })}
+    </div>
+  );
+
+  const renderAvailableTags = () => (
+    <div className="flex flex-wrap gap-2">
+      {tags
+        .filter((tag) => !selectedTagIds.includes(tag.id))
+        .map((tag) => (
+          <Badge
+            key={tag.id}
+            variant="outline"
+            className="cursor-pointer hover:bg-gray-100"
+            onClick={() => addTag(tag.id)}
+            style={{ borderColor: tag.color, color: tag.color }}
+          >
+            {tag.name}
+          </Badge>
+        ))}
+    </div>
+  );
+
+  // ============================================================================
+  // MAIN RENDER
+  // ============================================================================
 
   const dialogContent = (
     <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>
-          {employee ? "Edit Employee" : "Add New Employee"}
+          {currentEmployee ? "Edit Employee" : "Add New Employee"}
         </DialogTitle>
         <DialogDescription>
-          {employee
+          {currentEmployee
             ? "Update employee information and settings."
             : "Add a new team member to start collecting reviews."}
         </DialogDescription>
       </DialogHeader>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Photo Upload */}
+        {/* Photo Upload Section */}
         <div className="flex flex-col items-center space-y-4">
           <Avatar className="h-20 w-20">
             <AvatarImage src={photoPreview || undefined} />
@@ -406,12 +631,12 @@ const AddEmployeeDialog = ({
           </div>
         </div>
 
-        {/* Department and Position Dropdowns */}
+        {/* Department and Position Selection */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="department">Department</Label>
             <Select
-              key={`department-${departments.length}`} // Force re-render when departments change
+              key={`department-${departments.length}`}
               value={formData.department_id}
               onValueChange={handleDepartmentChange}
             >
@@ -430,7 +655,7 @@ const AddEmployeeDialog = ({
           <div className="space-y-2">
             <Label htmlFor="position">Position</Label>
             <Select
-              key={`position-${formData.department_id}-${filteredPositions.length}`} // Force re-render when filtered positions change
+              key={`position-${formData.department_id}-${filteredPositions.length}`}
               value={formData.position_id}
               onValueChange={handlePositionChange}
               disabled={
@@ -464,12 +689,92 @@ const AddEmployeeDialog = ({
           <Label htmlFor="legacy-position">Position (Legacy)</Label>
           <Input
             id="legacy-position"
-            value={formData.position}
+            value={formData.position || ""}
             onChange={(e) =>
               setFormData({ ...formData, position: e.target.value })
             }
-            placeholder="Enter position title (optional)"
+            placeholder="Enter custom position title (optional)"
           />
+        </div>
+
+        {/* Category Selection */}
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select
+            value={selectedCategoryId || ""}
+            onValueChange={handleCategoryChange}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No Category</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  ● {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Tag Selection */}
+        <div className="space-y-2">
+          <Label htmlFor="tags">Tags</Label>
+          <Select
+            value=""
+            onValueChange={(value) => {
+              if (value && !selectedTagIds.includes(value)) {
+                addTag(value);
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select tags" />
+            </SelectTrigger>
+            <SelectContent>
+              {tags
+                .filter((tag) => !selectedTagIds.includes(tag.id))
+                .map((tag) => (
+                  <SelectItem key={tag.id} value={tag.id}>
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: tag.color }}
+                      />
+                      {tag.name}
+                    </div>
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+
+          {/* Selected Tags Display */}
+          {selectedTagIds.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {selectedTagIds.map((tagId) => {
+                const tag = tags.find((t) => t.id === tagId);
+                if (!tag) return null;
+                return (
+                  <Badge
+                    key={tagId}
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                    style={{
+                      backgroundColor: tag.color + "20",
+                      color: tag.color,
+                    }}
+                  >
+                    {tag.name}
+                    <X
+                      className="h-3 w-3 cursor-pointer"
+                      onClick={() => removeTag(tagId)}
+                    />
+                  </Badge>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Active Status */}
@@ -484,7 +789,7 @@ const AddEmployeeDialog = ({
           <Label htmlFor="active">Active Employee</Label>
         </div>
 
-        {/* Submit Buttons */}
+        {/* Form Actions */}
         <div className="flex justify-end space-x-2">
           <Button
             type="button"
@@ -497,7 +802,7 @@ const AddEmployeeDialog = ({
           <Button type="submit" disabled={isLoading}>
             {isLoading
               ? "Saving..."
-              : employee
+              : currentEmployee
               ? "Update Employee"
               : "Add Employee"}
           </Button>
@@ -506,6 +811,7 @@ const AddEmployeeDialog = ({
     </DialogContent>
   );
 
+  // Conditional rendering based on trigger prop
   if (trigger) {
     return (
       <Dialog open={open} onOpenChange={setOpen}>

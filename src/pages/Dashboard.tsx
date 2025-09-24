@@ -85,6 +85,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useScreenReader } from "@/hooks/use-screen-reader";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { config } from "../lib/config";
 
 interface Review {
   id: string;
@@ -632,6 +633,134 @@ const Dashboard = () => {
     },
     [dropdownDepartments, announcePolite]
   );
+
+  const fetchSubscription = async () => {
+    // Placeholder function for subscription fetching
+    // This would typically fetch the user's subscription status
+    // console.log("Fetching subscription data...");
+  };
+
+  // Check for successful Stripe payment
+  useEffect(() => {
+    const verifyStripeSession = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionId = urlParams.get("session_id");
+      const success = urlParams.get("success");
+
+      // Only verify if we have URL parameters indicating a fresh payment
+      const isFromCheckout = success === "true" && sessionId;
+
+      if (sessionId && isFromCheckout) {
+        try {
+          //console.log("Verifying Stripe session:", sessionId);
+
+          // Get fresh session and retry if needed
+          let {
+            data: { session },
+          } = await supabase.auth.getSession();
+
+          // If no session, try to refresh
+          if (!session?.access_token) {
+            // console.log("No valid session, attempting refresh...");
+            const { data: refreshData, error: refreshError } =
+              await supabase.auth.refreshSession();
+            if (refreshError) {
+              throw new Error(
+                `Authentication refresh failed: ${refreshError.message}`
+              );
+            }
+            session = refreshData.session;
+          }
+
+          if (!session?.access_token) {
+            throw new Error(
+              "No valid authentication session found after refresh"
+            );
+          }
+
+          const response = await fetch(
+            `${config.supabase.url}/functions/v1/verify-session`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session.access_token}`,
+              },
+              body: JSON.stringify({
+                sessionId,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              toast.success(
+                "Payment successful! Your subscription has been activated."
+              );
+              // console.log("Subscription verified:", result.subscription);
+
+              // Refresh subscription data
+              await fetchSubscription();
+
+              // Clear URL parameters after successful verification
+              const newUrl = window.location.pathname;
+              window.history.replaceState({}, document.title, newUrl);
+            } else {
+              throw new Error(result.message || "Payment verification failed");
+            }
+          } else {
+            const errorText = await response.text();
+            console.error("Verification response error:", {
+              status: response.status,
+              statusText: response.statusText,
+              body: errorText,
+            });
+
+            // Parse error response if it's JSON
+            let errorMessage = `Verification request failed: ${response.status} ${response.statusText}`;
+            try {
+              const errorData = JSON.parse(errorText);
+              if (errorData.message) {
+                errorMessage = errorData.message;
+              }
+            } catch (e) {
+              // Not JSON, use default message
+            }
+
+            throw new Error(errorMessage);
+          }
+        } catch (error) {
+          console.error("Payment verification failed:", error);
+
+          // More specific error messages
+          let errorMessage = "Payment verification failed. ";
+
+          if (error.message.includes("authentication")) {
+            errorMessage +=
+              "Please try logging out and back in, then contact support.";
+          } else if (error.message.includes("User ID mismatch")) {
+            errorMessage +=
+              "Security validation failed. Please contact support.";
+          } else if (error.message.includes("Session ID is required")) {
+            errorMessage +=
+              "Session information is missing. Please try the purchase again.";
+          } else if (error.message.includes("Payment not completed")) {
+            errorMessage +=
+              "Payment was not completed successfully. Please check your payment method.";
+          } else {
+            errorMessage +=
+              "Please contact support if your payment was processed. Error: " +
+              error.message;
+          }
+
+          toast.error(errorMessage);
+        }
+      }
+    };
+
+    verifyStripeSession();
+  }, []); // Remove user?.id dependency since we only want this to run once on mount
 
   // Add useEffect to refetch data when department selection changes
   useEffect(() => {

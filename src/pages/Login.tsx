@@ -14,6 +14,10 @@ import { Star, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { supabase } from "@/integrations/supabase/client";
+
+// Add import for SubscriptionContext
+import { useSubscription } from "@/contexts/SubscriptionContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -23,9 +27,43 @@ const Login = () => {
   const { signIn, user } = useAuth();
   const navigate = useNavigate();
 
+  // Stripe checkout handler function
+  // Inside the Login component:
+  const { createSubscription } = useSubscription();
+
+  // Updated Stripe checkout handler
+  const handleStripeCheckout = async (
+    planType: "starter" | "professional" | "enterprise"
+  ) => {
+    try {
+      if (!user) {
+        toast.error("Please log in first");
+        return;
+      }
+
+      await createSubscription(planType);
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+      toast.error("Failed to start checkout process. Please try again.");
+    }
+  };
+
   useEffect(() => {
     if (user) {
-      navigate("/dashboard");
+      // Check for stored plan after successful login
+      const selectedPlan = sessionStorage.getItem("selectedPlan");
+      if (selectedPlan) {
+        sessionStorage.removeItem("selectedPlan");
+        // Trigger checkout for the stored plan
+        handleStripeCheckout(
+          selectedPlan as "starter" | "professional" | "enterprise"
+        );
+      } else {
+        // Get the intended destination from location state or default to dashboard
+        const location = window.location;
+        const from = location.state?.from?.pathname || "/dashboard";
+        navigate(from);
+      }
     }
   }, [user, navigate]);
 
@@ -44,7 +82,7 @@ const Login = () => {
         }
       } else {
         toast.success("Successfully signed in!");
-        navigate("/dashboard");
+        // Navigation will be handled by useEffect after user state updates
       }
     } catch (error) {
       toast.error("An unexpected error occurred. Please try again.");

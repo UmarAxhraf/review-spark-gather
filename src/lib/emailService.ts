@@ -5,45 +5,50 @@ const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
 const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
 const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
+// Secure Email Service - No exposed API keys
+import { config } from "./config";
+import { secureApiCall } from "./csrf";
+
 export interface EmailData {
   to: string;
   subject: string;
-  html: string;
-  customerName?: string;
-  reviewText?: string;
-  adminResponse?: string;
+  message: string;
   companyName?: string;
+  reviewerName?: string;
+  employeeName?: string;
 }
 
-export const sendEmailWithResend = async ({ to, subject, html }: EmailData) => {
+export const sendEmailWithResend = async (
+  emailData: EmailData
+): Promise<boolean> => {
   try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Review System <noreply@yourdomain.com>", // You can change this
-        to: [to],
-        subject,
-        html,
-      }),
-    });
+    const response = await secureApiCall(
+      `${config.supabase.url}/functions/v1/send-email`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.supabase.anonKey}`,
+        },
+        body: JSON.stringify({
+          provider: "resend",
+          ...emailData,
+        }),
+      }
+    );
 
     if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`Resend API error: ${response.status} - ${errorData}`);
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to send email");
     }
 
-    const result = await response.json();
-    return { success: true, messageId: result.id };
+    return true;
   } catch (error) {
-    console.error("Resend email error:", error);
-    return { success: false, error: error.message };
+    console.error("Error sending email with Resend:", error);
+    return false;
   }
 };
 
+// Consolidated sendReviewResponseEmail function
 export const sendReviewResponseEmail = async ({
   customerEmail,
   customerName,
@@ -58,25 +63,55 @@ export const sendReviewResponseEmail = async ({
   companyName?: string;
 }) => {
   try {
-    // EmailJS template parameters - matching your tested template
-    const templateParams = {
-      to_name: customerName,           // review giver name
-      review_text: reviewText,         // from review
-      admin_response: adminResponse,   // response by admin from the template
-      from_name: "Admin",             // Admin
-      email: customerEmail,            // get email from submitted review to send feedback
-    };
+    // Try EmailJS first (direct client-side)
+    if (EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY) {
+      const templateParams = {
+        to_name: customerName,
+        review_text: reviewText,
+        admin_response: adminResponse,
+        from_name: "Admin",
+        email: customerEmail,
+      };
 
-    const result = await emailjs.send(
-      EMAILJS_SERVICE_ID,
-      EMAILJS_TEMPLATE_ID,
-      templateParams,
-      EMAILJS_PUBLIC_KEY
+      const result = await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        templateParams,
+        EMAILJS_PUBLIC_KEY
+      );
+
+      return { success: true, messageId: result.text };
+    }
+
+    // Fallback to server-side email function
+    const response = await fetch(
+      `${config.supabase.url}/functions/v1/send-email`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.supabase.anonKey}`,
+        },
+        body: JSON.stringify({
+          to: customerEmail,
+          customerName,
+          reviewText,
+          adminResponse,
+          companyName,
+          type: "emailjs",
+        }),
+      }
     );
 
-    return { success: true, messageId: result.text };
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`Email API error: ${response.status} - ${errorData}`);
+    }
+
+    const result = await response.json();
+    return result;
   } catch (error) {
-    console.error("EmailJS error:", error);
+    console.error("Email service error:", error);
     return { success: false, error: error.message };
   }
 };

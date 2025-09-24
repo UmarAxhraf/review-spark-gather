@@ -5,11 +5,35 @@ import { toast } from "sonner";
 import TeamLayout from "@/components/TeamLayout";
 import EmployeeCard from "@/components/EmployeeCard";
 import AddEmployeeDialog from "@/components/AddEmployeeDialog";
-import QRCodeDialog from "@/components/QRCodeDialog";
+import { QRCodeDialog } from "@/components/QRCodeDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Users, UserPlus, Download } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Search,
+  Users,
+  UserPlus,
+  Download,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Edit,
+  Trash2,
+} from "lucide-react";
 import { PageLoading } from "@/components/ui/page-loading";
 import {
   EmployeeCardSkeleton,
@@ -17,6 +41,8 @@ import {
 } from "@/components/ui/skeleton-loaders";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BackButton } from "@/components/ui/back-button";
+import { AssignCategoryTagDialog } from "@/components/AssignCategoryTagDialog";
+import { CategoryTagFormDialog } from "@/components/CategoryTagFormDialog";
 
 interface Employee {
   id: string;
@@ -31,12 +57,42 @@ interface Employee {
   photo_url?: string;
   reviews_count?: number;
   avg_rating?: number;
+  category_id?: string;
   department?: {
     name: string;
   };
   position_data?: {
     title: string;
   };
+  category?: {
+    id: string;
+    name: string;
+    color: string;
+  };
+  employee_tags?: Array<{
+    tag_id: string;
+    tag: {
+      id: string;
+      name: string;
+      color: string;
+    };
+  }>;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  company_id: string;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  company_id: string;
 }
 
 const Employees = () => {
@@ -49,6 +105,20 @@ const Employees = () => {
   );
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+
+  // Category and Tag management state
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [tagDialogOpen, setTagDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedEmployeeForAssign, setSelectedEmployeeForAssign] =
+    useState<Employee | null>(null);
+  const [managementSectionOpen, setManagementSectionOpen] = useState(false);
 
   // Memoized calculations for better performance
   const stats = useMemo(() => {
@@ -66,12 +136,14 @@ const Employees = () => {
     };
   }, [employees]);
 
-  // Filter employees based on search term
+  // Update the filteredEmployees to include category/tag filtering
   const filteredEmployees = useMemo(() => {
-    if (!searchTerm) return employees;
+    if (!searchTerm && selectedCategory === "all" && selectedTags.length === 0)
+      return employees;
 
-    return employees.filter(
-      (employee) =>
+    return employees.filter((employee) => {
+      const matchesSearch =
+        !searchTerm ||
         employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         employee.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -80,9 +152,21 @@ const Employees = () => {
           .includes(searchTerm.toLowerCase()) ||
         employee.position_data?.title
           ?.toLowerCase()
-          .includes(searchTerm.toLowerCase())
-    );
-  }, [employees, searchTerm]);
+          .includes(searchTerm.toLowerCase());
+
+      const matchesCategory =
+        selectedCategory === "all" ||
+        (selectedCategory && employee.category_id === selectedCategory);
+
+      const matchesTags =
+        selectedTags.length === 0 ||
+        selectedTags.some((tagId) =>
+          employee.employee_tags?.some((et) => et.tag_id === tagId)
+        );
+
+      return matchesSearch && matchesCategory && matchesTags;
+    });
+  }, [employees, searchTerm, selectedCategory, selectedTags]);
 
   useEffect(() => {
     if (user) {
@@ -485,7 +569,7 @@ const Employees = () => {
                   trigger={
                     <Button>
                       <UserPlus className="h-4 w-4 mr-2" />
-                      Add Your First Team Member
+                      Add Employee
                     </Button>
                   }
                 />
@@ -498,11 +582,11 @@ const Employees = () => {
               <EmployeeCard
                 key={employee.id}
                 employee={employee}
-                onEdit={handleEditEmployee}
+                onToggleStatus={handleToggleEmployeeStatus}
                 onDelete={handleDeleteEmployee}
                 onViewQR={handleViewQR}
+                onEdit={handleEditEmployee}
                 onViewProfile={handleViewProfile}
-                onToggleStatus={handleToggleEmployeeStatus}
               />
             ))}
           </div>
@@ -515,19 +599,14 @@ const Employees = () => {
           onOpenChange={setQrDialogOpen}
         />
 
-        {editingEmployee && (
-          <AddEmployeeDialog
-            employee={editingEmployee}
-            onEmployeeAdded={() => {
-              fetchEmployees();
-              setEditingEmployee(null);
-            }}
-            open={!!editingEmployee}
-            onOpenChange={(open) => {
-              if (!open) setEditingEmployee(null);
-            }}
-          />
-        )}
+        <AddEmployeeDialog
+          employee={editingEmployee}
+          onEmployeeAdded={fetchEmployees}
+          open={!!editingEmployee}
+          onOpenChange={(open) => {
+            if (!open) setEditingEmployee(null);
+          }}
+        />
       </div>
     </TeamLayout>
   );

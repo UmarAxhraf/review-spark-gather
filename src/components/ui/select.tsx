@@ -84,10 +84,14 @@ const SelectContent = React.forwardRef<
       <SelectScrollUpButton />
       <SelectPrimitive.Viewport
         className={cn(
-          "p-1",
+          "p-1 overflow-x-auto overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100",
           position === "popper" &&
             "h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]"
         )}
+        style={{
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#D1D5DB #F3F4F6'
+        }}
       >
         {children}
       </SelectPrimitive.Viewport>
