@@ -1,307 +1,126 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { QRCodeSVG } from 'qrcode.react';
+import { Download, Copy } from 'lucide-react';
 import { toast } from 'sonner';
-import { X } from 'lucide-react';
 
 interface QRCodeDialogProps {
-  qrCode: any;
-  isOpen: boolean;
-  onClose: () => void;
-  onUpdate: () => void;
+  employee: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-interface Category {
-  id: string;
-  name: string;
-  color: string;
-}
+export function QRCodeDialog({ employee, open, onOpenChange }: QRCodeDialogProps) {
+  // Generate QR code URL dynamically using qr_code_id
+  const qrCodeUrl = employee?.qr_code_id ? `${window.location.origin}/review/${employee.qr_code_id}` : '';
+  const employeeName = employee?.name || 'Employee';
 
-interface Tag {
-  id: string;
-  name: string;
-  color: string;
-}
+  const handleDownload = () => {
+    if (!qrCodeUrl) {
+      toast.error('No QR code available for this employee');
+      return;
+    }
 
-export function QRCodeDialog({ qrCode, isOpen, onClose, onUpdate }: QRCodeDialogProps) {
-  const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    category_id: '',
-    is_active: true
-  });
+    // Create SVG element
+    const svg = document.querySelector('#qr-code-svg');
+    if (!svg) {
+      toast.error('QR code not found');
+      return;
+    }
 
-  useEffect(() => {
-    if (qrCode && isOpen) {
-      setFormData({
-        name: qrCode.name || '',
-        description: qrCode.description || '',
-        category_id: qrCode.category_id || '',
-        is_active: qrCode.is_active ?? true
-      });
+    // Convert SVG to canvas and download
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    // Get SVG data
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+    
+    img.onload = () => {
+      canvas.width = 512;
+      canvas.height = 512;
+      ctx?.drawImage(img, 0, 0, 512, 512);
       
-      // Load existing tags
-      if (qrCode.qr_code_tags) {
-        setSelectedTags(qrCode.qr_code_tags.map((qt: any) => qt.tag_id));
-      }
-    }
-  }, [qrCode, isOpen]);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchCategories();
-      fetchTags();
-    }
-  }, [isOpen]);
-
-  const fetchCategories = async () => {
-    if (!user?.id) return;
+      // Download the image
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const downloadUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = `${employeeName.replace(/\s+/g, '_')}_QR_Code.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(downloadUrl);
+          toast.success('QR code downloaded successfully');
+        }
+      }, 'image/png');
+      
+      URL.revokeObjectURL(url);
+    };
     
+    img.src = url;
+  };
+
+  const handleCopyUrl = async () => {
+    if (!qrCodeUrl) {
+      toast.error('No QR code available for this employee');
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('id, name, color')
-        .eq('company_id', user.id)
-        .order('name');
-
-      if (error) throw error;
-      setCategories(data || []);
+      await navigator.clipboard.writeText(qrCodeUrl);
+      toast.success('QR code URL copied to clipboard');
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      toast.error('Failed to copy URL to clipboard');
     }
-  };
-
-  const fetchTags = async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('id, name, color')
-        .eq('company_id', user.id)
-        .order('name');
-
-      if (error) throw error;
-      setTags(data || []);
-    } catch (error) {
-      console.error('Error fetching tags:', error);
-    }
-  };
-
-  const handleTagToggle = (tagId: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!qrCode?.id) return;
-
-    setLoading(true);
-    try {
-      // Update QR code
-      const { error: updateError } = await supabase
-        .from('qr_codes')
-        .update({
-          name: formData.name,
-          description: formData.description,
-          category_id: formData.category_id || null,
-          is_active: formData.is_active
-        })
-        .eq('id', qrCode.id);
-
-      if (updateError) throw updateError;
-
-      // Update tags
-      // First, remove existing tags
-      const { error: deleteError } = await supabase
-        .from('qr_code_tags')
-        .delete()
-        .eq('qr_code_id', qrCode.id);
-
-      if (deleteError) throw deleteError;
-
-      // Then add new tags
-      if (selectedTags.length > 0) {
-        const tagInserts = selectedTags.map(tagId => ({
-          qr_code_id: qrCode.id,
-          tag_id: tagId
-        }));
-
-        const { error: insertError } = await supabase
-          .from('qr_code_tags')
-          .insert(tagInserts);
-
-        if (insertError) throw insertError;
-      }
-
-      toast.success('QR code updated successfully');
-      onUpdate();
-      onClose();
-    } catch (error) {
-      console.error('Error updating QR code:', error);
-      toast.error('Failed to update QR code');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const renderSelectedTags = () => {
-    const selected = tags.filter(tag => selectedTags.includes(tag.id));
-    
-    if (selected.length === 0) {
-      return <p className="text-sm text-muted-foreground">No tags selected</p>;
-    }
-
-    return (
-      <div className="flex flex-wrap gap-2">
-        {selected.map(tag => (
-          <Badge 
-            key={tag.id} 
-            variant="secondary"
-            style={{ backgroundColor: tag.color, color: 'white' }}
-            className="cursor-pointer"
-            onClick={() => handleTagToggle(tag.id)}
-          >
-            {tag.name}
-            <X className="w-3 h-3 ml-1" />
-          </Badge>
-        ))}
-      </div>
-    );
-  };
-
-  const renderAvailableTags = () => {
-    const available = tags.filter(tag => !selectedTags.includes(tag.id));
-    
-    if (available.length === 0) {
-      return <p className="text-sm text-muted-foreground">All tags selected</p>;
-    }
-
-    return (
-      <div className="flex flex-wrap gap-2">
-        {available.map(tag => (
-          <Badge 
-            key={tag.id} 
-            variant="outline"
-            className="cursor-pointer hover:bg-gray-100"
-            onClick={() => handleTagToggle(tag.id)}
-          >
-            {tag.name}
-          </Badge>
-        ))}
-      </div>
-    );
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit QR Code</DialogTitle>
+          <DialogTitle>QR Code - {employeeName}</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="QR Code name"
-                required
-              />
+        <div className="flex flex-col items-center space-y-6 py-6">
+          {qrCodeUrl ? (
+            <>
+              <div className="bg-white p-4 rounded-lg shadow-sm">
+                <QRCodeSVG 
+                  id="qr-code-svg"
+                  value={qrCodeUrl} 
+                  size={300} 
+                  level="H"
+                  includeMargin={true}
+                />
+              </div>
+              
+              <div className="text-center space-y-2">
+                <p className="text-sm text-gray-600">Scan this QR code to leave a review</p>
+                <p className="text-xs text-gray-500 break-all max-w-[400px]">{qrCodeUrl}</p>
+              </div>
+              
+              <div className="flex gap-3">
+                <Button onClick={handleDownload} className="flex items-center gap-2">
+                  <Download size={16} />
+                  Download
+                </Button>
+                <Button onClick={handleCopyUrl} variant="outline" className="flex items-center gap-2">
+                  <Copy size={16} />
+                  Copy URL
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No QR code available for this employee</p>
             </div>
-            
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={formData.category_id}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, category_id: value === 'none' ? '' : value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No Category</SelectItem>
-                  {categories.map(category => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full" 
-                          style={{ backgroundColor: category.color }}
-                        />
-                        {category.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="QR Code description"
-              rows={3}
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label>Tags</Label>
-            
-            <div>
-              <Label className="text-sm font-medium">Selected Tags:</Label>
-              {renderSelectedTags()}
-            </div>
-            
-            <div>
-              <Label className="text-sm font-medium">Available Tags:</Label>
-              {renderAvailableTags()}
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="is_active"
-              checked={formData.is_active}
-              onChange={(e) => setFormData(prev => ({ ...prev, is_active: e.target.checked }))}
-              className="rounded"
-            />
-            <Label htmlFor="is_active">Active</Label>
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Updating...' : 'Update QR Code'}
-            </Button>
-          </div>
-        </form>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

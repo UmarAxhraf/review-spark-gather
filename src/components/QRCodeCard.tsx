@@ -43,13 +43,13 @@ interface Employee {
 
 interface QRCodeCardProps {
   employee: Employee;
-  onViewQR: () => void;
+  onViewQR: (employee: Employee) => void;
   onSelect: (checked: boolean) => void;
   isSelected: boolean;
   onAddTag: (tag: string) => void;
   onRemoveTag: (tag: string) => void;
   onUpdateCategory: (category: string) => void;
-  onEditQRCode?: (employee: Employee) => void;  // Add this missing prop
+  onEditQRCode?: (employee: Employee) => void;
   onToggleActive?: (employeeId: string, isActive: boolean) => Promise<void>;
   onRegenerateQR?: (employeeId: string) => Promise<void>;
   availableCategories: string[];
@@ -163,18 +163,22 @@ const QRCodeCard: React.FC<QRCodeCardProps> = ({
     try {
       // Toggle QR code active status
       await onToggleActive?.(employee.id, !employee.qr_is_active);
-      toast.success(`QR code ${employee.qr_is_active ? 'deactivated' : 'activated'} successfully`);
+      toast.success(
+        `QR code ${
+          employee.qr_is_active ? "deactivated" : "activated"
+        } successfully`
+      );
     } catch (error) {
-      toast.error('Failed to update QR code status');
+      toast.error("Failed to update QR code status");
     }
   };
 
   const handleRegenerateQR = async () => {
     try {
       await onRegenerateQR?.(employee.id);
-      toast.success('QR code regenerated successfully');
+      toast.success("QR code regenerated successfully");
     } catch (error) {
-      toast.error('Failed to regenerate QR code');
+      toast.error("Failed to regenerate QR code");
     }
   };
 
@@ -182,9 +186,7 @@ const QRCodeCard: React.FC<QRCodeCardProps> = ({
     <Card
       className={`w-full hover:shadow-lg transition-shadow ${
         !isActive ? "opacity-75" : ""
-      } ${
-        isExpired ? "border-red-200 bg-red-50/30" : ""
-      }`}
+      } ${isExpired ? "border-red-200 bg-red-50/30" : ""}`}
     >
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
@@ -207,7 +209,7 @@ const QRCodeCard: React.FC<QRCodeCardProps> = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleToggleActive}>
                   <AlertTriangle className="mr-2 h-4 w-4" />
-                  {employee.qr_is_active ? 'Deactivate' : 'Activate'}
+                  {employee.qr_is_active ? "Deactivate" : "Activate"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleRegenerateQR}>
@@ -230,7 +232,8 @@ const QRCodeCard: React.FC<QRCodeCardProps> = ({
               </span>
             </div>
             <p className="text-xs text-red-600 mt-1">
-              Expired on {new Date(employee.qr_expires_at!).toLocaleDateString()}
+              Expired on{" "}
+              {new Date(employee.qr_expires_at!).toLocaleDateString()}
             </p>
           </div>
         )}

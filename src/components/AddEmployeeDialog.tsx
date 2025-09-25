@@ -432,12 +432,12 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
       if (formData.position_id) {
         const { data: positionData } = await supabase
           .from("positions")
-          .select("title")  // ✅ FIXED: Only select 'title' column
+          .select("title") // ✅ FIXED: Only select 'title' column
           .eq("id", formData.position_id)
           .single();
-      
+
         if (positionData) {
-          positionTitle = positionData.title;  // ✅ FIXED: Only use 'title'
+          positionTitle = positionData.title; // ✅ FIXED: Only use 'title'
         }
       }
 
@@ -698,7 +698,7 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
         </div>
 
         {/* Category Selection */}
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="category">Category</Label>
           <Select
             value={selectedCategoryId || ""}
@@ -716,10 +716,10 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </div> */}
 
         {/* Tag Selection */}
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="tags">Tags</Label>
           <Select
             value=""
@@ -747,10 +747,10 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
                   </SelectItem>
                 ))}
             </SelectContent>
-          </Select>
+          </Select> */}
 
-          {/* Selected Tags Display */}
-          {selectedTagIds.length > 0 && (
+        {/* Selected Tags Display */}
+        {/* {selectedTagIds.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">
               {selectedTagIds.map((tagId) => {
                 const tag = tags.find((t) => t.id === tagId);
@@ -775,7 +775,7 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
               })}
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Active Status */}
         <div className="flex items-center space-x-2">

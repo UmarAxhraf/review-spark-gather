@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-// Mock shadcn/ui components - replace with actual imports in your project
 const Button = ({
   children,
   onClick,
@@ -18,9 +17,11 @@ const Button = ({
   size = "default",
   className = "",
   disabled = false,
+  type = "button", // Add this line
   ...props
 }) => (
   <button
+    type={type} // Add this line
     onClick={onClick}
     disabled={disabled}
     className={`
@@ -187,6 +188,7 @@ const SelectItem = ({ value, children, onSelect, isSelected }) => (
 
 const Switch = ({ checked, onCheckedChange, disabled, id }) => (
   <button
+    type="button" // Add this line
     id={id}
     onClick={() => !disabled && onCheckedChange(!checked)}
     disabled={disabled}
