@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import TeamLayout from "@/components/TeamLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -434,592 +433,584 @@ const CompanySettings = () => {
 
   if (isFetching) {
     return (
-      <TeamLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex items-center space-x-2">
-            <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
-            <span className="text-lg text-gray-600">
-              Loading company settings...
-            </span>
-          </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
+          <span className="text-lg text-gray-600">
+            Loading company settings...
+          </span>
         </div>
-      </TeamLayout>
+      </div>
     );
   }
 
   return (
-    <TeamLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Company Settings
-            </h1>
-            <p className="text-gray-600">
-              Manage your company information, branding, and preferences
-            </p>
-          </div>
-          {/* <div className="flex items-center space-x-2">
+    <div className="space-y-6 p-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Company Settings</h1>
+          <p className="text-gray-600">
+            Manage your company information, branding, and preferences
+          </p>
+        </div>
+        {/* <div className="flex items-center space-x-2">
             <Settings className="h-6 w-6 text-gray-500" />
           </div> */}
-        </div>
+      </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Hidden CSRF token field */}
-            <input type="hidden" name="csrfToken" value={csrfToken} />
-            {/* Company Information */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Building2 className="h-5 w-5 text-blue-600" />
-                  <CardTitle>Company Information</CardTitle>
-                </div>
-                <CardDescription>
-                  Basic information about your company
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="company_name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Company Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter company name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email Address *</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="contact@company.com"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+1 (555) 123-4567" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="website"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Website</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://company.com" {...field} />
-                        </FormControl>
-                        <FormDescription>
-                          Optional - your company website
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="industry"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Industry</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select industry" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {industryOptions.map((industry) => (
-                              <SelectItem key={industry} value={industry}>
-                                {industry}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="employee_count"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Employee Count</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select employee count" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {employeeCountOptions.map((count) => (
-                              <SelectItem key={count} value={count}>
-                                {count} employees
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* Hidden CSRF token field */}
+          <input type="hidden" name="csrfToken" value={csrfToken} />
+          {/* Company Information */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Building2 className="h-5 w-5 text-blue-600" />
+                <CardTitle>Company Information</CardTitle>
+              </div>
+              <CardDescription>
+                Basic information about your company
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="company_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Company Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter company name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
-                  name="description"
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Company Description</FormLabel>
+                      <FormLabel>Email Address *</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="Brief description of your company..."
-                          className="min-h-[100px]"
+                        <Input
+                          type="email"
+                          placeholder="contact@company.com"
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription>
-                        Optional - appears on review submission pages (max 500
-                        characters)
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Address Information */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-5 w-5 text-green-600" />
-                  <CardTitle>Address Information</CardTitle>
-                </div>
-                <CardDescription>
-                  Your company's physical address
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="address"
+                  name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Street Address *</FormLabel>
+                      <FormLabel>Phone Number *</FormLabel>
                       <FormControl>
-                        <Input placeholder="123 Business Street" {...field} />
+                        <Input placeholder="+1 (555) 123-4567" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>City *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="San Francisco" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="state"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>State *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="California" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="zip_code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>ZIP Code *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="94102" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
                 <FormField
                   control={form.control}
-                  name="timezone"
+                  name="website"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Timezone</FormLabel>
+                      <FormLabel>Website</FormLabel>
                       <FormControl>
-                        <Input placeholder="America/Los_Angeles" {...field} />
+                        <Input placeholder="https://company.com" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Used for scheduling reports and notifications
+                        Optional - your company website
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Branding & Logo */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Palette className="h-5 w-5 text-purple-600" />
-                  <CardTitle>Branding & Logo</CardTitle>
-                </div>
-                <CardDescription>
-                  Customize your company's visual identity
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Logo Upload */}
-                <div className="space-y-2">
-                  <Label>Company Logo</Label>
-                  <div className="flex items-center space-x-4">
-                    {form.watch("logo_url") ? (
-                      <div className="relative">
-                        <img
-                          src={form.watch("logo_url")}
-                          alt="Company Logo"
-                          className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                          onClick={handleRemoveLogo}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                        <Camera className="h-8 w-8 text-gray-400" />
-                      </div>
-                    )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="industry"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Industry</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select industry" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {industryOptions.map((industry) => (
+                            <SelectItem key={industry} value={industry}>
+                              {industry}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                    <div className="space-y-2">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
+                <FormField
+                  control={form.control}
+                  name="employee_count"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Employee Count</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select employee count" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {employeeCountOptions.map((count) => (
+                            <SelectItem key={count} value={count}>
+                              {count} employees
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Company Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Brief description of your company..."
+                        className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Optional - appears on review submission pages (max 500
+                      characters)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Address Information */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <MapPin className="h-5 w-5 text-green-600" />
+                <CardTitle>Address Information</CardTitle>
+              </div>
+              <CardDescription>Your company's physical address</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Street Address *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="123 Business Street" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="San Francisco" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>State *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="California" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="zip_code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ZIP Code *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="94102" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="timezone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Timezone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="America/Los_Angeles" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Used for scheduling reports and notifications
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Branding & Logo */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Palette className="h-5 w-5 text-purple-600" />
+                <CardTitle>Branding & Logo</CardTitle>
+              </div>
+              <CardDescription>
+                Customize your company's visual identity
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Logo Upload */}
+              <div className="space-y-2">
+                <Label>Company Logo</Label>
+                <div className="flex items-center space-x-4">
+                  {form.watch("logo_url") ? (
+                    <div className="relative">
+                      <img
+                        src={form.watch("logo_url")}
+                        alt="Company Logo"
+                        className="w-20 h-20 object-cover rounded-lg border-2 border-gray-200"
                       />
                       <Button
                         type="button"
-                        variant="outline"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isUploading}
-                        className="flex items-center space-x-2"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                        onClick={handleRemoveLogo}
                       >
-                        <Upload className="h-4 w-4" />
-                        <span>
-                          {isUploading ? "Uploading..." : "Upload Logo"}
-                        </span>
+                        <Trash2 className="h-3 w-3" />
                       </Button>
-                      {isUploading && (
-                        <Progress value={uploadProgress} className="w-32" />
-                      )}
-                      <p className="text-xs text-gray-500">
-                        Max 5MB, PNG/JPG/JPEG
-                      </p>
                     </div>
+                  ) : (
+                    <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                      <Camera className="h-8 w-8 text-gray-400" />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="flex items-center space-x-2"
+                    >
+                      <Upload className="h-4 w-4" />
+                      <span>
+                        {isUploading ? "Uploading..." : "Upload Logo"}
+                      </span>
+                    </Button>
+                    {isUploading && (
+                      <Progress value={uploadProgress} className="w-32" />
+                    )}
+                    <p className="text-xs text-gray-500">
+                      Max 5MB, PNG/JPG/JPEG
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                {/* Color Scheme */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="primary_color"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Primary Color</FormLabel>
-                        <div className="flex items-center space-x-2">
-                          <FormControl>
-                            <Input
-                              type="color"
-                              className="w-16 h-10 p-1 border rounded"
-                              {...field}
-                            />
-                          </FormControl>
+              {/* Color Scheme */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="primary_color"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Primary Color</FormLabel>
+                      <div className="flex items-center space-x-2">
+                        <FormControl>
                           <Input
-                            placeholder="#3b82f6"
-                            value={field.value}
-                            onChange={field.onChange}
-                            className="flex-1"
+                            type="color"
+                            className="w-16 h-10 p-1 border rounded"
+                            {...field}
                           />
-                        </div>
-                        <FormDescription>
-                          Used for buttons and accents
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        </FormControl>
+                        <Input
+                          placeholder="#3b82f6"
+                          value={field.value}
+                          onChange={field.onChange}
+                          className="flex-1"
+                        />
+                      </div>
+                      <FormDescription>
+                        Used for buttons and accents
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="secondary_color"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Secondary Color</FormLabel>
-                        <div className="flex items-center space-x-2">
-                          <FormControl>
-                            <Input
-                              type="color"
-                              className="w-16 h-10 p-1 border rounded"
-                              {...field}
-                            />
-                          </FormControl>
+                <FormField
+                  control={form.control}
+                  name="secondary_color"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Secondary Color</FormLabel>
+                      <div className="flex items-center space-x-2">
+                        <FormControl>
                           <Input
-                            placeholder="#64748b"
-                            value={field.value}
-                            onChange={field.onChange}
-                            className="flex-1"
+                            type="color"
+                            className="w-16 h-10 p-1 border rounded"
+                            {...field}
                           />
-                        </div>
-                        <FormDescription>
-                          Used for text and borders
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Notification Preferences */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Bell className="h-5 w-5 text-orange-600" />
-                  <CardTitle>Notification Preferences</CardTitle>
-                </div>
-                <CardDescription>
-                  Choose how you want to receive notifications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email_notifications"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Email Notifications
-                        </FormLabel>
-                        <FormDescription>
-                          Receive general notifications via email
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
+                        </FormControl>
+                        <Input
+                          placeholder="#64748b"
+                          value={field.value}
+                          onChange={field.onChange}
+                          className="flex-1"
                         />
-                      </FormControl>
+                      </div>
+                      <FormDescription>
+                        Used for text and borders
+                      </FormDescription>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
+              </div>
+            </CardContent>
+          </Card>
 
-                <FormField
-                  control={form.control}
-                  name="review_notifications"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Review Notifications
-                        </FormLabel>
-                        <FormDescription>
-                          Get notified when new reviews are submitted
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+          {/* Notification Preferences */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Bell className="h-5 w-5 text-orange-600" />
+                <CardTitle>Notification Preferences</CardTitle>
+              </div>
+              <CardDescription>
+                Choose how you want to receive notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email_notifications"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Email Notifications
+                      </FormLabel>
+                      <FormDescription>
+                        Receive general notifications via email
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="weekly_reports"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Weekly Reports
-                        </FormLabel>
-                        <FormDescription>
-                          Receive weekly summary reports via email
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+              <FormField
+                control={form.control}
+                name="review_notifications"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Review Notifications
+                      </FormLabel>
+                      <FormDescription>
+                        Get notified when new reviews are submitted
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-            {/* Privacy Settings */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Shield className="h-5 w-5 text-red-600" />
-                  <CardTitle>Privacy Settings</CardTitle>
-                </div>
-                <CardDescription>
-                  Control your company's privacy and visibility
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="public_profile"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Public Profile
-                        </FormLabel>
-                        <FormDescription>
-                          Make your company profile visible to the public
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="weekly_reports"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Weekly Reports
+                      </FormLabel>
+                      <FormDescription>
+                        Receive weekly summary reports via email
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
 
-                <FormField
-                  control={form.control}
-                  name="show_employee_count"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">
-                          Show Employee Count
-                        </FormLabel>
-                        <FormDescription>
-                          Display employee count on public pages
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
+          {/* Privacy Settings */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center space-x-2">
+                <Shield className="h-5 w-5 text-red-600" />
+                <CardTitle>Privacy Settings</CardTitle>
+              </div>
+              <CardDescription>
+                Control your company's privacy and visibility
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="public_profile"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Public Profile
+                      </FormLabel>
+                      <FormDescription>
+                        Make your company profile visible to the public
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
 
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  form.reset();
-                  fetchCompanyProfile();
-                }}
-                disabled={isLoading}
-              >
-                Reset Changes
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading || isUploading}
-                className="flex items-center space-x-2"
-              >
-                <Save className="h-4 w-4" />
-                <span>{isLoading ? "Saving..." : "Save Changes"}</span>
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </div>
-    </TeamLayout>
+              <FormField
+                control={form.control}
+                name="show_employee_count"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Show Employee Count
+                      </FormLabel>
+                      <FormDescription>
+                        Display employee count on public pages
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                form.reset();
+                fetchCompanyProfile();
+              }}
+              disabled={isLoading}
+            >
+              Reset Changes
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading || isUploading}
+              className="flex items-center space-x-2"
+            >
+              <Save className="h-4 w-4" />
+              <span>{isLoading ? "Saving..." : "Save Changes"}</span>
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 };
 

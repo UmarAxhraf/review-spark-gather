@@ -80,7 +80,7 @@ import {
   CardSkeleton,
 } from "@/components/ui/skeleton-loaders";
 import { useLoadingState } from "@/hooks/use-loading-state";
-import TeamLayout from "@/components/TeamLayout";
+
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useScreenReader } from "@/hooks/use-screen-reader";
@@ -1101,8 +1101,8 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Enhanced Responsive Header */}
+    <div className="space-y-6">
+      {/* Enhanced Responsive Header with Filters */}
       <header className="bg-white border-b border-gray-200">
         <div className={`px-4 sm:px-6 py-4`}>
           <div className="flex items-center justify-between">
@@ -1117,13 +1117,11 @@ const Dashboard = () => {
                     isMobile ? "text-lg" : "text-2xl"
                   }`}
                 >
-                  {isMobile ? "Dashboard" : "Enhanced Dashboard"}
+                  Dashboard
                 </h1>
-                {!isMobile && (
-                  <p className="text-gray-600 truncate">
-                    Welcome back, {user?.user_metadata?.company_name || "User"}!
-                  </p>
-                )}
+                <p className="text-gray-600 truncate text-sm">
+                  Welcome back, {user?.user_metadata?.company_name || "User"}!
+                </p>
               </div>
             </div>
 
@@ -1187,331 +1185,83 @@ const Dashboard = () => {
                   )}
                   Refresh
                 </Button>
+              </div>
+            )}
+          </div>
 
-                {/* Navigation Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Menu className="h-4 w-4 mr-2" />
-                      More
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end">
-                    <DropdownMenuItem onClick={() => navigate("/employees")}>
-                      <Users className="mr-2 h-4 w-4" />
-                      <span>Employees</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/qr-codes")}>
-                      <QrCode className="mr-2 h-4 w-4" />
-                      <span>QR Codes</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/reviews")}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      <span>Reviews</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/notifications")}
-                    >
-                      <Bell className="mr-2 h-4 w-4" />
-                      <span>Notifications</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => navigate("/export-reports")}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      <span>Export Reports</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/qr-analytics")}>
-                      <BarChart3 className="mr-2 h-4 w-4" />
-                      <span>QR Analytics</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/data-management")}
-                    >
-                      <Database className="mr-2 h-4 w-4" />
-                      <span>Data Management</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+          {/* Mobile Filters Row */}
+          {isMobile && (
+            <div className="mt-4 space-y-3">
+              {/* First Row: Time Range and Department */}
+              <div className="flex space-x-2">
+                <Select value={timeRange} onValueChange={handleTimeRangeChange}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7d">Last 7 days</SelectItem>
+                    <SelectItem value="30d">Last 30 days</SelectItem>
+                    <SelectItem value="90d">Last 90 days</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select
+                  value={selectedDepartment}
+                  onValueChange={handleDepartmentChange}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="All Departments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Departments</SelectItem>
+                    {dropdownDepartments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Second Row: Real-time Toggle and Refresh */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={realTimeEnabled}
+                    onCheckedChange={setRealTimeEnabled}
+                  />
+                  <span className="text-sm text-gray-600">Real-time</span>
+                </div>
 
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate("/analytics")}
+                  onClick={handleRefresh}
+                  disabled={isLoading("refreshing")}
+                  className="flex items-center space-x-2"
                 >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Analytics
+                  {isLoading("refreshing") ? (
+                    <LoadingSpinner size="sm" />
+                  ) : (
+                    <RefreshCw
+                      className={`h-4 w-4 ${
+                        refreshing ? "animate-spin" : ""
+                      }`}
+                    />
+                  )}
+                  <span>Refresh</span>
                 </Button>
-
-                <NotificationBell />
-
-                {/* User Menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="relative h-8 w-8 rounded-full"
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src="" alt={user?.email || ""} />
-                        <AvatarFallback className="bg-blue-100 text-blue-600">
-                          {getUserInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <div className="flex flex-col space-y-1 p-2">
-                      <p className="text-sm font-medium leading-none">
-                        {user?.email}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        Team Administrator
-                      </p>
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => navigate("/company-settings")}
-                    >
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/profile")}>
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={handleLogout}
-                      className="text-red-600"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
-            )}
-
-            {/* Mobile Controls */}
-            {isMobile && (
-              <div className="flex items-center space-x-2">
-                {/* Consolidated Mobile Menu */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <Menu className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-64" align="end">
-                    {/* Quick Actions Section */}
-                    <div className="p-3 border-b">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-500">
-                            Quick Actions
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate("/analytics")}
-                            className="h-8 text-xs"
-                          >
-                            <BarChart3 className="h-3 w-3 mr-1" />
-                            Analytics
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate("/notifications")}
-                            className="h-8 text-xs"
-                          >
-                            <Bell className="h-3 w-3 mr-1" />
-                            Notifications
-                          </Button>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleRefresh}
-                          disabled={isLoading("refreshing")}
-                          className="w-full h-8 text-xs"
-                        >
-                          {isLoading("refreshing") ? (
-                            <LoadingSpinner size="sm" />
-                          ) : (
-                            <RefreshCw
-                              className={`h-3 w-3 mr-1 ${
-                                refreshing ? "animate-spin" : ""
-                              }`}
-                            />
-                          )}
-                          Refresh
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Mobile Filters Section */}
-                    <div className="p-3 border-b">
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs font-medium text-gray-500 mb-1 block">
-                            Time Range
-                          </label>
-                          <Select
-                            value={timeRange}
-                            onValueChange={handleTimeRangeChange}
-                          >
-                            <SelectTrigger className="w-full h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="7d">Last 7 days</SelectItem>
-                              <SelectItem value="30d">Last 30 days</SelectItem>
-                              <SelectItem value="90d">Last 90 days</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <label className="text-xs font-medium text-gray-500 mb-1 block">
-                            Department
-                          </label>
-                          <Select
-                            value={selectedDepartment}
-                            onValueChange={handleDepartmentChange}
-                          >
-                            <SelectTrigger className="w-full h-8">
-                              <SelectValue placeholder="All Departments" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">
-                                All Departments
-                              </SelectItem>
-                              {dropdownDepartments.map((dept) => (
-                                <SelectItem key={dept.id} value={dept.id}>
-                                  {dept.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-500">
-                            Real-time
-                          </span>
-                          <Switch
-                            checked={realTimeEnabled}
-                            onCheckedChange={setRealTimeEnabled}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Navigation Items */}
-                    <DropdownMenuItem onClick={() => navigate("/employees")}>
-                      <Users className="mr-2 h-4 w-4" />
-                      <span>Employees</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/qr-codes")}>
-                      <QrCode className="mr-2 h-4 w-4" />
-                      <span>QR Codes</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/reviews")}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      <span>Reviews</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => navigate("/export-reports")}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      <span>Export Reports</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/qr-analytics")}>
-                      <BarChart3 className="mr-2 h-4 w-4" />
-                      <span>QR Analytics</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => navigate("/data-management")}
-                    >
-                      <Database className="mr-2 h-4 w-4" />
-                      <span>Data Management</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-
-                    {/* User Section */}
-                    <div className="p-3 border-t">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src="" alt={user?.email || ""} />
-                          <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
-                            {getUserInitials()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium truncate">
-                            {user?.email}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Team Admin
-                          </p>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate("/company-settings")}
-                          className="w-full justify-start h-8"
-                        >
-                          <Settings className="mr-2 h-3 w-3" />
-                          <span className="text-xs">Settings</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate("/profile")}
-                          className="w-full justify-start h-8"
-                        >
-                          <User className="mr-2 h-3 w-3" />
-                          <span className="text-xs">Profile</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleLogout}
-                          className="w-full justify-start h-8 text-red-600 hover:text-red-700"
-                        >
-                          <LogOut className="mr-2 h-3 w-3" />
-                          <span className="text-xs">Log out</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Mobile Welcome Message */}
-      {isMobile && (
-        <div className="bg-white border-b px-4 py-2">
-          <p className="text-sm text-gray-600 truncate">
-            Welcome back, {user?.user_metadata?.company_name || "User"}!
-          </p>
-        </div>
-      )}
+
 
       {/* Main Content with Responsive Padding */}
       <div className={`p-4 sm:p-6`}>
-        {/* Enhanced Stats Grid - Responsive */}
+        {/* Enhanced Stats Grid - Responsive (SINGLE INSTANCE) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {widgets.filter((w) => w.type === "stats").map(renderWidget)}
         </div>

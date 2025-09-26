@@ -20,7 +20,6 @@ import {
   Settings,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import TeamLayout from "@/components/TeamLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PageLoading } from "@/components/ui/page-loading";
@@ -357,494 +356,486 @@ const Notifications = () => {
 
   if (loading) {
     return (
-      <TeamLayout>
-        <div className="space-y-6">
-          {/* Header skeleton */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-48" />
-              <Skeleton className="h-4 w-64" />
-            </div>
-            <div className="flex items-center space-x-4">
-              <Skeleton className="h-10 w-32" />
-              <Skeleton className="h-10 w-24" />
-            </div>
+      <div className="space-y-6 p-6">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
           </div>
-
-          {/* Stats skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <StatsCardSkeleton key={i} />
-            ))}
+          <div className="flex items-center space-x-4">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-24" />
           </div>
-
-          {/* Notifications skeleton */}
-          <Card>
-            <CardHeader>
-              <Skeleton className="h-6 w-48" />
-              <Skeleton className="h-4 w-32" />
-            </CardHeader>
-            <CardContent>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <NotificationSkeleton key={i} />
-              ))}
-            </CardContent>
-          </Card>
         </div>
-      </TeamLayout>
+
+        {/* Stats skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <StatsCardSkeleton key={i} />
+          ))}
+        </div>
+
+        {/* Notifications skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </CardHeader>
+          <CardContent>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <NotificationSkeleton key={i} />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <TeamLayout>
-      <div className="space-y-6">
-        <div className="mb-6">
-          <BackButton />
+    <div className="space-y-6 p-6">
+      <div className="mb-6">
+        <BackButton />
+      </div>
+
+      {/* Responsive Header */}
+      <div
+        className={`${
+          isMobile ? "space-y-4" : "flex items-center justify-between"
+        }`}
+      >
+        <div>
+          <h1
+            className={`${
+              isMobile ? "text-2xl" : "text-3xl"
+            } font-bold text-gray-900`}
+          >
+            Notifications
+          </h1>
+          <p className="text-gray-600">
+            Stay updated with your team and review activities
+          </p>
         </div>
 
-        {/* Responsive Header */}
+        {/* Responsive Button Layout */}
         <div
           className={`${
-            isMobile ? "space-y-4" : "flex items-center justify-between"
+            isMobile
+              ? "flex flex-col space-y-2 w-full"
+              : "flex items-center space-x-4"
           }`}
         >
-          <div>
-            <h1
-              className={`${
-                isMobile ? "text-2xl" : "text-3xl"
-              } font-bold text-gray-900`}
-            >
-              Notifications
-            </h1>
-            <p className="text-gray-600">
-              Stay updated with your team and review activities
-            </p>
-          </div>
-
-          {/* Responsive Button Layout */}
-          <div
-            className={`${
-              isMobile
-                ? "flex flex-col space-y-2 w-full"
-                : "flex items-center space-x-4"
-            }`}
-          >
-            {unreadCount > 0 && (
-              <Button
-                onClick={markAllAsRead}
-                variant="outline"
-                size={isMobile ? "default" : "sm"}
-                className={isMobile ? "w-full" : ""}
-              >
-                <Check className="h-4 w-4 mr-2" />
-                Mark All Read ({unreadCount})
-              </Button>
-            )}
+          {unreadCount > 0 && (
             <Button
-              onClick={() => navigate("/notifications")}
+              onClick={markAllAsRead}
               variant="outline"
               size={isMobile ? "default" : "sm"}
               className={isMobile ? "w-full" : ""}
             >
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
+              <Check className="h-4 w-4 mr-2" />
+              Mark All Read ({unreadCount})
             </Button>
-          </div>
+          )}
+          <Button
+            onClick={() => navigate("/notifications")}
+            variant="outline"
+            size={isMobile ? "default" : "sm"}
+            className={isMobile ? "w-full" : ""}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
         </div>
+      </div>
 
-        {/* Stats Cards - Already responsive */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total</p>
-                  <p className="text-2xl font-bold">{notifications.length}</p>
-                </div>
-                <div className="p-3 bg-blue-100 rounded-full">
-                  <Bell className="h-8 w-8 text-blue-600" />
-                </div>
+      {/* Stats Cards - Already responsive */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total</p>
+                <p className="text-2xl font-bold">{notifications.length}</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Unread</p>
-                  <p className="text-2xl font-bold">{unreadCount}</p>
-                </div>
-                <div className="p-3 bg-red-100 rounded-full">
-                  <AlertCircle className="h-8 w-8 text-red-600" />
-                </div>
+              <div className="p-3 bg-blue-100 rounded-full">
+                <Bell className="h-8 w-8 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Reviews</p>
-                  <p className="text-2xl font-bold">{reviewCount}</p>
-                </div>
-                <div className="p-3 bg-yellow-100 rounded-full">
-                  <Star className="h-8 w-8 text-yellow-600" />
-                </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Unread</p>
+                <p className="text-2xl font-bold">{unreadCount}</p>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Team</p>
-                  <p className="text-2xl font-bold">{teamCount}</p>
-                </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <Users className="h-8 w-8 text-green-600" />
-                </div>
+              <div className="p-3 bg-red-100 rounded-full">
+                <AlertCircle className="h-8 w-8 text-red-600" />
               </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Responsive Tabs */}
-        <Tabs
-          value={filterType}
-          onValueChange={(value: any) => setFilterType(value)}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Reviews</p>
+                <p className="text-2xl font-bold">{reviewCount}</p>
+              </div>
+              <div className="p-3 bg-yellow-100 rounded-full">
+                <Star className="h-8 w-8 text-yellow-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Team</p>
+                <p className="text-2xl font-bold">{teamCount}</p>
+              </div>
+              <div className="p-3 bg-green-100 rounded-full">
+                <Users className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Responsive Tabs */}
+      <Tabs
+        value={filterType}
+        onValueChange={(value: any) => setFilterType(value)}
+      >
+        <TabsList
+          className={`${
+            isMobile ? "grid grid-cols-2 h-auto" : "grid w-full grid-cols-5"
+          }`}
         >
-          <TabsList
+          <TabsTrigger
+            value="all"
             className={`${
-              isMobile ? "grid grid-cols-2 h-auto" : "grid w-full grid-cols-5"
+              isMobile ? "flex-col p-2 h-auto" : "flex items-center gap-2"
             }`}
           >
-            <TabsTrigger
-              value="all"
-              className={`${
-                isMobile ? "flex-col p-2 h-auto" : "flex items-center gap-2"
-              }`}
-            >
-              {isMobile ? (
-                <>
-                  <span className="text-xs">All</span>
-                  {unreadCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
-                    >
-                      {unreadCount}
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <>
-                  All
-                  {unreadCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
-                    >
-                      {unreadCount}
-                    </Badge>
-                  )}
-                </>
-              )}
-            </TabsTrigger>
+            {isMobile ? (
+              <>
+                <span className="text-xs">All</span>
+                {unreadCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}
+              </>
+            ) : (
+              <>
+                All
+                {unreadCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}
+              </>
+            )}
+          </TabsTrigger>
 
-            <TabsTrigger
-              value="review"
-              className={`${
-                isMobile ? "flex-col p-2 h-auto" : "flex items-center gap-2"
-              }`}
-            >
-              {isMobile ? (
-                <>
-                  <Star className="h-3 w-3" />
-                  <span className="text-xs">Reviews</span>
-                  {reviewCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
-                    >
-                      {reviewCount}
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Star className="h-4 w-4" />
-                  Reviews
-                  {reviewCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
-                    >
-                      {reviewCount}
-                    </Badge>
-                  )}
-                </>
-              )}
-            </TabsTrigger>
+          <TabsTrigger
+            value="review"
+            className={`${
+              isMobile ? "flex-col p-2 h-auto" : "flex items-center gap-2"
+            }`}
+          >
+            {isMobile ? (
+              <>
+                <Star className="h-3 w-3" />
+                <span className="text-xs">Reviews</span>
+                {reviewCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                  >
+                    {reviewCount}
+                  </Badge>
+                )}
+              </>
+            ) : (
+              <>
+                <Star className="h-4 w-4" />
+                Reviews
+                {reviewCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
+                  >
+                    {reviewCount}
+                  </Badge>
+                )}
+              </>
+            )}
+          </TabsTrigger>
 
-            <TabsTrigger
-              value="team"
-              className={`${
-                isMobile ? "flex-col p-2 h-auto" : "flex items-center gap-2"
-              }`}
-            >
-              {isMobile ? (
-                <>
-                  <Users className="h-3 w-3" />
-                  <span className="text-xs">Team</span>
-                  {teamCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
-                    >
-                      {teamCount}
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Users className="h-4 w-4" />
-                  Team
-                  {teamCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
-                    >
-                      {teamCount}
-                    </Badge>
-                  )}
-                </>
-              )}
-            </TabsTrigger>
+          <TabsTrigger
+            value="team"
+            className={`${
+              isMobile ? "flex-col p-2 h-auto" : "flex items-center gap-2"
+            }`}
+          >
+            {isMobile ? (
+              <>
+                <Users className="h-3 w-3" />
+                <span className="text-xs">Team</span>
+                {teamCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                  >
+                    {teamCount}
+                  </Badge>
+                )}
+              </>
+            ) : (
+              <>
+                <Users className="h-4 w-4" />
+                Team
+                {teamCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
+                  >
+                    {teamCount}
+                  </Badge>
+                )}
+              </>
+            )}
+          </TabsTrigger>
 
-            <TabsTrigger
-              value="qr"
-              className={`${
-                isMobile ? "flex-col p-2 h-auto" : "flex items-center gap-2"
-              }`}
-            >
-              {isMobile ? (
-                <>
-                  <QrCode className="h-3 w-3" />
-                  <span className="text-xs">QR</span>
-                  {qrCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
-                    >
-                      {qrCount}
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <>
-                  <QrCode className="h-4 w-4" />
-                  QR Codes
-                  {qrCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
-                    >
-                      {qrCount}
-                    </Badge>
-                  )}
-                </>
-              )}
-            </TabsTrigger>
+          <TabsTrigger
+            value="qr"
+            className={`${
+              isMobile ? "flex-col p-2 h-auto" : "flex items-center gap-2"
+            }`}
+          >
+            {isMobile ? (
+              <>
+                <QrCode className="h-3 w-3" />
+                <span className="text-xs">QR</span>
+                {qrCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                  >
+                    {qrCount}
+                  </Badge>
+                )}
+              </>
+            ) : (
+              <>
+                <QrCode className="h-4 w-4" />
+                QR Codes
+                {qrCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
+                  >
+                    {qrCount}
+                  </Badge>
+                )}
+              </>
+            )}
+          </TabsTrigger>
 
-            <TabsTrigger
-              value="system"
-              className={`${
-                isMobile ? "flex-col p-2 h-auto" : "flex items-center gap-2"
-              }`}
-            >
-              {isMobile ? (
-                <>
-                  <Settings className="h-3 w-3" />
-                  <span className="text-xs">System</span>
-                  {systemCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
-                    >
-                      {systemCount}
-                    </Badge>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Settings className="h-4 w-4" />
-                  System
-                  {systemCount > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
-                    >
-                      {systemCount}
-                    </Badge>
-                  )}
-                </>
-              )}
-            </TabsTrigger>
-          </TabsList>
+          <TabsTrigger
+            value="system"
+            className={`${
+              isMobile ? "flex-col p-2 h-auto" : "flex items-center gap-2"
+            }`}
+          >
+            {isMobile ? (
+              <>
+                <Settings className="h-3 w-3" />
+                <span className="text-xs">System</span>
+                {systemCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                  >
+                    {systemCount}
+                  </Badge>
+                )}
+              </>
+            ) : (
+              <>
+                <Settings className="h-4 w-4" />
+                System
+                {systemCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
+                  >
+                    {systemCount}
+                  </Badge>
+                )}
+              </>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value={filterType} className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {filterType === "all"
-                    ? "All Notifications"
-                    : filterType === "unread"
-                    ? "Unread Notifications"
-                    : `${
-                        filterType.charAt(0).toUpperCase() + filterType.slice(1)
-                      } Notifications`}
-                </CardTitle>
-                <CardDescription>
-                  {filteredNotifications.length} notification
-                  {filteredNotifications.length !== 1 ? "s" : ""}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {filteredNotifications.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Bell className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">No notifications found</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {filteredNotifications.map((notification) => (
+        <TabsContent value={filterType} className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {filterType === "all"
+                  ? "All Notifications"
+                  : filterType === "unread"
+                  ? "Unread Notifications"
+                  : `${
+                      filterType.charAt(0).toUpperCase() + filterType.slice(1)
+                    } Notifications`}
+              </CardTitle>
+              <CardDescription>
+                {filteredNotifications.length} notification
+                {filteredNotifications.length !== 1 ? "s" : ""}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {filteredNotifications.length === 0 ? (
+                <div className="text-center py-8">
+                  <Bell className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No notifications found</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredNotifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={`p-4 border rounded-lg ${
+                        notification.isRead
+                          ? "bg-gray-50"
+                          : "bg-white border-blue-200"
+                      }`}
+                    >
                       <div
-                        key={notification.id}
-                        className={`p-4 border rounded-lg ${
-                          notification.isRead
-                            ? "bg-gray-50"
-                            : "bg-white border-blue-200"
+                        className={`${
+                          isMobile
+                            ? "space-y-3"
+                            : "flex items-start justify-between"
                         }`}
                       >
-                        <div
-                          className={`${
-                            isMobile
-                              ? "space-y-3"
-                              : "flex items-start justify-between"
-                          }`}
-                        >
-                          <div className="flex items-start space-x-3 flex-1">
-                            {getNotificationIcon(notification.type)}
-                            <div className="flex-1 min-w-0">
+                        <div className="flex items-start space-x-3 flex-1">
+                          {getNotificationIcon(notification.type)}
+                          <div className="flex-1 min-w-0">
+                            <div
+                              className={`${
+                                isMobile
+                                  ? "space-y-2"
+                                  : "flex items-center space-x-2 mb-1"
+                              }`}
+                            >
+                              <h3
+                                className={`font-medium ${
+                                  notification.isRead
+                                    ? "text-gray-700"
+                                    : "text-gray-900"
+                                }`}
+                              >
+                                {notification.title}
+                              </h3>
                               <div
                                 className={`${
                                   isMobile
-                                    ? "space-y-2"
-                                    : "flex items-center space-x-2 mb-1"
+                                    ? "flex items-center space-x-2"
+                                    : "contents"
                                 }`}
                               >
-                                <h3
-                                  className={`font-medium ${
-                                    notification.isRead
-                                      ? "text-gray-700"
-                                      : "text-gray-900"
-                                  }`}
-                                >
-                                  {notification.title}
-                                </h3>
-                                <div
-                                  className={`${
-                                    isMobile
-                                      ? "flex items-center space-x-2"
-                                      : "contents"
-                                  }`}
-                                >
-                                  <Badge
-                                    className={getPriorityColor(
-                                      notification.priority
-                                    )}
-                                  >
-                                    {notification.priority}
-                                  </Badge>
-                                  {!notification.isRead && (
-                                    <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+                                <Badge
+                                  className={getPriorityColor(
+                                    notification.priority
                                   )}
-                                </div>
+                                >
+                                  {notification.priority}
+                                </Badge>
+                                {!notification.isRead && (
+                                  <div className="h-2 w-2 bg-blue-600 rounded-full"></div>
+                                )}
                               </div>
-                              <p
-                                className={`text-sm ${
-                                  notification.isRead
-                                    ? "text-gray-500"
-                                    : "text-gray-700"
-                                }`}
-                              >
-                                {notification.message}
-                              </p>
-                              <p className="text-xs text-gray-400 mt-1">
-                                {formatDate(notification.createdAt)}
-                              </p>
                             </div>
+                            <p
+                              className={`text-sm ${
+                                notification.isRead
+                                  ? "text-gray-500"
+                                  : "text-gray-700"
+                              }`}
+                            >
+                              {notification.message}
+                            </p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {formatDate(notification.createdAt)}
+                            </p>
                           </div>
+                        </div>
 
-                          {/* Responsive Action Buttons */}
-                          <div
-                            className={`${
-                              isMobile
-                                ? "flex justify-end space-x-2 mt-2"
-                                : "flex items-center space-x-2 flex-shrink-0"
-                            }`}
-                          >
-                            {notification.actionUrl && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  navigate(notification.actionUrl!)
-                                }
-                                className={isMobile ? "text-xs px-2 py-1" : ""}
-                              >
-                                View
-                              </Button>
-                            )}
-                            {!notification.isRead && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => markAsRead(notification.id)}
-                                className={isMobile ? "p-1 h-8 w-8" : ""}
-                                title="Mark as read"
-                              >
-                                <Check
-                                  className={isMobile ? "h-3 w-3" : "h-4 w-4"}
-                                />
-                              </Button>
-                            )}
+                        {/* Responsive Action Buttons */}
+                        <div
+                          className={`${
+                            isMobile
+                              ? "flex justify-end space-x-2 mt-2"
+                              : "flex items-center space-x-2 flex-shrink-0"
+                          }`}
+                        >
+                          {notification.actionUrl && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => navigate(notification.actionUrl!)}
+                              className={isMobile ? "text-xs px-2 py-1" : ""}
+                            >
+                              View
+                            </Button>
+                          )}
+                          {!notification.isRead && (
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() =>
-                                deleteNotification(notification.id)
-                              }
+                              onClick={() => markAsRead(notification.id)}
                               className={isMobile ? "p-1 h-8 w-8" : ""}
-                              title="Delete notification"
+                              title="Mark as read"
                             >
-                              <X className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
+                              <Check
+                                className={isMobile ? "h-3 w-3" : "h-4 w-4"}
+                              />
                             </Button>
-                          </div>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteNotification(notification.id)}
+                            className={isMobile ? "p-1 h-8 w-8" : ""}
+                            title="Delete notification"
+                          >
+                            <X className={isMobile ? "h-3 w-3" : "h-4 w-4"} />
+                          </Button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </TeamLayout>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

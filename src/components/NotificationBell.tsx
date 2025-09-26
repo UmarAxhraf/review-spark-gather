@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,6 +28,7 @@ const NotificationBell = () => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const channelRef = useRef<string>(`notifications-changes-${Math.random().toString(36).substr(2, 9)}`);
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -85,9 +86,9 @@ const NotificationBell = () => {
 
     fetchNotifications();
 
-    // Set up real-time subscription for new notifications
+    // Set up real-time subscription for new notifications with unique channel name
     const subscription = supabase
-      .channel("notifications-changes")
+      .channel(channelRef.current)
       .on(
         "postgres_changes",
         {

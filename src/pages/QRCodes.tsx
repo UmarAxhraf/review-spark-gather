@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import TeamLayout from "@/components/TeamLayout";
 import QRCodeCard from "@/components/QRCodeCard";
 import { QRCodeDialog } from "@/components/QRCodeDialog";
 import { Button } from "@/components/ui/button";
@@ -1018,154 +1017,147 @@ const QRCodes = () => {
 
   if (loading) {
     return (
-      <TeamLayout>
-        <div className="space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-4 w-80 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-            <div className="flex space-x-2">
-              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-10 w-28 bg-gray-200 rounded animate-pulse"></div>
-            </div>
+      <div className="space-y-6 p-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-80 bg-gray-200 rounded animate-pulse"></div>
           </div>
-
-          {/* Stats Cards Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-          </div>
-
-          {/* Search and Filters Skeleton */}
-          <div className="flex items-center space-x-4">
-            <div className="h-10 flex-1 bg-gray-200 rounded animate-pulse"></div>
+          <div className="flex space-x-2">
             <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-
-          {/* QR Codes Grid Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <QRCardSkeleton key={i} />
-            ))}
+            <div className="h-10 w-28 bg-gray-200 rounded animate-pulse"></div>
           </div>
         </div>
-      </TeamLayout>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+        </div>
+
+        {/* Search and Filters Skeleton */}
+        <div className="flex items-center space-x-4">
+          <div className="h-10 flex-1 bg-gray-200 rounded animate-pulse"></div>
+          <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+
+        {/* QR Codes Grid Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <QRCardSkeleton key={i} />
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <TeamLayout>
-      <div className="space-y-6">
-        <div className="mb-6">
-          <BackButton />
+    <div className="space-y-6 p-6">
+      <div className="mb-6">
+        <BackButton />
+      </div>
+      {/* Header */}
+      <div
+        className={`flex ${
+          isMobile ? "flex-col space-y-4" : "items-center justify-between"
+        }`}
+      >
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            QR Code Management
+          </h1>
+          <p className="text-gray-600">
+            Generate, manage, and track QR codes for review collection
+          </p>
         </div>
-        {/* Header */}
         <div
           className={`flex ${
-            isMobile ? "flex-col space-y-4" : "items-center justify-between"
+            isMobile ? "flex-col space-y-2 w-full" : "items-center space-x-2"
           }`}
         >
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              QR Code Management
-            </h1>
-            <p className="text-gray-600">
-              Generate, manage, and track QR codes for review collection
-            </p>
-          </div>
-          <div
-            className={`flex ${
-              isMobile ? "flex-col space-y-2 w-full" : "items-center space-x-2"
-            }`}
+          <Button
+            variant="outline"
+            onClick={handleViewAnalytics}
+            className={isMobile ? "w-full justify-center" : ""}
           >
-            <Button
-              variant="outline"
-              onClick={handleViewAnalytics}
-              className={isMobile ? "w-full justify-center" : ""}
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Analytics
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setQrDialogOpen(true)}
-              className={isMobile ? "w-full justify-center" : ""}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Customize QR Codes
-            </Button>
-          </div>
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setQrDialogOpen(true)}
+            className={isMobile ? "w-full justify-center" : ""}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Customize QR Codes
+          </Button>
         </div>
+      </div>
 
-        {/* Enhanced Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total QR Codes
-              </CardTitle>
-              <QrCode className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalQRCodes}</div>
-              <p className="text-xs text-muted-foreground">
-                Generated QR codes
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Active QR Codes
-              </CardTitle>
-              <QrCode className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {activeQRCodes.length}
-              </div>
-              <p className="text-xs text-muted-foreground">Currently active</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Expired QR Codes
-              </CardTitle>
-              <Clock className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">
-                {expiredQRCodes.length}
-              </div>
-              <p className="text-xs text-muted-foreground">Need renewal</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Success Rate
-              </CardTitle>
-              <Share2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {totalQRCodes > 0
-                  ? Math.round((activeQRCodes.length / totalQRCodes) * 100)
-                  : 0}
-                %
-              </div>
-              <p className="text-xs text-muted-foreground">Active QR codes</p>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Enhanced Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total QR Codes
+            </CardTitle>
+            <QrCode className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalQRCodes}</div>
+            <p className="text-xs text-muted-foreground">Generated QR codes</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Active QR Codes
+            </CardTitle>
+            <QrCode className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {activeQRCodes.length}
+            </div>
+            <p className="text-xs text-muted-foreground">Currently active</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Expired QR Codes
+            </CardTitle>
+            <Clock className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">
+              {expiredQRCodes.length}
+            </div>
+            <p className="text-xs text-muted-foreground">Need renewal</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+            <Share2 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {totalQRCodes > 0
+                ? Math.round((activeQRCodes.length / totalQRCodes) * 100)
+                : 0}
+              %
+            </div>
+            <p className="text-xs text-muted-foreground">Active QR codes</p>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Category & Tag Management */}
-        {/* <Collapsible
+      {/* Category & Tag Management */}
+      {/* <Collapsible
           open={managementSectionOpen}
           onOpenChange={setManagementSectionOpen}
         >
@@ -1296,8 +1288,8 @@ const QRCodes = () => {
           </CollapsibleContent>
         </Collapsible> */}
 
-        {/* Enhanced Filter UI */}
-        {/* <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
+      {/* Enhanced Filter UI */}
+      {/* <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
           <div className="flex items-center gap-4 mb-4">
             <Filter className="w-5 h-5 text-gray-500" />
             <h3 className="font-medium">Filters</h3>
@@ -1395,405 +1387,397 @@ const QRCodes = () => {
           </div>
         </div> */}
 
-        {/* Enhanced Actions Bar */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center space-x-2 flex-1 max-w-sm">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search QR codes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select
-              value={filterStatus}
-              onValueChange={(value: any) => setFilterStatus(value)}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="expired">Expired</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Enhanced Actions Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center space-x-2 flex-1 max-w-sm">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search QR codes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
-
-          <div className="flex items-center space-x-2">
-            {selectedEmployees.length > 0 && (
-              <Dialog
-                open={bulkActionDialogOpen}
-                onOpenChange={setBulkActionDialogOpen}
-              >
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <Users className="h-4 w-4 mr-2" />
-                    Bulk Actions ({selectedEmployees.length})
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {selectedEmployees.length === 1
-                        ? "Edit QR Code"
-                        : `Bulk Actions (${selectedEmployees.length})`}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        onClick={() => handleBulkAction("activate")}
-                        size="sm"
-                      >
-                        Activate All
-                      </Button>
-                      <Button
-                        onClick={() => handleBulkAction("deactivate")}
-                        variant="outline"
-                        size="sm"
-                      >
-                        Deactivate All
-                      </Button>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="bulk-expiration">Expiration Date</Label>
-                        <Input
-                          id="bulk-expiration"
-                          type="datetime-local"
-                          value={bulkExpirationDate}
-                          onChange={(e) =>
-                            setBulkExpirationDate(e.target.value)
-                          }
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="bulk-scan-limit">Scan Limit</Label>
-                        <Input
-                          id="bulk-scan-limit"
-                          type="number"
-                          placeholder="e.g., 100"
-                          value={bulkScanLimit}
-                          onChange={(e) => setBulkScanLimit(e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="bulk-custom-page">
-                          Custom Landing Page
-                        </Label>
-                        <Textarea
-                          id="bulk-custom-page"
-                          placeholder="Custom HTML content..."
-                          value={bulkCustomPage}
-                          onChange={(e) => setBulkCustomPage(e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="bulk-redirect-url">Redirect URL</Label>
-                        <Input
-                          id="bulk-redirect-url"
-                          placeholder="https://example.com"
-                          value={bulkRedirectUrl}
-                          onChange={(e) => setBulkRedirectUrl(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        onClick={() => handleBulkAction("update")}
-                        size="sm"
-                      >
-                        Update Settings
-                      </Button>
-                      <Button
-                        onClick={() => handleBulkAction("regenerate")}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <RefreshCw className="h-4 w-4 mr-1" />
-                        Regenerate QR
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            )}
-
-            {employees.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleBulkDownload}
-                disabled={isDownloading}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {isDownloading ? "Preparing ZIP..." : "Download All as ZIP"}
-              </Button>
-            )}
-          </div>
+          <Select
+            value={filterStatus}
+            onValueChange={(value: any) => setFilterStatus(value)}
+          >
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        {/* Bulk Selection */}
-        {filteredEmployees.length > 0 && (
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              checked={selectedEmployees.length === filteredEmployees.length}
-              onCheckedChange={handleSelectAll}
-            />
-            <Label>Select All ({filteredEmployees.length} items)</Label>
-            {selectedEmployees.length > 0 && (
-              <Badge variant="secondary">
-                {selectedEmployees.length} selected
-              </Badge>
-            )}
-          </div>
-        )}
-
-        {/* Download Progress */}
-        {isDownloading && (
-          <div className="space-y-2">
-            <Progress value={downloadProgress} className="h-2" />
-            <p className="text-xs text-center text-gray-500">
-              Generating QR codes: {downloadProgress}% complete
-            </p>
-          </div>
-        )}
-
-        {/* QR Codes Grid */}
-        {filteredEmployees.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-12">
-              <QrCode className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchTerm ? "No QR codes found" : "No QR codes yet"}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {searchTerm
-                  ? "Try adjusting your search terms"
-                  : "Add team members to generate QR codes for review collection"}
-              </p>
-              {!searchTerm && (
-                <Button onClick={() => (window.location.href = "/employees")}>
-                  <QrCode className="h-4 w-4 mr-2" />
-                  Go to Team Management
+        <div className="flex items-center space-x-2">
+          {selectedEmployees.length > 0 && (
+            <Dialog
+              open={bulkActionDialogOpen}
+              onOpenChange={setBulkActionDialogOpen}
+            >
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Users className="h-4 w-4 mr-2" />
+                  Bulk Actions ({selectedEmployees.length})
                 </Button>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEmployees.map((employee) => (
-              <div key={employee.id} className="relative">
-                <div className="absolute top-2 left-2 z-10">
-                  <Checkbox
-                    checked={selectedEmployees.includes(employee.id)}
-                    onCheckedChange={(checked) =>
-                      handleBulkSelect(employee.id, checked as boolean)
-                    }
-                  />
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    {selectedEmployees.length === 1
+                      ? "Edit QR Code"
+                      : `Bulk Actions (${selectedEmployees.length})`}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={() => handleBulkAction("activate")}
+                      size="sm"
+                    >
+                      Activate All
+                    </Button>
+                    <Button
+                      onClick={() => handleBulkAction("deactivate")}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Deactivate All
+                    </Button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="bulk-expiration">Expiration Date</Label>
+                      <Input
+                        id="bulk-expiration"
+                        type="datetime-local"
+                        value={bulkExpirationDate}
+                        onChange={(e) => setBulkExpirationDate(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="bulk-scan-limit">Scan Limit</Label>
+                      <Input
+                        id="bulk-scan-limit"
+                        type="number"
+                        placeholder="e.g., 100"
+                        value={bulkScanLimit}
+                        onChange={(e) => setBulkScanLimit(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="bulk-custom-page">
+                        Custom Landing Page
+                      </Label>
+                      <Textarea
+                        id="bulk-custom-page"
+                        placeholder="Custom HTML content..."
+                        value={bulkCustomPage}
+                        onChange={(e) => setBulkCustomPage(e.target.value)}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="bulk-redirect-url">Redirect URL</Label>
+                      <Input
+                        id="bulk-redirect-url"
+                        placeholder="https://example.com"
+                        value={bulkRedirectUrl}
+                        onChange={(e) => setBulkRedirectUrl(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={() => handleBulkAction("update")}
+                      size="sm"
+                    >
+                      Update Settings
+                    </Button>
+                    <Button
+                      onClick={() => handleBulkAction("regenerate")}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Regenerate QR
+                    </Button>
+                  </div>
                 </div>
-                <QRCodeCard
-                  employee={employee}
-                  onViewQR={handleViewQR}
-                  onSelect={(checked) => handleBulkSelect(employee.id, checked)}
-                  isSelected={selectedEmployees.includes(employee.id)}
-                  onAddTag={(employeeId, tagName) => {
-                    // Handle legacy tag addition if needed
-                  }}
-                  onRemoveTag={(employeeId, tagName) => {
-                    // Handle legacy tag removal if needed
-                  }}
-                  onUpdateCategory={(employeeId, category) => {
-                    // Handle legacy category update if needed
-                  }}
-                  onEditQRCode={handleEditQRCode}
-                  onToggleActive={handleToggleActive}
-                  onRegenerateQR={handleRegenerateQR}
-                  availableCategories={categories.map((c) => c.name)}
-                  availableTags={tags.map((t) => t.name)}
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {employees.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleBulkDownload}
+              disabled={isDownloading}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isDownloading ? "Preparing ZIP..." : "Download All as ZIP"}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Bulk Selection */}
+      {filteredEmployees.length > 0 && (
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            checked={selectedEmployees.length === filteredEmployees.length}
+            onCheckedChange={handleSelectAll}
+          />
+          <Label>Select All ({filteredEmployees.length} items)</Label>
+          {selectedEmployees.length > 0 && (
+            <Badge variant="secondary">
+              {selectedEmployees.length} selected
+            </Badge>
+          )}
+        </div>
+      )}
+
+      {/* Download Progress */}
+      {isDownloading && (
+        <div className="space-y-2">
+          <Progress value={downloadProgress} className="h-2" />
+          <p className="text-xs text-center text-gray-500">
+            Generating QR codes: {downloadProgress}% complete
+          </p>
+        </div>
+      )}
+
+      {/* QR Codes Grid */}
+      {filteredEmployees.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <QrCode className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchTerm ? "No QR codes found" : "No QR codes yet"}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {searchTerm
+                ? "Try adjusting your search terms"
+                : "Add team members to generate QR codes for review collection"}
+            </p>
+            {!searchTerm && (
+              <Button onClick={() => (window.location.href = "/employees")}>
+                <QrCode className="h-4 w-4 mr-2" />
+                Go to Team Management
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredEmployees.map((employee) => (
+            <div key={employee.id} className="relative">
+              <div className="absolute top-2 left-2 z-10">
+                <Checkbox
+                  checked={selectedEmployees.includes(employee.id)}
+                  onCheckedChange={(checked) =>
+                    handleBulkSelect(employee.id, checked as boolean)
+                  }
                 />
               </div>
-            ))}
-          </div>
-        )}
+              <QRCodeCard
+                employee={employee}
+                onViewQR={handleViewQR}
+                onSelect={(checked) => handleBulkSelect(employee.id, checked)}
+                isSelected={selectedEmployees.includes(employee.id)}
+                onAddTag={(employeeId, tagName) => {
+                  // Handle legacy tag addition if needed
+                }}
+                onRemoveTag={(employeeId, tagName) => {
+                  // Handle legacy tag removal if needed
+                }}
+                onUpdateCategory={(employeeId, category) => {
+                  // Handle legacy category update if needed
+                }}
+                onEditQRCode={handleEditQRCode}
+                onToggleActive={handleToggleActive}
+                onRegenerateQR={handleRegenerateQR}
+                availableCategories={categories.map((c) => c.name)}
+                availableTags={tags.map((t) => t.name)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
-        {/* Analytics Dialog */}
-        <Dialog
-          open={analyticsDialogOpen}
-          onOpenChange={setAnalyticsDialogOpen}
-        >
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>QR Code Analytics</DialogTitle>
-              <DialogDescription>
-                Real-time insights into your QR code performance
-              </DialogDescription>
-            </DialogHeader>
-            {qrAnalytics ? (
-              <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-4">
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-2xl font-bold">
-                        {qrAnalytics.total_scans}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Total Scans
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-2xl font-bold">
-                        {qrAnalytics.unique_scans}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Unique Visitors
-                      </p>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="text-2xl font-bold">
-                        {qrAnalytics.conversion_rate.toFixed(1)}%
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Conversion Rate
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {qrAnalytics.total_scans > 0 ? (
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-semibold mb-3">
-                        Top Performing Employees
-                      </h4>
-                      <div className="space-y-2">
-                        {qrAnalytics.top_employees?.length > 0 ? (
-                          qrAnalytics.top_employees.map((employee, index) => (
-                            <div
-                              key={employee.employee_id}
-                              className="flex items-center justify-between p-2 bg-gray-50 rounded"
-                            >
-                              <span className="font-medium">
-                                {employee.employee_name}
-                              </span>
-                              <span className="text-sm text-muted-foreground">
-                                {employee.scan_count} scans
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No employee data available
-                          </p>
-                        )}
-                      </div>
+      {/* Analytics Dialog */}
+      <Dialog open={analyticsDialogOpen} onOpenChange={setAnalyticsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>QR Code Analytics</DialogTitle>
+            <DialogDescription>
+              Real-time insights into your QR code performance
+            </DialogDescription>
+          </DialogHeader>
+          {qrAnalytics ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold">
+                      {qrAnalytics.total_scans}
                     </div>
-                    <div>
-                      <h4 className="font-semibold mb-3">Recent Scans</h4>
-                      <div className="space-y-2 max-h-48 overflow-y-auto">
-                        {qrAnalytics.recent_scans?.length > 0 ? (
-                          qrAnalytics.recent_scans.map((scan, index) => (
-                            <div
-                              key={index}
-                              className="flex justify-between text-sm"
-                            >
-                              <div>
-                                <span className="font-medium">
-                                  {scan.employees?.name || "Unknown"}
-                                </span>
-                                {scan.employees?.position && (
-                                  <span className="text-muted-foreground ml-2">
-                                    ({scan.employees.position})
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-muted-foreground">
-                                {new Date(scan.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No recent scans
-                          </p>
-                        )}
-                      </div>
+                    <p className="text-sm text-muted-foreground">Total Scans</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold">
+                      {qrAnalytics.unique_scans}
                     </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <QrCode className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">
-                      No Scan Data Yet
-                    </h3>
-                    <p className="text-muted-foreground">
-                      QR code analytics will appear here once customers start
-                      scanning your QR codes.
+                    <p className="text-sm text-muted-foreground">
+                      Unique Visitors
                     </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-2xl font-bold">
+                      {qrAnalytics.conversion_rate.toFixed(1)}%
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Conversion Rate
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {qrAnalytics.total_scans > 0 ? (
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold mb-3">
+                      Top Performing Employees
+                    </h4>
+                    <div className="space-y-2">
+                      {qrAnalytics.top_employees?.length > 0 ? (
+                        qrAnalytics.top_employees.map((employee, index) => (
+                          <div
+                            key={employee.employee_id}
+                            className="flex items-center justify-between p-2 bg-gray-50 rounded"
+                          >
+                            <span className="font-medium">
+                              {employee.employee_name}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {employee.scan_count} scans
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No employee data available
+                        </p>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading analytics...</p>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+                  <div>
+                    <h4 className="font-semibold mb-3">Recent Scans</h4>
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {qrAnalytics.recent_scans?.length > 0 ? (
+                        qrAnalytics.recent_scans.map((scan, index) => (
+                          <div
+                            key={index}
+                            className="flex justify-between text-sm"
+                          >
+                            <div>
+                              <span className="font-medium">
+                                {scan.employees?.name || "Unknown"}
+                              </span>
+                              {scan.employees?.position && (
+                                <span className="text-muted-foreground ml-2">
+                                  ({scan.employees.position})
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-muted-foreground">
+                              {new Date(scan.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          No recent scans
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <QrCode className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    No Scan Data Yet
+                  </h3>
+                  <p className="text-muted-foreground">
+                    QR code analytics will appear here once customers start
+                    scanning your QR codes.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading analytics...</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-        {/* QR Code Dialog */}
-        <QRCodeDialog
-          employee={selectedEmployee}
-          open={qrDialogOpen}
-          onOpenChange={setQrDialogOpen}
-        />
+      {/* QR Code Dialog */}
+      <QRCodeDialog
+        employee={selectedEmployee}
+        open={qrDialogOpen}
+        onOpenChange={setQrDialogOpen}
+      />
 
-        {/* Category Dialog */}
-        <CategoryTagFormDialog
-          open={categoryDialogOpen}
-          onOpenChange={setCategoryDialogOpen}
-          type="category"
-          item={editingCategory}
-          onSave={handleCreateCategory}
-          onUpdate={handleUpdateCategory}
-        />
+      {/* Category Dialog */}
+      <CategoryTagFormDialog
+        open={categoryDialogOpen}
+        onOpenChange={setCategoryDialogOpen}
+        type="category"
+        item={editingCategory}
+        onSave={handleCreateCategory}
+        onUpdate={handleUpdateCategory}
+      />
 
-        {/* Tag Dialog */}
-        <CategoryTagFormDialog
-          open={tagDialogOpen}
-          onOpenChange={setTagDialogOpen}
-          type="tag"
-          item={editingTag}
-          onSave={handleCreateTag}
-          onUpdate={handleUpdateTag}
-        />
+      {/* Tag Dialog */}
+      <CategoryTagFormDialog
+        open={tagDialogOpen}
+        onOpenChange={setTagDialogOpen}
+        type="tag"
+        item={editingTag}
+        onSave={handleCreateTag}
+        onUpdate={handleUpdateTag}
+      />
 
-        {/* Assignment Dialog */}
-        <AssignCategoryTagDialog
-          open={assignDialogOpen}
-          onOpenChange={setAssignDialogOpen}
-          employee={selectedEmployeeForAssign}
-          categories={categories}
-          tags={tags}
-          onAssignCategory={handleAssignEmployeeCategory}
-          onAssignTags={handleAssignTags}
-        />
-      </div>
-    </TeamLayout>
+      {/* Assignment Dialog */}
+      <AssignCategoryTagDialog
+        open={assignDialogOpen}
+        onOpenChange={setAssignDialogOpen}
+        employee={selectedEmployeeForAssign}
+        categories={categories}
+        tags={tags}
+        onAssignCategory={handleAssignEmployeeCategory}
+        onAssignTags={handleAssignTags}
+      />
+    </div>
   );
 };
 

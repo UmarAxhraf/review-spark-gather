@@ -164,7 +164,8 @@ const Reviews = () => {
     useState<Review | null>(null);
   // Add these new state variables
   const [showReviewDetailsDialog, setShowReviewDetailsDialog] = useState(false);
-  const [selectedReviewForDetails, setSelectedReviewForDetails] = useState<Review | null>(null);
+  const [selectedReviewForDetails, setSelectedReviewForDetails] =
+    useState<Review | null>(null);
   const [responseText, setResponseText] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   const [sendEmail, setSendEmail] = useState(true);
@@ -320,7 +321,11 @@ const Reviews = () => {
   });
 
   // ✅ FIX: Combine all loading states
-  const isLoading = employeesLoading || departmentsLoading || reviewsLoading || templatesLoading;
+  const isLoading =
+    employeesLoading ||
+    departmentsLoading ||
+    reviewsLoading ||
+    templatesLoading;
 
   // Email sending function
   // Email sending function
@@ -451,7 +456,7 @@ const Reviews = () => {
         .from("reviews")
         .update({
           flagged_as_spam: false,
-          moderation_status: "approved"
+          moderation_status: "approved",
         })
         .eq("id", reviewId);
 
@@ -474,7 +479,7 @@ const Reviews = () => {
         .from("reviews")
         .update({
           flagged_as_spam: true,
-          moderation_status: "flagged"
+          moderation_status: "flagged",
         })
         .eq("id", reviewId);
 
@@ -667,7 +672,7 @@ const Reviews = () => {
   // Add loading state display
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 p-4">
         {/* Header Skeleton */}
         <div className="flex items-center justify-between">
           <div className="space-y-2">
@@ -820,25 +825,25 @@ const Reviews = () => {
           </div>
 
           {review.comment && (
-              <div className="mt-3">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm text-gray-600 flex-1 line-clamp-3">
-                    {review.comment}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedReviewForDetails(review);
-                      setShowReviewDetailsDialog(true);
-                    }}
-                    className="h-6 w-6 p-0 shrink-0 mt-0.5"
-                  >
-                    <Eye className="h-3 w-3" />
-                  </Button>
-                </div>
+            <div className="mt-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm text-gray-600 flex-1 line-clamp-3">
+                  {review.comment}
+                </p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSelectedReviewForDetails(review);
+                    setShowReviewDetailsDialog(true);
+                  }}
+                  className="h-6 w-6 p-0 shrink-0 mt-0.5"
+                >
+                  <Eye className="h-3 w-3" />
+                </Button>
               </div>
-            )}
+            </div>
+          )}
 
           {renderVideoPreview(review)}
         </div>
@@ -868,89 +873,92 @@ const Reviews = () => {
           </div>
 
           {/* Action buttons - Refactored with dropdown */}
-        <div className="flex gap-2">
-          {/* Keep Approve button visible */}
-          {review.moderation_status === "pending" && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => bulkApproveMutation.mutate([review.id])}
-              disabled={bulkApproveMutation.isPending}
-              className="flex-1 sm:flex-none"
-            >
-              <Check className="h-4 w-4 mr-1" />
-              Approve
-            </Button>
-          )}
-          
-          {/* More Actions Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <div className="flex gap-2">
+            {/* Keep Approve button visible */}
+            {review.moderation_status === "pending" && (
               <Button
                 size="sm"
                 variant="outline"
+                onClick={() => bulkApproveMutation.mutate([review.id])}
+                disabled={bulkApproveMutation.isPending}
                 className="flex-1 sm:flex-none"
               >
-                <MoreHorizontal className="h-4 w-4 mr-1" />
-                Actions
+                <Check className="h-4 w-4 mr-1" />
+                Approve
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {/* Spam Actions */}
-              {review.flagged_as_spam ? (
-                <DropdownMenuItem
-                  onClick={() => spamOverrideMutation.mutate(review.id)}
-                  disabled={spamOverrideMutation.isPending}
+            )}
+
+            {/* More Actions Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
                 >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Remove from Spam
-                </DropdownMenuItem>
-              ) : (
+                  <MoreHorizontal className="h-4 w-4 mr-1" />
+                  Actions
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                {/* Spam Actions */}
+                {review.flagged_as_spam ? (
+                  <DropdownMenuItem
+                    onClick={() => spamOverrideMutation.mutate(review.id)}
+                    disabled={spamOverrideMutation.isPending}
+                  >
+                    <Shield className="h-4 w-4 mr-2" />
+                    Remove from Spam
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    onClick={() => markAsSpamMutation.mutate(review.id)}
+                    disabled={markAsSpamMutation.isPending}
+                  >
+                    <Flag className="h-4 w-4 mr-2" />
+                    Add to Spam
+                  </DropdownMenuItem>
+                )}
+
+                {/* Respond Action */}
                 <DropdownMenuItem
-                  onClick={() => markAsSpamMutation.mutate(review.id)}
-                  disabled={markAsSpamMutation.isPending}
+                  onClick={() => {
+                    setSelectedReviewForResponse(review);
+                    setResponseText(review.admin_response || "");
+                    setShowResponseDialog(true);
+                  }}
                 >
-                  <Flag className="h-4 w-4 mr-2" />
-                  Add to Spam
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Respond
                 </DropdownMenuItem>
-              )}
-              
-              {/* Respond Action */}
-              <DropdownMenuItem
-                onClick={() => {
-                  setSelectedReviewForResponse(review);
-                  setResponseText(review.admin_response || "");
-                  setShowResponseDialog(true);
-                }}
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Respond
-              </DropdownMenuItem>
-              
-              {/* Download Action (only for videos) */}
-              {review.review_type === "video" && review.video_url && (
+
+                {/* Download Action (only for videos) */}
+                {review.review_type === "video" && review.video_url && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      handleVideoDownload(
+                        review.video_url!,
+                        review.customer_name
+                      )
+                    }
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Video
+                  </DropdownMenuItem>
+                )}
+
+                {/* Delete Action */}
                 <DropdownMenuItem
-                  onClick={() =>
-                    handleVideoDownload(review.video_url!, review.customer_name)
-                  }
+                  onClick={() => deleteMutation.mutate(review.id)}
+                  disabled={deleteMutation.isPending}
+                  className="text-red-600 focus:text-red-600"
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Video
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
                 </DropdownMenuItem>
-              )}
-              
-              {/* Delete Action */}
-              <DropdownMenuItem
-                onClick={() => deleteMutation.mutate(review.id)}
-                disabled={deleteMutation.isPending}
-                className="text-red-600 focus:text-red-600"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -1062,7 +1070,7 @@ const Reviews = () => {
       </header>
 
       {/* Enhanced Main Content */}
-      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+      <div className="px-3 sm:px-4 lg:px-4 py-4 sm:py-4">
         <div className="mb-4 sm:mb-6">
           <BackButton />
         </div>
@@ -1134,15 +1142,33 @@ const Reviews = () => {
                         <TableHead className="w-12">
                           <Skeleton className="h-4 w-4" />
                         </TableHead>
-                        <TableHead><Skeleton className="h-4 w-20" /></TableHead>
-                        <TableHead><Skeleton className="h-4 w-20" /></TableHead>
-                        <TableHead><Skeleton className="h-4 w-16" /></TableHead>
-                        <TableHead><Skeleton className="h-4 w-12" /></TableHead>
-                        <TableHead><Skeleton className="h-4 w-20" /></TableHead>
-                        <TableHead><Skeleton className="h-4 w-20" /></TableHead>
-                        <TableHead><Skeleton className="h-4 w-16" /></TableHead>
-                        <TableHead><Skeleton className="h-4 w-12" /></TableHead>
-                        <TableHead><Skeleton className="h-4 w-20" /></TableHead>
+                        <TableHead>
+                          <Skeleton className="h-4 w-20" />
+                        </TableHead>
+                        <TableHead>
+                          <Skeleton className="h-4 w-20" />
+                        </TableHead>
+                        <TableHead>
+                          <Skeleton className="h-4 w-16" />
+                        </TableHead>
+                        <TableHead>
+                          <Skeleton className="h-4 w-12" />
+                        </TableHead>
+                        <TableHead>
+                          <Skeleton className="h-4 w-20" />
+                        </TableHead>
+                        <TableHead>
+                          <Skeleton className="h-4 w-20" />
+                        </TableHead>
+                        <TableHead>
+                          <Skeleton className="h-4 w-16" />
+                        </TableHead>
+                        <TableHead>
+                          <Skeleton className="h-4 w-12" />
+                        </TableHead>
+                        <TableHead>
+                          <Skeleton className="h-4 w-20" />
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1273,7 +1299,9 @@ const Reviews = () => {
                             <TableCell className="max-w-xs">
                               {review.comment ? (
                                 <div className="flex items-center gap-2">
-                                  <p className="truncate flex-1">{review.comment}</p>
+                                  <p className="truncate flex-1">
+                                    {review.comment}
+                                  </p>
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -1287,7 +1315,9 @@ const Reviews = () => {
                                   </Button>
                                 </div>
                               ) : (
-                                <span className="text-muted-foreground">No comment</span>
+                                <span className="text-muted-foreground">
+                                  No comment
+                                </span>
                               )}
                               {renderVideoPreview(review)}
                               {review.flagged_as_spam && (
@@ -1338,7 +1368,7 @@ const Reviews = () => {
                                     <Check className="h-4 w-4" />
                                   </Button>
                                 )}
-                                
+
                                 {/* More Actions Dropdown */}
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
@@ -1350,56 +1380,70 @@ const Reviews = () => {
                                       <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuContent
+                                    align="end"
+                                    className="w-48"
+                                  >
                                     {/* Spam Actions */}
                                     {review.flagged_as_spam ? (
                                       <DropdownMenuItem
-                                        onClick={() => spamOverrideMutation.mutate(review.id)}
-                                        disabled={spamOverrideMutation.isPending}
+                                        onClick={() =>
+                                          spamOverrideMutation.mutate(review.id)
+                                        }
+                                        disabled={
+                                          spamOverrideMutation.isPending
+                                        }
                                       >
                                         <Shield className="h-4 w-4 mr-2" />
                                         Remove from Spam
                                       </DropdownMenuItem>
                                     ) : (
                                       <DropdownMenuItem
-                                        onClick={() => markAsSpamMutation.mutate(review.id)}
+                                        onClick={() =>
+                                          markAsSpamMutation.mutate(review.id)
+                                        }
                                         disabled={markAsSpamMutation.isPending}
                                       >
                                         <Flag className="h-4 w-4 mr-2" />
                                         Add to Spam
                                       </DropdownMenuItem>
                                     )}
-                                    
+
                                     {/* Respond Action */}
                                     <DropdownMenuItem
                                       onClick={() => {
                                         setSelectedReviewForResponse(review);
-                                        setResponseText(review.admin_response || "");
+                                        setResponseText(
+                                          review.admin_response || ""
+                                        );
                                         setShowResponseDialog(true);
                                       }}
                                     >
                                       <MessageSquare className="h-4 w-4 mr-2" />
                                       Respond
                                     </DropdownMenuItem>
-                                    
+
                                     {/* Download Action (only for videos) */}
-                                    {review.review_type === "video" && review.video_url && (
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          handleVideoDownload(
-                                            review.video_url!,
-                                            review.customer_name
-                                          )
-                                        }
-                                      >
-                                        <Download className="h-4 w-4 mr-2" />
-                                        Download Video
-                                      </DropdownMenuItem>
-                                    )}
-                                    
+                                    {review.review_type === "video" &&
+                                      review.video_url && (
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            handleVideoDownload(
+                                              review.video_url!,
+                                              review.customer_name
+                                            )
+                                          }
+                                        >
+                                          <Download className="h-4 w-4 mr-2" />
+                                          Download Video
+                                        </DropdownMenuItem>
+                                      )}
+
                                     {/* Delete Action */}
                                     <DropdownMenuItem
-                                      onClick={() => deleteMutation.mutate(review.id)}
+                                      onClick={() =>
+                                        deleteMutation.mutate(review.id)
+                                      }
                                       disabled={deleteMutation.isPending}
                                       className="text-red-600 focus:text-red-600"
                                     >
@@ -1489,7 +1533,10 @@ const Reviews = () => {
       </div>
 
       {/* Review Details Dialog */}
-      <Dialog open={showReviewDetailsDialog} onOpenChange={setShowReviewDetailsDialog}>
+      <Dialog
+        open={showReviewDetailsDialog}
+        onOpenChange={setShowReviewDetailsDialog}
+      >
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Review Details</DialogTitle>
@@ -1497,7 +1544,7 @@ const Reviews = () => {
               Full review from {selectedReviewForDetails?.customer_name}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedReviewForDetails && (
             <div className="space-y-4">
               {/* Customer Info */}
@@ -1508,10 +1555,14 @@ const Reviews = () => {
                 </div>
                 <div>
                   <span className="font-medium">Date:</span>
-                  <p>{new Date(selectedReviewForDetails.created_at).toLocaleDateString()}</p>
+                  <p>
+                    {new Date(
+                      selectedReviewForDetails.created_at
+                    ).toLocaleDateString()}
+                  </p>
                 </div>
               </div>
-              
+
               {/* Rating */}
               <div>
                 <span className="font-medium text-sm">Rating:</span>
@@ -1531,18 +1582,21 @@ const Reviews = () => {
                   </span>
                 </div>
               </div>
-              
+
               {/* Employee Info */}
               <div>
                 <span className="font-medium text-sm">Employee:</span>
                 <p className="text-sm">
                   {selectedReviewForDetails.employee.name}
                   {selectedReviewForDetails.employee.position && (
-                    <span className="text-gray-600"> - {selectedReviewForDetails.employee.position}</span>
+                    <span className="text-gray-600">
+                      {" "}
+                      - {selectedReviewForDetails.employee.position}
+                    </span>
                   )}
                 </p>
               </div>
-              
+
               {/* Review Comment */}
               <div>
                 <span className="font-medium text-sm">Review:</span>
@@ -1552,7 +1606,7 @@ const Reviews = () => {
                   </p>
                 </div>
               </div>
-              
+
               {/* Video Preview if available */}
               {selectedReviewForDetails.video_url && (
                 <div>
@@ -1565,7 +1619,7 @@ const Reviews = () => {
                   </div>
                 </div>
               )}
-              
+
               {/* Status and Admin Response */}
               <div className="grid grid-cols-1 gap-4">
                 <div>
@@ -1573,16 +1627,18 @@ const Reviews = () => {
                   <div className="mt-1 flex flex-wrap gap-2">
                     <Badge
                       variant={
-                        selectedReviewForDetails.moderation_status === "approved"
+                        selectedReviewForDetails.moderation_status ===
+                        "approved"
                           ? "default"
-                          : selectedReviewForDetails.moderation_status === "pending"
+                          : selectedReviewForDetails.moderation_status ===
+                            "pending"
                           ? "secondary"
                           : "destructive"
                       }
                     >
                       {selectedReviewForDetails.moderation_status}
                     </Badge>
-                    
+
                     {selectedReviewForDetails.flagged_as_spam && (
                       <Badge variant="destructive">
                         <Flag className="h-3 w-3 mr-1" />
@@ -1591,19 +1647,21 @@ const Reviews = () => {
                     )}
                   </div>
                 </div>
-                
+
                 {selectedReviewForDetails.admin_response && (
                   <div>
                     <span className="font-medium text-sm">Admin Response:</span>
                     <div className="mt-2 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm">{selectedReviewForDetails.admin_response}</p>
+                      <p className="text-sm">
+                        {selectedReviewForDetails.admin_response}
+                      </p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
             <Button
               variant="outline"
@@ -1636,18 +1694,19 @@ const Reviews = () => {
                 Add to Spam
               </Button>
             )}
-            {selectedReviewForDetails && !selectedReviewForDetails.admin_response && (
-              <Button
-                onClick={() => {
-                  setSelectedReviewForResponse(selectedReviewForDetails);
-                  setShowReviewDetailsDialog(false);
-                  setShowResponseDialog(true);
-                }}
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Respond
-              </Button>
-            )}
+            {selectedReviewForDetails &&
+              !selectedReviewForDetails.admin_response && (
+                <Button
+                  onClick={() => {
+                    setSelectedReviewForResponse(selectedReviewForDetails);
+                    setShowReviewDetailsDialog(false);
+                    setShowResponseDialog(true);
+                  }}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Respond
+                </Button>
+              )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

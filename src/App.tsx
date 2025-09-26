@@ -11,7 +11,7 @@ import { DirectSubscriptionProvider } from "./contexts/DirectSubscriptionContext
 import { SupabaseSubscriptionProvider } from "@/contexts/SupabaseSubscriptionContext";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { SubscriptionGuard } from "@/components/SubscriptionGuard";
-//import { SubscriptionErrorDialog } from "./components/SubscriptionErrorDialog";
+import SidebarLayout from "@/components/SidebarLayout";
 
 // Lazy load components for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -33,6 +33,8 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Profile = lazy(() => import("./pages/Profile"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const Platform = lazy(() => import("./pages/Platform"));
+const Support = lazy(() => import("./pages/Support"));
 
 // Loading component for Suspense fallback
 const PageLoader = () => (
@@ -67,7 +69,6 @@ const App = () => (
                 <Sonner />
                 <BrowserRouter>
                   <Suspense fallback={<PageLoader />}>
-                    {/* <SubscriptionErrorDialog /> */}
                     <Routes>
                       {/* Public routes */}
                       <Route path="/" element={<Index />} />
@@ -90,13 +91,15 @@ const App = () => (
                         element={<PaymentSuccess />}
                       />
 
-                      {/* Protected routes */}
+                      {/* Protected routes with sidebar */}
                       <Route
                         path="/dashboard"
                         element={
                           <ProtectedRoute>
                             <SubscriptionGuard>
-                              <Dashboard />
+                              <SidebarLayout>
+                                <Dashboard />
+                              </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>
                         }
@@ -106,7 +109,9 @@ const App = () => (
                         element={
                           <ProtectedRoute>
                             <SubscriptionGuard>
-                              <Employees />
+                              <SidebarLayout>
+                                <Employees />
+                              </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>
                         }
@@ -116,7 +121,9 @@ const App = () => (
                         element={
                           <ProtectedRoute>
                             <SubscriptionGuard>
-                              <QRCodes />
+                              <SidebarLayout>
+                                <QRCodes />
+                              </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>
                         }
@@ -126,7 +133,9 @@ const App = () => (
                         element={
                           <ProtectedRoute>
                             <SubscriptionGuard>
-                              <Reviews />
+                              <SidebarLayout>
+                                <Reviews />
+                              </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>
                         }
@@ -136,7 +145,21 @@ const App = () => (
                         element={
                           <ProtectedRoute>
                             <SubscriptionGuard>
-                              <Analytics />
+                              <SidebarLayout>
+                                <Analytics />
+                              </SidebarLayout>
+                            </SubscriptionGuard>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/platforms"
+                        element={
+                          <ProtectedRoute>
+                            <SubscriptionGuard>
+                              <SidebarLayout>
+                                <Platform />
+                              </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>
                         }
@@ -146,7 +169,21 @@ const App = () => (
                         element={
                           <ProtectedRoute>
                             <SubscriptionGuard>
-                              <Notifications />
+                              <SidebarLayout>
+                                <Notifications />
+                              </SidebarLayout>
+                            </SubscriptionGuard>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/support"
+                        element={
+                          <ProtectedRoute>
+                            <SubscriptionGuard>
+                              <SidebarLayout>
+                                <Support />
+                              </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>
                         }
@@ -155,7 +192,9 @@ const App = () => (
                         path="/profile"
                         element={
                           <ProtectedRoute requiresSubscription={false}>
-                            <Profile />
+                            <SidebarLayout>
+                              <Profile />
+                            </SidebarLayout>
                           </ProtectedRoute>
                         }
                       />
@@ -163,7 +202,9 @@ const App = () => (
                         path="/company-settings"
                         element={
                           <ProtectedRoute>
-                            <CompanySettings />
+                            <SidebarLayout>
+                              <CompanySettings />
+                            </SidebarLayout>
                           </ProtectedRoute>
                         }
                       />
@@ -172,7 +213,9 @@ const App = () => (
                         element={
                           <ProtectedRoute>
                             <SubscriptionGuard>
-                              <ExportReports />
+                              <SidebarLayout>
+                                <ExportReports />
+                              </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>
                         }
@@ -182,7 +225,9 @@ const App = () => (
                         element={
                           <ProtectedRoute>
                             <SubscriptionGuard>
-                              <QRCodeAnalytics />
+                              <SidebarLayout>
+                                <QRCodeAnalytics />
+                              </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>
                         }
@@ -192,7 +237,9 @@ const App = () => (
                         element={
                           <ProtectedRoute>
                             <SubscriptionGuard>
-                              <DataManagement />
+                              <SidebarLayout>
+                                <DataManagement />
+                              </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>
                         }

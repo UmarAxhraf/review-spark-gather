@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import TeamLayout from "@/components/TeamLayout";
 import {
   Card,
   CardContent,
@@ -576,265 +575,257 @@ const DataManagement = () => {
   };
 
   return (
-    <TeamLayout>
-      <div className="space-y-6">
-        <div className="mb-6">
-          <BackButton />
-        </div>
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Data Management</h1>
-          <p className="text-gray-600">Backup, restore, and manage your data</p>
-        </div>
+    <div className="space-y-6 p-6">
+      <div className="mb-6">
+        <BackButton />
+      </div>
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Data Management</h1>
+        <p className="text-gray-600">Backup, restore, and manage your data</p>
+      </div>
 
-        <Tabs defaultValue="backup">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="backup">Backup & Restore</TabsTrigger>
-            <TabsTrigger value="export">Export</TabsTrigger>
-            <TabsTrigger value="archive">Archive</TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="backup">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="backup">Backup & Restore</TabsTrigger>
+          <TabsTrigger value="export">Export</TabsTrigger>
+          <TabsTrigger value="archive">Archive</TabsTrigger>
+        </TabsList>
 
-          {/* Backup & Restore Tab */}
-          <TabsContent value="backup" className="space-y-4">
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Important</AlertTitle>
-              <AlertDescription>
-                Backing up your data regularly helps prevent data loss.
-                Restoring data will overwrite your existing data.
-              </AlertDescription>
-            </Alert>
+        {/* Backup & Restore Tab */}
+        <TabsContent value="backup" className="space-y-4">
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Important</AlertTitle>
+            <AlertDescription>
+              Backing up your data regularly helps prevent data loss. Restoring
+              data will overwrite your existing data.
+            </AlertDescription>
+          </Alert>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Backup Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Download className="h-5 w-5" />
-                    Backup Data
-                  </CardTitle>
-                  <CardDescription>
-                    Download a complete backup of your data
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        className={
-                          exportFormat === "json" ? "bg-primary/10" : ""
-                        }
-                        onClick={() => setExportFormat("json")}
-                      >
-                        <FileJson className="h-4 w-4 mr-2" />
-                        JSON
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className={
-                          exportFormat === "csv" ? "bg-primary/10" : ""
-                        }
-                        onClick={() => setExportFormat("csv")}
-                      >
-                        <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        CSV
-                      </Button>
-                    </div>
-
-                    {isExporting && (
-                      <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div
-                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                          style={{ width: `${exportProgress}%` }}
-                        ></div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    onClick={handleExportData}
-                    disabled={isExporting}
-                    className="w-full"
-                  >
-                    {isExporting
-                      ? `Exporting... ${exportProgress}%`
-                      : "Download Backup"}
-                  </Button>
-                </CardFooter>
-              </Card>
-
-              {/* Restore Card */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Upload className="h-5 w-5" />
-                    Restore Data
-                  </CardTitle>
-                  <CardDescription>
-                    Restore data from a previous backup
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <Input
-                      type="file"
-                      accept=".json,.csv"
-                      onChange={(e) =>
-                        setImportFile(e.target.files?.[0] || null)
-                      }
-                      disabled={isImporting}
-                    />
-
-                    {importFile && (
-                      <p className="text-sm text-gray-600">
-                        Selected file: {importFile.name}
-                      </p>
-                    )}
-
-                    {isImporting && (
-                      <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div
-                          className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
-                          style={{ width: `${importProgress}%` }}
-                        ></div>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    onClick={handleImportData}
-                    disabled={isImporting || !importFile}
-                    className="w-full"
-                    variant="destructive"
-                  >
-                    {isImporting
-                      ? `Importing... ${importProgress}%`
-                      : "Restore Backup"}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Export Tab */}
-          <TabsContent value="export" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Export Data</CardTitle>
-                <CardDescription>
-                  Export specific data for analysis or reporting
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Choose what data you want to export and in what format
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Button
-                    variant="outline"
-                    className="flex flex-col items-center justify-center h-24"
-                    onClick={() => handleSelectiveExport("employees")}
-                  >
-                    <Users className="h-8 w-8 mb-2" />
-                    Export Employees
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="flex flex-col items-center justify-center h-24"
-                    onClick={() => handleSelectiveExport("reviews")}
-                  >
-                    <MessageSquare className="h-8 w-8 mb-2" />
-                    Export Reviews
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="flex flex-col items-center justify-center h-24"
-                    onClick={() => handleSelectiveExport("analytics")}
-                  >
-                    <BarChart className="h-8 w-8 mb-2" />
-                    Export Analytics
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Archive Tab */}
-          <TabsContent value="archive" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Backup Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Archive className="h-5 w-5" />
-                  Data Archiving
+                  <Download className="h-5 w-5" />
+                  Backup Data
                 </CardTitle>
                 <CardDescription>
-                  Archive old data to improve system performance
+                  Download a complete backup of your data
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Alert>
-                    <Database className="h-4 w-4" />
-                    <AlertTitle>Archiving Strategy</AlertTitle>
-                    <AlertDescription>
-                      Archiving moves older data to long-term storage while
-                      keeping it accessible when needed.
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="border rounded-lg p-4">
-                      <h3 className="font-medium mb-2">Reviews</h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Archive reviews older than:
-                      </p>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
-                          6 Months
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          1 Year
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          2 Years
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <h3 className="font-medium mb-2">QR Code Scans</h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Archive scan data older than:
-                      </p>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
-                          3 Months
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          6 Months
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          1 Year
-                        </Button>
-                      </div>
-                    </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      className={exportFormat === "json" ? "bg-primary/10" : ""}
+                      onClick={() => setExportFormat("json")}
+                    >
+                      <FileJson className="h-4 w-4 mr-2" />
+                      JSON
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className={exportFormat === "csv" ? "bg-primary/10" : ""}
+                      onClick={() => setExportFormat("csv")}
+                    >
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      CSV
+                    </Button>
                   </div>
+
+                  {isExporting && (
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                        style={{ width: `${exportProgress}%` }}
+                      ></div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full">Configure Archiving Settings</Button>
+                <Button
+                  onClick={handleExportData}
+                  disabled={isExporting}
+                  className="w-full"
+                >
+                  {isExporting
+                    ? `Exporting... ${exportProgress}%`
+                    : "Download Backup"}
+                </Button>
               </CardFooter>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </TeamLayout>
+
+            {/* Restore Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Restore Data
+                </CardTitle>
+                <CardDescription>
+                  Restore data from a previous backup
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Input
+                    type="file"
+                    accept=".json,.csv"
+                    onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    disabled={isImporting}
+                  />
+
+                  {importFile && (
+                    <p className="text-sm text-gray-600">
+                      Selected file: {importFile.name}
+                    </p>
+                  )}
+
+                  {isImporting && (
+                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                        style={{ width: `${importProgress}%` }}
+                      ></div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  onClick={handleImportData}
+                  disabled={isImporting || !importFile}
+                  className="w-full"
+                  variant="destructive"
+                >
+                  {isImporting
+                    ? `Importing... ${importProgress}%`
+                    : "Restore Backup"}
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* Export Tab */}
+        <TabsContent value="export" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Export Data</CardTitle>
+              <CardDescription>
+                Export specific data for analysis or reporting
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 mb-4">
+                Choose what data you want to export and in what format
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button
+                  variant="outline"
+                  className="flex flex-col items-center justify-center h-24"
+                  onClick={() => handleSelectiveExport("employees")}
+                >
+                  <Users className="h-8 w-8 mb-2" />
+                  Export Employees
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="flex flex-col items-center justify-center h-24"
+                  onClick={() => handleSelectiveExport("reviews")}
+                >
+                  <MessageSquare className="h-8 w-8 mb-2" />
+                  Export Reviews
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="flex flex-col items-center justify-center h-24"
+                  onClick={() => handleSelectiveExport("analytics")}
+                >
+                  <BarChart className="h-8 w-8 mb-2" />
+                  Export Analytics
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Archive Tab */}
+        <TabsContent value="archive" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Archive className="h-5 w-5" />
+                Data Archiving
+              </CardTitle>
+              <CardDescription>
+                Archive old data to improve system performance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Alert>
+                  <Database className="h-4 w-4" />
+                  <AlertTitle>Archiving Strategy</AlertTitle>
+                  <AlertDescription>
+                    Archiving moves older data to long-term storage while
+                    keeping it accessible when needed.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-medium mb-2">Reviews</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Archive reviews older than:
+                    </p>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm">
+                        6 Months
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        1 Year
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        2 Years
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg p-4">
+                    <h3 className="font-medium mb-2">QR Code Scans</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Archive scan data older than:
+                    </p>
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm">
+                        3 Months
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        6 Months
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        1 Year
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full">Configure Archiving Settings</Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

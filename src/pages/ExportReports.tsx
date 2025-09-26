@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -326,291 +326,279 @@ const ExportReports = () => {
   const filteredData = getFilteredData();
 
   return (
-    <TeamLayout>
-      <div className="space-y-6">
-        <div className="mb-6">
-          <BackButton />
+    <div className="space-y-6 p-6">
+      <div className="mb-6">
+        <BackButton />
+      </div>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Export & Reporting
+          </h1>
+          <p className="text-gray-600">
+            Export data and generate comprehensive reports
+          </p>
         </div>
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Export & Reporting
-            </h1>
-            <p className="text-gray-600">
-              Export data and generate comprehensive reports
-            </p>
-          </div>
+        <div className="flex items-center space-x-2">
+          <FileText className="h-6 w-6 text-gray-500" />
+        </div>
+      </div>
+
+      {/* Filter Controls */}
+      <Card>
+        <CardHeader>
           <div className="flex items-center space-x-2">
-            <FileText className="h-6 w-6 text-gray-500" />
+            <Filter className="h-5 w-5 text-blue-600" />
+            <CardTitle>Export Settings</CardTitle>
           </div>
-        </div>
+          <CardDescription>
+            Configure your export preferences and time period
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="period">Time Period</Label>
+              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select time period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">Last 7 days</SelectItem>
+                  <SelectItem value="30">Last 30 days</SelectItem>
+                  <SelectItem value="90">Last 90 days</SelectItem>
+                  <SelectItem value="365">Last year</SelectItem>
+                  <SelectItem value="9999">All time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-        {/* Filter Controls */}
+            <div className="space-y-2">
+              <Label htmlFor="format">Export Format</Label>
+              <Select value={selectedFormat} onValueChange={setSelectedFormat}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="csv">CSV</SelectItem>
+                  <SelectItem value="json">JSON</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Data Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
-          <CardHeader>
-            <div className="flex items-center space-x-2">
-              <Filter className="h-5 w-5 text-blue-600" />
-              <CardTitle>Export Settings</CardTitle>
-            </div>
-            <CardDescription>
-              Configure your export preferences and time period
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="period">Time Period</Label>
-                <Select
-                  value={selectedPeriod}
-                  onValueChange={setSelectedPeriod}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select time period" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">Last 7 days</SelectItem>
-                    <SelectItem value="30">Last 30 days</SelectItem>
-                    <SelectItem value="90">Last 90 days</SelectItem>
-                    <SelectItem value="365">Last year</SelectItem>
-                    <SelectItem value="9999">All time</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="format">Export Format</Label>
-                <Select
-                  value={selectedFormat}
-                  onValueChange={setSelectedFormat}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="csv">CSV</SelectItem>
-                    <SelectItem value="json">JSON</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {filteredData.employees.length}
             </div>
+            <p className="text-xs text-muted-foreground">
+              {filteredData.employees.filter((emp) => emp.is_active).length}{" "}
+              active
+            </p>
           </CardContent>
         </Card>
 
-        {/* Data Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Team Members
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {filteredData.employees.length}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {filteredData.employees.filter((emp) => emp.is_active).length}{" "}
-                active
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Reviews</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {filteredData.reviews.length}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {filteredData.reviews.filter((rev) => rev.is_approved).length}{" "}
-                approved
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {filteredData.reviews.length > 0
-                  ? (
-                      filteredData.reviews.reduce(
-                        (sum, rev) => sum + rev.rating,
-                        0
-                      ) / filteredData.reviews.length
-                    ).toFixed(1)
-                  : "0.0"}
-              </div>
-              <p className="text-xs text-muted-foreground">Out of 5.0</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Period</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {selectedPeriod === "9999" ? "All" : selectedPeriod}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {selectedPeriod === "9999" ? "time" : "days"}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Export Options */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Individual Exports */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Individual Exports</CardTitle>
-              <CardDescription>
-                Export specific data types separately
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => handleExport("employees")}
-                disabled={isExporting === "employees"}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                {isExporting === "employees"
-                  ? "Exporting..."
-                  : `Export Team Members (${filteredData.employees.length})`}
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => handleExport("reviews")}
-                disabled={isExporting === "reviews"}
-              >
-                <MessageSquare className="h-4 w-4 mr-2" />
-                {isExporting === "reviews"
-                  ? "Exporting..."
-                  : `Export Reviews (${filteredData.reviews.length})`}
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full justify-start"
-                onClick={() => handleExport("analytics")}
-                disabled={isExporting === "analytics"}
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                {isExporting === "analytics"
-                  ? "Exporting..."
-                  : "Export Analytics Summary"}
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Comprehensive Reports */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Comprehensive Reports</CardTitle>
-              <CardDescription>
-                Generate complete reports with all data and analytics
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button
-                className="w-full justify-start"
-                onClick={() => handleExport("comprehensive")}
-                disabled={isExporting === "comprehensive"}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {isExporting === "comprehensive"
-                  ? "Generating..."
-                  : "Generate Comprehensive Report"}
-              </Button>
-
-              <div className="text-sm text-gray-600 space-y-2">
-                <p>
-                  <strong>Includes:</strong>
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>Complete team member data</li>
-                  <li>All reviews and ratings</li>
-                  <li>Performance analytics</li>
-                  <li>Rating distribution</li>
-                  <li>Top performer rankings</li>
-                  <li>Summary statistics</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Stats */}
         <Card>
-          <CardHeader>
-            <CardTitle>Data Summary</CardTitle>
-            <CardDescription>
-              Quick overview of your filtered data
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reviews</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-              <div>
-                <div className="font-medium text-gray-900">
-                  Team Performance
-                </div>
-                <div className="text-gray-600">
-                  {filteredData.employees.filter((emp) => emp.is_active).length}{" "}
-                  / {filteredData.employees.length} active members
-                </div>
-              </div>
-              <div>
-                <div className="font-medium text-gray-900">Review Approval</div>
-                <div className="text-gray-600">
-                  {filteredData.reviews.filter((rev) => rev.is_approved).length}{" "}
-                  / {filteredData.reviews.length} approved
-                </div>
-              </div>
-              <div>
-                <div className="font-medium text-gray-900">
-                  Rating Distribution
-                </div>
-                <div className="text-gray-600">
-                  {[4, 5]
-                    .map(
-                      (rating) =>
-                        filteredData.reviews.filter(
-                          (rev) => rev.rating === rating
-                        ).length
-                    )
-                    .reduce((a, b) => a + b, 0)}{" "}
-                  high ratings (4-5★)
-                </div>
-              </div>
-              <div>
-                <div className="font-medium text-gray-900">Export Format</div>
-                <div className="text-gray-600">
-                  {selectedFormat.toUpperCase()} •{" "}
-                  {selectedPeriod === "9999"
-                    ? "All time"
-                    : `${selectedPeriod} days`}
-                </div>
-              </div>
+            <div className="text-2xl font-bold">
+              {filteredData.reviews.length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {filteredData.reviews.filter((rev) => rev.is_approved).length}{" "}
+              approved
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {filteredData.reviews.length > 0
+                ? (
+                    filteredData.reviews.reduce(
+                      (sum, rev) => sum + rev.rating,
+                      0
+                    ) / filteredData.reviews.length
+                  ).toFixed(1)
+                : "0.0"}
+            </div>
+            <p className="text-xs text-muted-foreground">Out of 5.0</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Period</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {selectedPeriod === "9999" ? "All" : selectedPeriod}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {selectedPeriod === "9999" ? "time" : "days"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Export Options */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Individual Exports */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Individual Exports</CardTitle>
+            <CardDescription>
+              Export specific data types separately
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleExport("employees")}
+              disabled={isExporting === "employees"}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              {isExporting === "employees"
+                ? "Exporting..."
+                : `Export Team Members (${filteredData.employees.length})`}
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleExport("reviews")}
+              disabled={isExporting === "reviews"}
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              {isExporting === "reviews"
+                ? "Exporting..."
+                : `Export Reviews (${filteredData.reviews.length})`}
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => handleExport("analytics")}
+              disabled={isExporting === "analytics"}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              {isExporting === "analytics"
+                ? "Exporting..."
+                : "Export Analytics Summary"}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Comprehensive Reports */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Comprehensive Reports</CardTitle>
+            <CardDescription>
+              Generate complete reports with all data and analytics
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              className="w-full justify-start"
+              onClick={() => handleExport("comprehensive")}
+              disabled={isExporting === "comprehensive"}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {isExporting === "comprehensive"
+                ? "Generating..."
+                : "Generate Comprehensive Report"}
+            </Button>
+
+            <div className="text-sm text-gray-600 space-y-2">
+              <p>
+                <strong>Includes:</strong>
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-xs">
+                <li>Complete team member data</li>
+                <li>All reviews and ratings</li>
+                <li>Performance analytics</li>
+                <li>Rating distribution</li>
+                <li>Top performer rankings</li>
+                <li>Summary statistics</li>
+              </ul>
             </div>
           </CardContent>
         </Card>
       </div>
-    </TeamLayout>
+
+      {/* Quick Stats */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Data Summary</CardTitle>
+          <CardDescription>
+            Quick overview of your filtered data
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div>
+              <div className="font-medium text-gray-900">Team Performance</div>
+              <div className="text-gray-600">
+                {filteredData.employees.filter((emp) => emp.is_active).length} /{" "}
+                {filteredData.employees.length} active members
+              </div>
+            </div>
+            <div>
+              <div className="font-medium text-gray-900">Review Approval</div>
+              <div className="text-gray-600">
+                {filteredData.reviews.filter((rev) => rev.is_approved).length} /{" "}
+                {filteredData.reviews.length} approved
+              </div>
+            </div>
+            <div>
+              <div className="font-medium text-gray-900">
+                Rating Distribution
+              </div>
+              <div className="text-gray-600">
+                {[4, 5]
+                  .map(
+                    (rating) =>
+                      filteredData.reviews.filter(
+                        (rev) => rev.rating === rating
+                      ).length
+                  )
+                  .reduce((a, b) => a + b, 0)}{" "}
+                high ratings (4-5★)
+              </div>
+            </div>
+            <div>
+              <div className="font-medium text-gray-900">Export Format</div>
+              <div className="text-gray-600">
+                {selectedFormat.toUpperCase()} •{" "}
+                {selectedPeriod === "9999"
+                  ? "All time"
+                  : `${selectedPeriod} days`}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

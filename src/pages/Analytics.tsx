@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import TeamLayout from "@/components/TeamLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -294,324 +293,338 @@ const Analytics = () => {
 
   if (loading) {
     return (
-      <TeamLayout>
-        <div className="space-y-6">
-          {/* Header Skeleton */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="h-8 w-64 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-4 w-96 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="h-10 w-40 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
-            </div>
+      <div className="space-y-6 p-6">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-64 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-96 bg-gray-200 rounded animate-pulse"></div>
           </div>
-
-          {/* Stats Cards Skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-            <StatsCardSkeleton />
-          </div>
-
-          {/* Charts Skeleton */}
-          <div className="space-y-6">
-            <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
-              <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-8 w-28 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <CardSkeleton />
-              <CardSkeleton />
-            </div>
+          <div className="flex items-center space-x-2">
+            <div className="h-10 w-40 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-10 w-32 bg-gray-200 rounded animate-pulse"></div>
           </div>
         </div>
-      </TeamLayout>
+
+        {/* Stats Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+          <StatsCardSkeleton />
+        </div>
+
+        {/* Charts Skeleton */}
+        <div className="space-y-6">
+          <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-28 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-20 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <TeamLayout>
-      <div className="space-y-6">
-        <div className="mb-6">
-          <BackButton />
-        </div>
-        
-        {/* Responsive Header */}
-        <div className={`${isMobile ? 'space-y-4' : 'flex items-center justify-between'}`}>
-          <div>
-            <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-gray-900`}>
-              Analytics Dashboard
-            </h1>
-            <p className="text-gray-600">
-              Comprehensive insights into your review performance
-            </p>
-          </div>
-          
-          {/* Responsive Controls */}
-          <div className={`${isMobile ? 'flex flex-col space-y-3 w-full' : 'flex items-center space-x-2'}`}>
-            <Select value={dateRange} onValueChange={setDateRange}>
-              <SelectTrigger className={`${isMobile ? 'w-full' : 'w-40'}`}>
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Last 7 days</SelectItem>
-                <SelectItem value="30">Last 30 days</SelectItem>
-                <SelectItem value="90">Last 3 months</SelectItem>
-                <SelectItem value="365">Last year</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              variant="outline" 
-              size={isMobile ? "default" : "sm"}
-              className={isMobile ? "w-full" : ""}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
-            </Button>
-          </div>
+    <div className="space-y-6 p-6">
+      <div className="mb-6">
+        <BackButton />
+      </div>
+
+      {/* Responsive Header */}
+      <div
+        className={`${
+          isMobile ? "space-y-4" : "flex items-center justify-between"
+        }`}
+      >
+        <div>
+          <h1
+            className={`${
+              isMobile ? "text-2xl" : "text-3xl"
+            } font-bold text-gray-900`}
+          >
+            Analytics Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Comprehensive insights into your review performance
+          </p>
         </div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Reviews
-              </CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {analyticsData.totalReviews}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                +{analyticsData.reviewsThisMonth} this month
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Average Rating
-              </CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {analyticsData.avgRating}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {analyticsData.ratingTrend > 0 ? "+" : ""}
-                {analyticsData.ratingTrend} from last month
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Team Members
-              </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {analyticsData.totalEmployees}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {analyticsData.activeQRCodes} with active QR codes
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                QR Code Scans
-              </CardTitle>
-              <QrCode className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {analyticsData.qrCodeScans.reduce(
-                  (sum, day) => sum + day.scans,
-                  0
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Last {dateRange} days
-              </p>
-            </CardContent>
-          </Card>
+        {/* Responsive Controls */}
+        <div
+          className={`${
+            isMobile
+              ? "flex flex-col space-y-3 w-full"
+              : "flex items-center space-x-2"
+          }`}
+        >
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className={`${isMobile ? "w-full" : "w-40"}`}>
+              <SelectValue placeholder="Select period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7">Last 7 days</SelectItem>
+              <SelectItem value="30">Last 30 days</SelectItem>
+              <SelectItem value="90">Last 3 months</SelectItem>
+              <SelectItem value="365">Last year</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size={isMobile ? "default" : "sm"}
+            className={isMobile ? "w-full" : ""}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
         </div>
+      </div>
 
-        {/* Responsive Charts */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          {/* Responsive TabsList */}
-          <div className={`${isMobile ? 'overflow-x-auto' : ''}`}>
-            <TabsList className={`${isMobile ? 'flex w-max min-w-full' : 'grid w-full grid-cols-4'}`}>
-              <TabsTrigger 
-                value="overview" 
-                className={`${isMobile ? 'flex-shrink-0 px-4' : ''}`}
-              >
-                {isMobile ? 'Overview' : 'Overview'}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="reviews" 
-                className={`${isMobile ? 'flex-shrink-0 px-4' : ''}`}
-              >
-                {isMobile ? 'Reviews' : 'Reviews'}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="team" 
-                className={`${isMobile ? 'flex-shrink-0 px-4' : ''}`}
-              >
-                {isMobile ? 'Team' : 'Team Performance'}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="qrcodes" 
-                className={`${isMobile ? 'flex-shrink-0 px-4' : ''}`}
-              >
-                {isMobile ? 'QR Codes' : 'QR Codes'}
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Review Trends</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig}>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <AreaChart data={analyticsData.reviewsByMonth}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" />
-                        <YAxis />
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                        <Area
-                          type="monotone"
-                          dataKey="reviews"
-                          stroke="var(--color-reviews)"
-                          fill="var(--color-reviews)"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Rating Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig}>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={analyticsData.reviewsByRating}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={({ rating, count }) => `${rating}★ (${count})`}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="count"
-                        >
-                          {analyticsData.reviewsByRating.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <ChartTooltip content={<ChartTooltipContent />} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Reviews</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {analyticsData.totalReviews}
             </div>
-          </TabsContent>
+            <p className="text-xs text-muted-foreground">
+              +{analyticsData.reviewsThisMonth} this month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Average Rating
+            </CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{analyticsData.avgRating}</div>
+            <p className="text-xs text-muted-foreground">
+              {analyticsData.ratingTrend > 0 ? "+" : ""}
+              {analyticsData.ratingTrend} from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {analyticsData.totalEmployees}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {analyticsData.activeQRCodes} with active QR codes
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">QR Code Scans</CardTitle>
+            <QrCode className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {analyticsData.qrCodeScans.reduce(
+                (sum, day) => sum + day.scans,
+                0
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Last {dateRange} days
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-          <TabsContent value="reviews">
+      {/* Responsive Charts */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        {/* Responsive TabsList */}
+        <div className={`${isMobile ? "overflow-x-auto" : ""}`}>
+          <TabsList
+            className={`${
+              isMobile ? "flex w-max min-w-full" : "grid w-full grid-cols-4"
+            }`}
+          >
+            <TabsTrigger
+              value="overview"
+              className={`${isMobile ? "flex-shrink-0 px-4" : ""}`}
+            >
+              {isMobile ? "Overview" : "Overview"}
+            </TabsTrigger>
+            <TabsTrigger
+              value="reviews"
+              className={`${isMobile ? "flex-shrink-0 px-4" : ""}`}
+            >
+              {isMobile ? "Reviews" : "Reviews"}
+            </TabsTrigger>
+            <TabsTrigger
+              value="team"
+              className={`${isMobile ? "flex-shrink-0 px-4" : ""}`}
+            >
+              {isMobile ? "Team" : "Team Performance"}
+            </TabsTrigger>
+            <TabsTrigger
+              value="qrcodes"
+              className={`${isMobile ? "flex-shrink-0 px-4" : ""}`}
+            >
+              {isMobile ? "QR Codes" : "QR Codes"}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Review & Rating Trends</CardTitle>
+                <CardTitle>Review Trends</CardTitle>
               </CardHeader>
               <CardContent>
                 <ChartContainer config={chartConfig}>
-                  <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={analyticsData.reviewsByMonth}>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={analyticsData.reviewsByMonth}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis />
                       <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="reviews" fill="var(--color-reviews)" name="Reviews" />
-                      <Bar dataKey="rating" fill="var(--color-rating)" name="Avg Rating" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="team">
-            <Card>
-              <CardHeader>
-                <CardTitle>Team Performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={chartConfig}>
-                  <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={analyticsData.reviewsByEmployee}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="reviews" fill="var(--color-reviews)" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="qrcodes">
-            <Card>
-              <CardHeader>
-                <CardTitle>QR Code Scan Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={chartConfig}>
-                  <ResponsiveContainer width="100%" height={400}>
-                    <AreaChart data={analyticsData.qrCodeScans}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <ChartTooltip content={<ChartTooltipContent />} />
                       <Area
                         type="monotone"
-                        dataKey="scans"
-                        stroke="var(--color-scans)"
-                        fill="var(--color-scans)"
+                        dataKey="reviews"
+                        stroke="var(--color-reviews)"
+                        fill="var(--color-reviews)"
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 </ChartContainer>
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </TeamLayout>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Rating Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={chartConfig}>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={analyticsData.reviewsByRating}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ rating, count }) => `${rating}★ (${count})`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                      >
+                        {analyticsData.reviewsByRating.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="reviews">
+          <Card>
+            <CardHeader>
+              <CardTitle>Monthly Review & Rating Trends</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig}>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={analyticsData.reviewsByMonth}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar
+                      dataKey="reviews"
+                      fill="var(--color-reviews)"
+                      name="Reviews"
+                    />
+                    <Bar
+                      dataKey="rating"
+                      fill="var(--color-rating)"
+                      name="Avg Rating"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="team">
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Performance</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig}>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={analyticsData.reviewsByEmployee}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="reviews" fill="var(--color-reviews)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="qrcodes">
+          <Card>
+            <CardHeader>
+              <CardTitle>QR Code Scan Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig}>
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={analyticsData.qrCodeScans}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Area
+                      type="monotone"
+                      dataKey="scans"
+                      stroke="var(--color-scans)"
+                      fill="var(--color-scans)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

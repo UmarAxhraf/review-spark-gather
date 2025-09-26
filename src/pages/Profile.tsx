@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import TeamLayout from "@/components/TeamLayout";
 import {
   User,
   Building2,
@@ -294,7 +293,7 @@ const Profile = () => {
 
   // Loading skeleton
   const SubscriptionSkeleton = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="space-y-2">
@@ -320,461 +319,455 @@ const Profile = () => {
   // Error state
   if (computedValues.hasError && !profile) {
     return (
-      <TeamLayout>
-        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-          <AlertTriangle className="h-12 w-12 text-red-500" />
-          <div className="text-center">
-            <h2 className="text-xl font-semibold">Failed to Load Profile</h2>
-            <p className="text-muted-foreground">{error}</p>
-            <Button
-              onClick={fetchProfile}
-              className="mt-4"
-              disabled={loadingState === "loading"}
-            >
-              {loadingState === "loading" ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Retrying...
-                </>
-              ) : (
-                "Try Again"
-              )}
-            </Button>
-          </div>
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <AlertTriangle className="h-12 w-12 text-red-500" />
+        <div className="text-center">
+          <h2 className="text-xl font-semibold">Failed to Load Profile</h2>
+          <p className="text-muted-foreground">{error}</p>
+          <Button
+            onClick={fetchProfile}
+            className="mt-4"
+            disabled={loadingState === "loading"}
+          >
+            {loadingState === "loading" ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Retrying...
+              </>
+            ) : (
+              "Try Again"
+            )}
+          </Button>
         </div>
-      </TeamLayout>
+      </div>
     );
   }
 
   // Initial loading state
   if (loadingState === "loading" && !profile) {
     return (
-      <TeamLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </TeamLayout>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
     );
   }
 
   const StatusIcon = computedValues.statusIcon;
 
   return (
-    <TeamLayout>
-      <div className="space-y-6">
-        <div className="mb-6">
-          <BackButton />
+    <div className="space-y-6 p-6">
+      <div className="mb-6">
+        <BackButton />
+      </div>
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+          <p className="text-muted-foreground">
+            View and manage your company profile information
+          </p>
         </div>
+        <Button
+          onClick={() => navigate("/company-settings")}
+          className="flex items-center gap-2"
+          disabled={!profile}
+        >
+          <Edit className="h-4 w-4" />
+          Edit Profile
+        </Button>
+      </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
-            <p className="text-muted-foreground">
-              View and manage your company profile information
-            </p>
-          </div>
-          <Button
-            onClick={() => navigate("/company-settings")}
-            className="flex items-center gap-2"
-            disabled={!profile}
-          >
-            <Edit className="h-4 w-4" />
-            Edit Profile
-          </Button>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Profile Overview */}
+        <Card className="lg:col-span-1">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <Avatar className="h-24 w-24">
+                <AvatarImage
+                  src={profile?.logo_url || ""}
+                  alt={profile?.company_name || ""}
+                />
+                <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl">
+                  {getUserInitials()}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            <CardTitle className="text-xl">
+              {profile?.company_name || "Company Name"}
+            </CardTitle>
+            <CardDescription>
+              {profile?.industry || "Industry not specified"}
+            </CardDescription>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Overview */}
-          <Card className="lg:col-span-1">
-            <CardHeader className="text-center">
-              <div className="flex justify-center mb-4">
-                <Avatar className="h-24 w-24">
-                  <AvatarImage
-                    src={profile?.logo_url || ""}
-                    alt={profile?.company_name || ""}
-                  />
-                  <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl">
-                    {getUserInitials()}
-                  </AvatarFallback>
-                </Avatar>
+            {/* Subscription Status Badge */}
+            <div className="flex justify-center mt-3">
+              <Badge
+                className={`${computedValues.statusColor} flex items-center gap-1 hover:bg-primary/20`}
+              >
+                <StatusIcon
+                  className={`h-3 w-3 ${
+                    computedValues.isLoading ? "animate-spin" : ""
+                  }`}
+                />
+                {computedValues.status}
+              </Badge>
+            </div>
+
+            {profile?.public_profile && (
+              <Badge variant="secondary" className="mt-2">
+                Public Profile
+              </Badge>
+            )}
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            {profile?.description && (
+              <div>
+                <h4 className="font-medium mb-2">About</h4>
+                <p className="text-sm text-muted-foreground">
+                  {profile.description}
+                </p>
               </div>
-              <CardTitle className="text-xl">
-                {profile?.company_name || "Company Name"}
-              </CardTitle>
-              <CardDescription>
-                {profile?.industry || "Industry not specified"}
-              </CardDescription>
+            )}
 
-              {/* Subscription Status Badge */}
-              <div className="flex justify-center mt-3">
-                <Badge
-                  className={`${computedValues.statusColor} flex items-center gap-1 hover:bg-primary/20`}
-                >
-                  <StatusIcon
-                    className={`h-3 w-3 ${
-                      computedValues.isLoading ? "animate-spin" : ""
-                    }`}
-                  />
-                  {computedValues.status}
-                </Badge>
+            <Separator />
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span>{profile?.email || user?.email}</span>
               </div>
 
-              {profile?.public_profile && (
-                <Badge variant="secondary" className="mt-2">
-                  Public Profile
-                </Badge>
-              )}
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {profile?.description && (
-                <div>
-                  <h4 className="font-medium mb-2">About</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {profile.description}
-                  </p>
-                </div>
-              )}
-
-              <Separator />
-
-              <div className="space-y-2">
+              {profile?.phone && (
                 <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{profile?.email || user?.email}</span>
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>{profile.phone}</span>
+                </div>
+              )}
+
+              {profile?.website && (
+                <div className="flex items-center gap-2 text-sm">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <a
+                    href={profile.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    {profile.website}
+                  </a>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Subscription Details */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5" />
+              Subscription Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {computedValues.isLoading ? (
+              <SubscriptionSkeleton />
+            ) : (
+              <>
+                {/* Current Status Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Status</h4>
+                    <Badge
+                      className={`${computedValues.statusColor} px-2 py-1 text-xs font-medium rounded-full hover:bg-primary/20`}
+                    >
+                      {computedValues.status}
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Plan</h4>
+                    <p className="text-sm">
+                      {profile?.plan_name ||
+                        (isTrialActive
+                          ? "Free Trial"
+                          : isActive
+                          ? "Review Enterprise"
+                          : "Free")}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="font-medium">Price</h4>
+                    <p className="text-sm">{computedValues.billingAmount}</p>
+                  </div>
                 </div>
 
-                {profile?.phone && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{profile.phone}</span>
-                  </div>
-                )}
+                {/* Active Subscription Card - Only show if truly active and not in trial */}
+                {isActive && subscription && !isTrialActive && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h4 className="font-medium text-green-800 mb-4">
+                      Active Subscription
+                    </h4>
 
-                {profile?.website && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <a
-                      href={profile.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {profile.website}
-                    </a>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Subscription Details */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Crown className="h-5 w-5" />
-                Subscription Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {computedValues.isLoading ? (
-                <SubscriptionSkeleton />
-              ) : (
-                <>
-                  {/* Current Status Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Status</h4>
-                      <Badge
-                        className={`${computedValues.statusColor} px-2 py-1 text-xs font-medium rounded-full hover:bg-primary/20`}
-                      >
-                        {computedValues.status}
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Plan</h4>
-                      <p className="text-sm">
-                        {profile?.plan_name ||
-                          (isTrialActive
-                            ? "Free Trial"
-                            : isActive
-                            ? "Review Enterprise"
-                            : "Free")}
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Price</h4>
-                      <p className="text-sm">{computedValues.billingAmount}</p>
-                    </div>
-                  </div>
-
-                  {/* Active Subscription Card - Only show if truly active and not in trial */}
-                  {isActive && subscription && !isTrialActive && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h4 className="font-medium text-green-800 mb-4">
-                        Active Subscription
-                      </h4>
-
-                      {/* Add Subscription Progress Bar */}
-                      {profile?.subscription_start &&
-                        profile?.subscription_end && (
-                          <SubscriptionProgress
-                            startDate={profile.subscription_start}
-                            endDate={profile.subscription_end}
-                            className="mb-4"
-                          />
-                        )}
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="text-green-700 font-medium">
-                            Current Period Start:
-                          </p>
-                          <p className="text-green-800">
-                            {formatDate(profile?.subscription_start)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-green-700 font-medium">
-                            Current Period End:
-                          </p>
-                          <p className="text-green-800">
-                            {formatDate(profile?.subscription_end)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-green-700 font-medium">
-                            Next Billing Date:
-                          </p>
-                          <p className="text-green-800">
-                            {formatDate(profile?.next_billing_date)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-green-700 font-medium">
-                            Monthly Cost:
-                          </p>
-                          <p className="text-green-800">
-                            {computedValues.billingAmount}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Trial Warning - Only show if trial is active and no paid subscription */}
-                  {isTrialActive && !isActive && (trialDaysLeft || 0) <= 7 && (
-                    <div className="border rounded-lg p-4 bg-orange-50">
-                      <h4 className="font-medium text-orange-800 mb-3">
-                        Trial Ending Soon
-                      </h4>
-                      {/* Add Trial Progress Bar */}
-                      {profile?.trial_start && profile?.trial_end && (
+                    {/* Add Subscription Progress Bar */}
+                    {profile?.subscription_start &&
+                      profile?.subscription_end && (
                         <SubscriptionProgress
-                          startDate={profile.trial_start}
-                          endDate={profile.trial_end}
-                          className="mb-3"
+                          startDate={profile.subscription_start}
+                          endDate={profile.subscription_end}
+                          className="mb-4"
                         />
                       )}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="text-orange-700 font-medium">
-                            Trial Started:
-                          </p>
-                          <p className="text-orange-800">
-                            {formatDate(profile?.trial_start)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-orange-700 font-medium">
-                            Trial Expires:
-                          </p>
-                          <p className="text-orange-800">
-                            {formatDate(profile?.trial_end)}
-                          </p>
-                        </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-green-700 font-medium">
+                          Current Period Start:
+                        </p>
+                        <p className="text-green-800">
+                          {formatDate(profile?.subscription_start)}
+                        </p>
                       </div>
-                      <div className="mt-3 flex items-center gap-2 text-orange-700">
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm font-medium">
-                          {trialDaysLeft} days remaining
-                        </span>
+                      <div>
+                        <p className="text-green-700 font-medium">
+                          Current Period End:
+                        </p>
+                        <p className="text-green-800">
+                          {formatDate(profile?.subscription_end)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-green-700 font-medium">
+                          Next Billing Date:
+                        </p>
+                        <p className="text-green-800">
+                          {formatDate(profile?.next_billing_date)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-green-700 font-medium">
+                          Monthly Cost:
+                        </p>
+                        <p className="text-green-800">
+                          {computedValues.billingAmount}
+                        </p>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {/* Trial Warning - Only show if trial is active and no paid subscription */}
+                {isTrialActive && !isActive && (trialDaysLeft || 0) <= 7 && (
+                  <div className="border rounded-lg p-4 bg-orange-50">
+                    <h4 className="font-medium text-orange-800 mb-3">
+                      Trial Ending Soon
+                    </h4>
+                    {/* Add Trial Progress Bar */}
+                    {profile?.trial_start && profile?.trial_end && (
+                      <SubscriptionProgress
+                        startDate={profile.trial_start}
+                        endDate={profile.trial_end}
+                        className="mb-3"
+                      />
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-orange-700 font-medium">
+                          Trial Started:
+                        </p>
+                        <p className="text-orange-800">
+                          {formatDate(profile?.trial_start)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-orange-700 font-medium">
+                          Trial Expires:
+                        </p>
+                        <p className="text-orange-800">
+                          {formatDate(profile?.trial_end)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 text-orange-700">
+                      <Clock className="h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        {trialDaysLeft} days remaining
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                  {(isActive || isTrialActive) && (
+                    <Button
+                      onClick={handlePortalSession}
+                      disabled={portalLoading}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      {portalLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Loading...
+                        </>
+                      ) : (
+                        "Manage Subscription"
+                      )}
+                    </Button>
                   )}
 
-                  {/* Action Buttons */}
-                  <div className="space-y-3">
-                    {(isActive || isTrialActive) && (
-                      <Button
-                        onClick={handlePortalSession}
-                        disabled={portalLoading}
-                        variant="outline"
-                        className="w-full"
-                      >
-                        {portalLoading ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            Loading...
-                          </>
-                        ) : (
-                          "Manage Subscription"
-                        )}
-                      </Button>
-                    )}
-
-                    {computedValues.showUpgrade && (
-                      <Button
-                        onClick={() => navigate("/#pricing")}
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                      >
-                        {computedValues.isExpired
-                          ? "Reactivate Subscription"
-                          : "Upgrade Now"}
-                      </Button>
-                    )}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Additional Information Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Company Information */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-blue-600" />
-                <CardTitle>Company Information</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {[
-                { label: "Company Name", value: profile?.company_name },
-                { label: "Industry", value: profile?.industry },
-                { label: "Employee Count", value: profile?.employee_count },
-                { label: "Timezone", value: profile?.timezone },
-              ].map(({ label, value }) => (
-                <div key={label}>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    {label}
-                  </label>
-                  <p className="mt-1">{value || "Not specified"}</p>
+                  {computedValues.showUpgrade && (
+                    <Button
+                      onClick={() => navigate("/#pricing")}
+                      className="w-full bg-blue-600 hover:bg-blue-700"
+                    >
+                      {computedValues.isExpired
+                        ? "Reactivate Subscription"
+                        : "Upgrade Now"}
+                    </Button>
+                  )}
                 </div>
-              ))}
-            </CardContent>
-          </Card>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Contact & Address */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-green-600" />
-                <CardTitle>Contact & Address</CardTitle>
+      {/* Additional Information Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Company Information */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              <CardTitle>Company Information</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { label: "Company Name", value: profile?.company_name },
+              { label: "Industry", value: profile?.industry },
+              { label: "Employee Count", value: profile?.employee_count },
+              { label: "Timezone", value: profile?.timezone },
+            ].map(({ label, value }) => (
+              <div key={label}>
+                <label className="text-sm font-medium text-muted-foreground">
+                  {label}
+                </label>
+                <p className="mt-1">{value || "Not specified"}</p>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Email
-                  </label>
-                  <p className="mt-1">{profile?.email || user?.email}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Phone
-                  </label>
-                  <p className="mt-1">{profile?.phone || "Not specified"}</p>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Contact & Address */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-green-600" />
+              <CardTitle>Contact & Address</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Email
+                </label>
+                <p className="mt-1">{profile?.email || user?.email}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Phone
+                </label>
+                <p className="mt-1">{profile?.phone || "Not specified"}</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-muted-foreground">
+                Address
+              </label>
+              <div className="mt-1 space-y-1">
+                {formatAddress().map((line, index) => (
+                  <p key={index}>{line}</p>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preferences */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-purple-600" />
+              <CardTitle>Preferences</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Notifications
+                </label>
+                <div className="mt-2 space-y-1">
+                  {[
+                    {
+                      key: "email_notifications",
+                      label: "Email Notifications",
+                    },
+                    {
+                      key: "review_notifications",
+                      label: "Review Notifications",
+                    },
+                    { key: "weekly_reports", label: "Weekly Reports" },
+                  ].map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          profile?.[key as keyof ProfileData]
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      />
+                      <span className="text-sm">{label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
-                  Address
+                  Brand Colors
                 </label>
-                <div className="mt-1 space-y-1">
-                  {formatAddress().map((line, index) => (
-                    <p key={index}>{line}</p>
-                  ))}
+                <div className="mt-2 flex gap-3">
+                  {[
+                    { color: profile?.primary_color, label: "Primary" },
+                    { color: profile?.secondary_color, label: "Secondary" },
+                  ].map(
+                    ({ color, label }) =>
+                      color && (
+                        <div key={label} className="flex items-center gap-2">
+                          <div
+                            className="w-6 h-6 rounded border"
+                            style={{ backgroundColor: color }}
+                          />
+                          <span className="text-sm">{label}</span>
+                        </div>
+                      )
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Preferences */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Settings className="h-5 w-5 text-purple-600" />
-                <CardTitle>Preferences</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Notifications
-                  </label>
-                  <div className="mt-2 space-y-1">
-                    {[
-                      {
-                        key: "email_notifications",
-                        label: "Email Notifications",
-                      },
-                      {
-                        key: "review_notifications",
-                        label: "Review Notifications",
-                      },
-                      { key: "weekly_reports", label: "Weekly Reports" },
-                    ].map(({ key, label }) => (
-                      <div key={key} className="flex items-center gap-2">
-                        <div
-                          className={`w-2 h-2 rounded-full ${
-                            profile?.[key as keyof ProfileData]
-                              ? "bg-green-500"
-                              : "bg-gray-300"
-                          }`}
-                        />
-                        <span className="text-sm">{label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">
-                    Brand Colors
-                  </label>
-                  <div className="mt-2 flex gap-3">
-                    {[
-                      { color: profile?.primary_color, label: "Primary" },
-                      { color: profile?.secondary_color, label: "Secondary" },
-                    ].map(
-                      ({ color, label }) =>
-                        color && (
-                          <div key={label} className="flex items-center gap-2">
-                            <div
-                              className="w-6 h-6 rounded border"
-                              style={{ backgroundColor: color }}
-                            />
-                            <span className="text-sm">{label}</span>
-                          </div>
-                        )
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </TeamLayout>
+    </div>
   );
 };
 
