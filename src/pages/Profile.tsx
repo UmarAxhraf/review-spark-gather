@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -32,6 +34,14 @@ import {
   Crown,
   Calendar,
   AlertTriangle,
+  QrCode,
+  Copy,
+  Facebook,
+  ExternalLink,
+  Shield,
+  Star,
+  Plane,
+  Download,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/back-button";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -67,7 +77,17 @@ interface ProfileData {
   subscription_start?: string;
   subscription_end?: string;
   next_billing_date?: string;
-  role?: string; // Add role field
+  role?: string;
+  company_qr_code_id?: string;
+  company_qr_url?: string;
+}
+
+interface PlatformProfile {
+  id: string;
+  platform_type: string;
+  profile_url: string;
+  profile_name?: string;
+  is_active: boolean;
 }
 
 type LoadingState = "idle" | "loading" | "error" | "success";
@@ -83,6 +103,10 @@ const Profile = () => {
   const [loadingState, setLoadingState] = useState<LoadingState>("idle");
   const [portalLoading, setPortalLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+  const [platformProfiles, setPlatformProfiles] = useState<PlatformProfile[]>(
+    []
+  );
 
   // Subscription context
   const {
@@ -104,6 +128,53 @@ const Profile = () => {
       verifySession();
     }
   });
+
+  const fetchPlatformProfiles = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("platform_profiles")
+        .select("*")
+        .eq("company_id", user.id)
+        .eq("is_active", true);
+
+      if (error) throw error;
+      setPlatformProfiles(data || []);
+    } catch (error) {
+      console.error("Error fetching platform profiles:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchPlatformProfiles();
+    }
+  }, [user?.id]);
+
+  const getPlatformIcon = (platformType: string) => {
+    const iconMap = {
+      google_my_business: MapPin,
+      facebook: Facebook,
+      yelp: Star,
+      tripadvisor: Plane,
+      trustpilot: Shield,
+      booking_com: Calendar,
+    };
+    return iconMap[platformType as keyof typeof iconMap] || Globe;
+  };
+
+  const getPlatformName = (platformType: string) => {
+    const nameMap = {
+      google_my_business: "Google My Business",
+      facebook: "Facebook",
+      yelp: "Yelp",
+      tripadvisor: "TripAdvisor",
+      trustpilot: "Trustpilot",
+      booking_com: "Booking.com",
+    };
+    return nameMap[platformType as keyof typeof nameMap] || platformType;
+  };
 
   // Computed values with proper fallbacks
   const computedValues = useMemo(() => {
@@ -178,6 +249,71 @@ const Profile = () => {
       setLoadingState("error");
     }
   }, [user?.id]);
+
+  // QR Code helper functions
+  const getCompanyReviewUrl = (qrCodeId: string) => {
+    return `${window.location.origin}/review/company/${qrCodeId}`;
+  };
+
+  const generateQRCode = async () => {
+    if (!profile?.company_qr_code_id) return;
+
+    const reviewUrl = getCompanyReviewUrl(profile.company_qr_code_id);
+
+    try {
+      const QRCode = (await import("qrcode")).default;
+      const dataUrl = await QRCode.toDataURL(reviewUrl, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: profile.primary_color || "#000000",
+          light: "#FFFFFF",
+        },
+      });
+      setQrCodeDataUrl(dataUrl);
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({ title: "Copied to clipboard!" });
+    } catch (error) {
+      toast({ title: "Failed to copy", variant: "destructive" });
+    }
+  };
+
+  const downloadCompanyQRCode = () => {
+    if (!qrCodeDataUrl || !profile?.company_name) {
+      toast({
+        title: "QR code not available for download",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create a link element and trigger download
+    const link = document.createElement("a");
+    link.href = qrCodeDataUrl;
+    link.download = `${profile.company_name.replace(
+      /\s+/g,
+      "_"
+    )}_Company_QR_Code.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({ title: "QR code downloaded successfully" });
+  };
+
+  // Generate QR code when profile loads
+  useEffect(() => {
+    if (profile?.company_qr_code_id) {
+      generateQRCode();
+    }
+  }, [profile?.company_qr_code_id]);
 
   // API functions with better error handling
   const fetchProfile = async () => {
@@ -638,6 +774,118 @@ const Profile = () => {
       </div>
 
       {/* Additional Information Cards */}
+      {/* Company QR Code Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-2">
+            <QrCode className="h-5 w-5 text-blue-600" />
+            <CardTitle>Company QR Code & Review Link</CardTitle>
+          </div>
+          <CardDescription>
+            Share this permanent QR code and link to collect reviews for your
+            company
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* QR Code Display */}
+            {/* QR Code Display */}
+            <div className="text-center">
+              <div className="bg-white p-4 rounded-lg border inline-block">
+                {qrCodeDataUrl ? (
+                  <img
+                    src={qrCodeDataUrl}
+                    alt="Company QR Code"
+                    className="w-48 h-48 mx-auto"
+                  />
+                ) : (
+                  <div className="w-48 h-48 bg-gray-100 flex items-center justify-center">
+                    <QrCode className="h-12 w-12 text-gray-400" />
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-gray-600 mt-2">
+                Scan to leave a company review
+              </p>
+              {/* Add centered download button */}
+              {qrCodeDataUrl && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={downloadCompanyQRCode}
+                    className="flex items-center gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download QR Code
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Review Link */}
+            <div className="space-y-4">
+              <div>
+                <Label>Shareable Review Link</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={
+                      profile?.company_qr_code_id
+                        ? getCompanyReviewUrl(profile.company_qr_code_id)
+                        : ""
+                    }
+                    readOnly
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      copyToClipboard(
+                        profile?.company_qr_code_id
+                          ? getCompanyReviewUrl(profile.company_qr_code_id)
+                          : ""
+                      )
+                    }
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div>
+                <Label>QR Code ID</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={profile?.company_qr_code_id || ""}
+                    readOnly
+                    className="font-mono text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      copyToClipboard(profile?.company_qr_code_id || "")
+                    }
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">How to use:</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Print the QR code and display it in your business</li>
+                  <li>• Share the review link on social media or email</li>
+                  <li>• Customers can scan or click to leave reviews</li>
+                  <li>• This QR code never expires and never changes</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Company Information */}
         <Card>
@@ -700,6 +948,70 @@ const Profile = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Platform Profiles */}
+        {platformProfiles.length > 0 && (
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Globe className="h-5 w-5 text-blue-600" />
+                <CardTitle>Platform Profiles</CardTitle>
+              </div>
+              <CardDescription>
+                Your connected review platform profiles
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {platformProfiles.map((profile) => {
+                  const IconComponent = getPlatformIcon(profile.platform_type);
+                  return (
+                    <div
+                      key={profile.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <IconComponent className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm">
+                            {getPlatformName(profile.platform_type)}
+                          </p>
+                          {profile.profile_name && (
+                            <p className="text-xs text-gray-500 truncate max-w-[120px]">
+                              {profile.profile_name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          window.open(profile.profile_url, "_blank")
+                        }
+                        className="flex items-center gap-1"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Visit
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/platforms")}
+                  className="w-full"
+                >
+                  Manage Platform Profiles
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Preferences */}
         <Card className="lg:col-span-2">

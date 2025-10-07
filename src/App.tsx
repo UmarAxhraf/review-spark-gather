@@ -12,6 +12,10 @@ import { SupabaseSubscriptionProvider } from "@/contexts/SupabaseSubscriptionCon
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { SubscriptionGuard } from "@/components/SubscriptionGuard";
 import SidebarLayout from "@/components/SidebarLayout";
+import GoogleBusinessCallback from "@/components/GoogleBusinessCallback";
+import FacebookCallback from "./components/FacebookCallback";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import DataDeletion from "./pages/DataDeletion";
 
 // Lazy load components for code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -35,6 +39,7 @@ const Profile = lazy(() => import("./pages/Profile"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const Platform = lazy(() => import("./pages/Platform"));
 const Support = lazy(() => import("./pages/Support"));
+const ReviewRequest = lazy(() => import("./pages/ReviewRequest"));
 
 // Loading component for Suspense fallback
 const PageLoader = () => (
@@ -79,6 +84,10 @@ const App = () => (
                         element={<ReviewSubmission />}
                       />
                       <Route
+                        path="/review/company/:companyQrId"
+                        element={<ReviewSubmission />}
+                      />
+                      <Route
                         path="/forgot-password"
                         element={<ForgotPassword />}
                       />
@@ -90,6 +99,19 @@ const App = () => (
                         path="/payment-success"
                         element={<PaymentSuccess />}
                       />
+                      <Route
+                        path="/google-business-callback"
+                        element={<GoogleBusinessCallback />}
+                      />
+                      <Route
+                        path="/facebook-callback"
+                        element={<FacebookCallback />}
+                      />
+                      <Route
+                        path="/privacy-policy"
+                        element={<PrivacyPolicy />}
+                      />
+                      <Route path="/data-deletion" element={<DataDeletion />} />
 
                       {/* Protected routes with sidebar */}
                       <Route
@@ -135,6 +157,18 @@ const App = () => (
                             <SubscriptionGuard>
                               <SidebarLayout>
                                 <Reviews />
+                              </SidebarLayout>
+                            </SubscriptionGuard>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/review-request"
+                        element={
+                          <ProtectedRoute>
+                            <SubscriptionGuard>
+                              <SidebarLayout>
+                                <ReviewRequest />
                               </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>

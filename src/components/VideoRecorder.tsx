@@ -164,6 +164,9 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [showStopDialog, setShowStopDialog] = useState(false);
 
+  // Add new state for actual video duration
+  const [actualVideoDuration, setActualVideoDuration] = useState(0);
+
   // Camera state
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [cameras, setCameras] = useState<CameraDevice[]>([]);
@@ -636,6 +639,13 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
             throw new Error("Recorded video is empty");
           }
 
+          if (actualVideoDuration === 0) {
+            setActualVideoDuration(recordingTime);
+          }
+
+          // Set the actual video duration when processing completes
+          setActualVideoDuration(recordingTime);
+
           // Verify the blob type is set correctly
           if (!blob.type || !blob.type.startsWith("video/")) {
             console.warn(
@@ -779,16 +789,21 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
   }, [state, recordingTime, maxDuration, stopTimer, handleError, toast]);
 
   const stopRecording = useCallback(() => {
+    // Capture the current recording time before stopping
+    const finalRecordingTime = recordingTime;
+
     if (
       mediaRecorderRef.current &&
       (mediaRecorderRef.current.state === "recording" ||
         mediaRecorderRef.current.state === "paused")
     ) {
+      // Set the actual video duration immediately
+      setActualVideoDuration(finalRecordingTime);
       mediaRecorderRef.current.stop();
       stopTimer();
     }
     setShowStopDialog(false);
-  }, [stopTimer]);
+  }, [stopTimer, recordingTime]);
 
   const resetRecording = useCallback(() => {
     stopTimer();
@@ -796,6 +811,8 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
     setRecordingTime(0);
     setProgress(0);
     setState("idle");
+    // Reset the actual video duration
+    setActualVideoDuration(0);
 
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current = null;
@@ -1418,7 +1435,7 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
             </div>
 
             <div className="text-sm text-gray-600">
-              <p>Duration: {formatTime(recordingTime)}</p>
+              <p>Duration: {formatTime(actualVideoDuration)}</p>
               <p>
                 Quality: {quality} ({QUALITY_CONFIGS[quality].height.ideal}p)
               </p>

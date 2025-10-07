@@ -44,12 +44,15 @@ import {
   Menu,
   Database,
   FileText,
+  Copy,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import NotificationBell from "@/components/NotificationBell";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   LineChart,
   Line,
@@ -189,6 +192,10 @@ const Dashboard = () => {
   });
   const { announcePolite, announceAssertive } = useScreenReader();
 
+  // Add QR code state
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+  const [companyProfile, setCompanyProfile] = useState<any>(null);
+
   const subscriptionsRef = useRef<any[]>([]);
 
   const [stats, setStats] = useState<DashboardStats>({
@@ -295,6 +302,79 @@ const Dashboard = () => {
   const getUserInitials = () => {
     if (!user?.email) return "U";
     return user.email.charAt(0).toUpperCase();
+  };
+
+  // QR Code helper functions
+  const getCompanyReviewUrl = (qrCodeId: string) => {
+    return `${window.location.origin}/review/company/${qrCodeId}`;
+  };
+
+  const generateQRCode = async () => {
+    if (!companyProfile?.company_qr_code_id) return;
+
+    const reviewUrl = getCompanyReviewUrl(companyProfile.company_qr_code_id);
+
+    try {
+      const QRCode = (await import("qrcode")).default;
+      const dataUrl = await QRCode.toDataURL(reviewUrl, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: companyProfile.primary_color || "#000000",
+          light: "#FFFFFF",
+        },
+      });
+      setQrCodeDataUrl(dataUrl);
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Copied to clipboard!");
+    } catch (error) {
+      toast.error("Failed to copy");
+    }
+  };
+
+  const downloadCompanyQRCode = () => {
+    if (!qrCodeDataUrl || !companyProfile?.company_name) {
+      toast.error("QR code not available for download");
+      return;
+    }
+
+    // Create a link element and trigger download
+    const link = document.createElement("a");
+    link.href = qrCodeDataUrl;
+    link.download = `${companyProfile.company_name.replace(
+      /\s+/g,
+      "_"
+    )}_Company_QR_Code.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success("QR code downloaded successfully");
+  };
+
+  // Fetch company profile for QR code
+  const fetchCompanyProfile = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("company_qr_code_id, primary_color, company_name")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      setCompanyProfile(data);
+    } catch (error) {
+      console.error("Error fetching company profile:", error);
+    }
   };
 
   const getDateRange = () => {
@@ -761,6 +841,20 @@ const Dashboard = () => {
 
     verifyStripeSession();
   }, []); // Remove user?.id dependency since we only want this to run once on mount
+
+  // Generate QR code when company profile loads
+  useEffect(() => {
+    if (companyProfile?.company_qr_code_id) {
+      generateQRCode();
+    }
+  }, [companyProfile?.company_qr_code_id]);
+
+  // Fetch company profile on component mount
+  useEffect(() => {
+    if (user?.id) {
+      fetchCompanyProfile();
+    }
+  }, [user?.id]);
 
   // Add useEffect to refetch data when department selection changes
   useEffect(() => {
@@ -1244,9 +1338,7 @@ const Dashboard = () => {
                     <LoadingSpinner size="sm" />
                   ) : (
                     <RefreshCw
-                      className={`h-4 w-4 ${
-                        refreshing ? "animate-spin" : ""
-                      }`}
+                      className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
                     />
                   )}
                   <span>Refresh</span>
@@ -1257,78 +1349,212 @@ const Dashboard = () => {
         </div>
       </header>
 
-
-
       {/* Main Content with Responsive Padding */}
       <div className={`p-4 sm:p-6`}>
-        {/* Enhanced Stats Grid - Responsive (SINGLE INSTANCE) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          {widgets.filter((w) => w.type === "stats").map(renderWidget)}
-        </div>
+        {/* Modified Layout: 7 Cards on Left, QR Code on Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          {/* Left side: 7 cards in 3x3 grid (with one empty space) */}
+          <div className="lg:col-span-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              {/* Row 1: Total Reviews, Avg Rating, Team Members */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Reviews
+                  </CardTitle>
+                  <Star className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.totalReviews}</div>
+                  <p className="text-xs text-muted-foreground">
+                    +{stats.thisMonth} this month
+                  </p>
+                </CardContent>
+              </Card>
 
-        {/* Additional KPI Cards - Responsive */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Response Rate
-              </CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.responseRate}%</div>
-              <p className="text-xs text-muted-foreground">
-                Customer engagement
-              </p>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Average Rating
+                  </CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {stats.avgRating.toFixed(1)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Out of 5 stars
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Avg Response Time
-              </CardTitle>
-              <Zap className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.avgResponseTime}h</div>
-              <p className="text-xs text-muted-foreground">Time to respond</p>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Team Members
+                  </CardTitle>
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.teamMembers}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Active employees
+                  </p>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Top Performer
-              </CardTitle>
-              <Award className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div
-                className={`font-bold truncate ${
-                  isMobile ? "text-lg" : "text-lg"
-                }`}
-              >
-                {stats.topRatedEmployee}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Highest rated employee
-              </p>
-            </CardContent>
-          </Card>
+              {/* Row 2: QR Code Scans, Pending Reviews, Customer Satisfaction */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    QR Code Scans
+                  </CardTitle>
+                  <QrCode className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stats.qrCodeScans}</div>
+                  <p className="text-xs text-muted-foreground">Total scans</p>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Departments</CardTitle>
-              <Grid className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.departmentCount}</div>
-              <p className="text-xs text-muted-foreground">
-                Active departments
-              </p>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Pending Reviews
+                  </CardTitle>
+                  <Bell className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {stats.pendingReviews}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Awaiting approval
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Customer Satisfaction
+                  </CardTitle>
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {stats.customerSatisfaction}%
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Satisfaction rate
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Row 3: Review Growth (NEW CARD) */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Review Growth
+                  </CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {stats.reviewGrowth > 0 ? "+" : ""}
+                    {stats.reviewGrowth}%
+                  </div>
+                  <p className="text-xs text-muted-foreground">vs last month</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Right side: Company QR Code */}
+          <div className="lg:col-span-1">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">
+                  Company QR Code
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Share this QR code to collect company reviews
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* QR Code Display */}
+                <div className="text-center">
+                  <div className="bg-white p-3 rounded-lg border inline-block">
+                    {qrCodeDataUrl ? (
+                      <img
+                        src={qrCodeDataUrl}
+                        alt="Company QR Code"
+                        className="w-36 h-36 mx-auto"
+                      />
+                    ) : (
+                      <div className="w-32 h-32 bg-gray-100 flex items-center justify-center">
+                        <QrCode className="h-8 w-8 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                  {/* Add centered download button */}
+                  {qrCodeDataUrl && (
+                    <div className="mt-2 flex justify-center">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={downloadCompanyQRCode}
+                        className="flex items-center gap-1"
+                      >
+                        <Download className="h-3 w-3" />
+                        Download
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Review Link */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Review Link</Label>
+                  <div className="flex gap-1">
+                    <Input
+                      value={
+                        companyProfile?.company_qr_code_id
+                          ? getCompanyReviewUrl(
+                              companyProfile.company_qr_code_id
+                            )
+                          : ""
+                      }
+                      readOnly
+                      className="font-mono text-xs h-8"
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() =>
+                        copyToClipboard(
+                          companyProfile?.company_qr_code_id
+                            ? getCompanyReviewUrl(
+                                companyProfile.company_qr_code_id
+                              )
+                            : ""
+                        )
+                      }
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                {/* <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-xs text-blue-800">
+                    Share this QR code to collect company reviews easily!
+                  </p>
+                </div> */}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Charts Grid - Responsive */}

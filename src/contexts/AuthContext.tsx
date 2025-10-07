@@ -128,23 +128,63 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const now = Date.now();
     lastActivityRef.current = now;
 
-    // Store activity timestamp securely
+    // Check if we're in an OAuth flow - if so, don't enforce timeouts
+    const isOAuthCallback = window.location.pathname.includes("callback");
+
     localStorage.setItem("lastActivity", now.toString());
     localStorage.setItem(
       "sessionId",
       session?.access_token?.substring(0, 10) || ""
     );
 
-    // Clear warning if user becomes active
+    // Store OAuth flag
+    if (isOAuthCallback) {
+      localStorage.setItem("inOAuthFlow", "true");
+    }
+
     if (sessionTimeoutWarning) {
       setSessionTimeoutWarning(false);
     }
   }, [sessionTimeoutWarning, session]);
 
+  // const updateActivity = useCallback(() => {
+  //   const now = Date.now();
+  //   lastActivityRef.current = now;
+
+  //   // Store activity timestamp securely
+  //   localStorage.setItem("lastActivity", now.toString());
+  //   localStorage.setItem(
+  //     "sessionId",
+  //     session?.access_token?.substring(0, 10) || ""
+  //   );
+
+  //   // Clear warning if user becomes active
+  //   if (sessionTimeoutWarning) {
+  //     setSessionTimeoutWarning(false);
+  //   }
+  // }, [sessionTimeoutWarning, session]);
+
   // Enhanced session timeout check with idle detection
   const checkSessionTimeout = useCallback(async () => {
     // Don't check session if offline
     if (!navigator.onLine) return;
+
+    // Don't timeout during OAuth callback
+    if (localStorage.getItem("inOAuthFlow") === "true") {
+      return;
+    }
+
+    // Don't timeout during OAuth callback - add more paths if needed
+    const oAuthPaths = ["/google-business-callback", "/auth/callback"];
+    if (oAuthPaths.some((path) => window.location.pathname.includes(path))) {
+      // console.log("OAuth callback in progress, skipping session timeout");
+      return;
+    }
+
+    // Don't timeout if OAuth flow flag is set
+    if (localStorage.getItem("inOAuthFlow") === "true") {
+      return;
+    }
 
     const timeSinceLastActivity = Date.now() - lastActivityRef.current;
     const storedSessionId = localStorage.getItem("sessionId");
@@ -335,6 +375,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Move handleAuthStateChange outside useEffect and define it at component level
   const handleAuthStateChange = useCallback(
     (event: string, session: Session | null) => {
+      //console.log(`Auth state change: ${event}, session: ${!!session}`);
+
+      // Update session
       setSession((prevSession) => {
         if (prevSession?.access_token !== session?.access_token) {
           return session;
@@ -342,6 +385,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return prevSession;
       });
 
+      // Update user
       setUser((prevUser) => {
         const newUser = session?.user ?? null;
         if (prevUser?.id !== newUser?.id) {
@@ -350,42 +394,98 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return prevUser;
       });
 
-      setLoading(false);
+      // Set loading to false AFTER updating user and session
+      if (!initialAuthCheckComplete) {
+        //console.log("Initial auth check complete, setting loading to false");
+        setInitialAuthCheckComplete(true);
+        setLoading(false); // This should be LAST
+      }
 
       if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        setIsSessionValid(true);
         startSessionManagement();
       } else if (!session) {
+        setIsSessionValid(false);
         clearAllTimers();
       }
     },
-    [startSessionManagement, clearAllTimers]
+    [initialAuthCheckComplete, startSessionManagement, clearAllTimers]
   );
 
-  // Auth state management
+  // Single consolidated auth initialization effect
   useEffect(() => {
     let mounted = true;
+    //console.log("AuthContext: Starting authentication initialization");
 
-    // Set up auth state listener
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return;
-      handleAuthStateChange(event, session);
-    });
+    const initializeAuth = async () => {
+      try {
+        // Check for session in localStorage first (synchronous)
+        const storedSession = localStorage.getItem("supabase.auth.token");
+        if (storedSession) {
+          // console.log("Found stored session token");
+          setIsSessionValid(true);
+        }
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        handleAuthStateChange("INITIAL_SESSION", session);
+        // Set up auth state listener first
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((event, session) => {
+          if (!mounted) return;
+          // console.log(`Auth state listener triggered: ${event}`);
+          handleAuthStateChange(event, session);
+        });
+
+        // Then check for existing session
+        // console.log("Checking for existing session...");
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.error("Error getting session:", error);
+        }
+
+        if (mounted) {
+          //console.log("Processing initial session:", !!session);
+          handleAuthStateChange("INITIAL_SESSION", session);
+
+          if (session) {
+            // Update session ID in localStorage
+            const currentSessionId =
+              session.access_token?.substring(0, 10) || "";
+            localStorage.setItem("sessionId", currentSessionId);
+          }
+        }
+
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error("Auth initialization error:", error);
+        if (mounted) {
+          setLoading(false);
+          setInitialAuthCheckComplete(true);
+        }
       }
+    };
+
+    let cleanup: (() => void) | undefined;
+
+    initializeAuth().then((cleanupFn) => {
+      cleanup = cleanupFn;
     });
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      if (cleanup) {
+        cleanup();
+      }
       clearAllTimers();
     };
-  }, [handleAuthStateChange, clearAllTimers]);
+  }, []); // Empty dependency array - only run once on mount
+
+  // Remove the separate checkStoredSession useEffect - it's now integrated above
 
   const signUp = async (
     email: string,

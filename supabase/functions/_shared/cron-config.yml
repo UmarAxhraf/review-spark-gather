@@ -1,0 +1,70 @@
+# Cron job configuration for automated email notifications
+# This file documents the required cron jobs for your hosting platform
+
+jobs:
+  # Daily review notifications - runs every day at 9 AM UTC
+  - name: "send-daily-notifications"
+    schedule: "0 9 * * *"
+    url: "https://uiszftfrxbqjqdgybbmk.supabase.co/functions/v1/send-daily-notifications"
+    method: "POST"
+    headers:
+      Authorization: "Bearer YOUR_SUPABASE_ANON_KEY"
+      Content-Type: "application/json"
+    body: "{}"
+
+  # Weekly reports - runs every Monday at 10 AM UTC
+  - name: "send-weekly-reports"
+    schedule: "0 10 * * 1"
+    url: "https://uiszftfrxbqjqdgybbmk.supabase.co/functions/v1/send-weekly-reports"
+    method: "POST"
+    headers:
+      Authorization: "Bearer YOUR_SUPABASE_ANON_KEY"
+      Content-Type: "application/json"
+    body: "{}"
+
+  # Download reminders - runs every Tuesday at 11 AM UTC
+  - name: "send-download-reminders"
+    schedule: "0 11 * * 2"
+    url: "https://uiszftfrxbqjqdgybbmk.supabase.co/functions/v1/send-download-reminders"
+    method: "POST"
+    headers:
+      Authorization: "Bearer YOUR_SUPABASE_ANON_KEY"
+      Content-Type: "application/json"
+    body: "{}"
+# Alternative: GitHub Actions workflow for scheduling
+# Create .github/workflows/email-notifications.yml:
+#
+# name: Email Notifications
+# on:
+#   schedule:
+#     - cron: '0 9 * * *'    # Daily at 9 AM UTC
+#     - cron: '0 10 * * 1'   # Weekly on Monday at 10 AM UTC
+#     - cron: '0 11 * * 2'   # Download reminders on Tuesday at 11 AM UTC
+#
+# jobs:
+#   send-notifications:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Send Daily Notifications
+#         if: github.event.schedule == '0 9 * * *'
+#         run: |
+#           curl -X POST "https://your-project.supabase.co/functions/v1/send-daily-notifications" \
+#             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+#             -H "Content-Type: application/json" \
+#             -d '{}'
+#
+#       - name: Send Weekly Reports
+#         if: github.event.schedule == '0 10 * * 1'
+#         run: |
+#           curl -X POST "https://your-project.supabase.co/functions/v1/send-weekly-reports" \
+#             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+#             -H "Content-Type: application/json" \
+#             -d '{}'
+#
+#       - name: Send Download Reminders
+#         if: github.event.schedule == '0 11 * * 2'
+#         run: |
+#           curl -X POST "https://your-project.supabase.co/functions/v1/send-download-reminders" \
+#             -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+#             -H "Content-Type: application/json" \
+#             -d '{}'

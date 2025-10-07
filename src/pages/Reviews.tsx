@@ -119,12 +119,14 @@ interface Review {
   assigned_to?: string;
   admin_response?: string;
   created_at: string;
-  employee: {
+  review_target_type: "employee" | "company";
+  target_company_id?: string;
+  employee?: {
     id: string;
     name: string;
     position?: string;
     department_id?: string;
-  };
+  } | null;
 }
 
 interface Employee {
@@ -784,9 +786,9 @@ const Reviews = () => {
             <p className="text-sm font-medium text-gray-700 mb-1">Employee</p>
             <div>
               <p className="font-medium text-gray-900">
-                {review.employee.name}
+                {review.employee?.name || "No employee assigned"}
               </p>
-              {review.employee.position && (
+              {review.employee?.position && (
                 <p className="text-sm text-gray-600">
                   {review.employee.position}
                 </p>
@@ -965,22 +967,22 @@ const Reviews = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       {/* Enhanced Responsive Header */}
       <header className="bg-white border-b border-gray-200">
-        <div className="px-4 sm:px-6 lg:px-8 py-4">
+        <div className="px-3 sm:px-4 lg:px-6 xl:px-8 py-4">
           <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
-            <div className="flex-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 truncate">
                 Review Management
               </h1>
-              <p className="text-sm sm:text-base text-gray-600 mt-1">
+              <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-1">
                 Manage and moderate customer reviews with advanced tools
               </p>
             </div>
 
             {/* Enhanced Filter Buttons */}
-            <div className="flex flex-wrap gap-2 lg:flex-nowrap">
+            <div className="flex flex-wrap gap-1 sm:gap-2 lg:flex-nowrap">
               {[
                 { key: "all", label: "All", icon: null },
                 { key: "pending", label: "Pending", icon: null },
@@ -990,13 +992,11 @@ const Reviews = () => {
                 <Button
                   key={key}
                   variant={filterStatus === key ? "default" : "outline"}
-                  size={screenSize === "mobile" ? "sm" : "default"}
+                  size="sm"
                   onClick={() => setFilterStatus(key as any)}
-                  className={`${
-                    screenSize === "mobile" ? "flex-1" : "flex-none"
-                  } ${screenSize === "tablet" ? "min-w-[100px]" : ""}`}
+                  className="flex items-center space-x-1 whitespace-nowrap text-xs sm:text-sm"
                 >
-                  {Icon && <Icon className="h-4 w-4 mr-1" />}
+                  {Icon && <Icon className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />}
                   {screenSize === "mobile" && key === "flagged"
                     ? "Flag"
                     : label}
@@ -1007,7 +1007,7 @@ const Reviews = () => {
           </div>
 
           {/* Enhanced Additional Filters */}
-          <div className="mt-4 flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:space-x-4">
+          <div className="mt-4 flex flex-col space-y-3 md:flex-row md:items-center md:space-y-0 md:space-x-2 lg:space-x-4">
             {/* Employee Filter */}
             <div className="flex items-center space-x-2 flex-1 md:flex-none">
               <Users className="h-4 w-4 text-gray-500 flex-shrink-0" />
@@ -1015,7 +1015,7 @@ const Reviews = () => {
                 value={selectedEmployee}
                 onValueChange={setSelectedEmployee}
               >
-                <SelectTrigger className="w-full md:w-48 lg:w-56">
+                <SelectTrigger className="w-full md:w-40 lg:w-48 xl:w-56">
                   <SelectValue placeholder="Filter by employee" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1037,7 +1037,7 @@ const Reviews = () => {
                 value={selectedDepartment}
                 onValueChange={setSelectedDepartment}
               >
-                <SelectTrigger className="w-full md:w-48 lg:w-56">
+                <SelectTrigger className="w-full md:w-40 lg:w-48 xl:w-56">
                   <SelectValue placeholder="Filter by department" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1059,7 +1059,7 @@ const Reviews = () => {
                 variant="outline"
                 size="sm"
                 onClick={resetFilters}
-                className="flex items-center space-x-1 w-full md:w-auto"
+                className="flex items-center space-x-1 w-full md:w-auto whitespace-nowrap"
               >
                 <Filter className="h-4 w-4" />
                 <span>Reset Filters</span>
@@ -1070,19 +1070,19 @@ const Reviews = () => {
       </header>
 
       {/* Enhanced Main Content */}
-      <div className="px-3 sm:px-4 lg:px-4 py-4 sm:py-4">
+      <div className="px-3 sm:px-4 lg:px-6 xl:px-8 py-4">
         <div className="mb-4 sm:mb-6">
           <BackButton />
         </div>
 
-        <Card>
+        <Card className="w-full">
           <CardHeader>
             <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-              <div>
-                <CardTitle className="text-lg sm:text-xl lg:text-2xl">
+              <div className="min-w-0 flex-1">
+                <CardTitle className="text-base sm:text-lg lg:text-xl xl:text-2xl truncate">
                   Customer Reviews
                 </CardTitle>
-                <CardDescription className="text-sm sm:text-base">
+                <CardDescription className="text-xs sm:text-sm lg:text-base">
                   {reviews.length} review{reviews.length !== 1 ? "s" : ""} found
                   {selectedReviews.length > 0 && (
                     <span className="ml-2 text-blue-600 font-medium">
@@ -1099,9 +1099,9 @@ const Reviews = () => {
                     size="sm"
                     onClick={() => bulkApproveMutation.mutate(selectedReviews)}
                     disabled={bulkApproveMutation.isPending}
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto text-xs sm:text-sm"
                   >
-                    <Check className="h-4 w-4 mr-1" />
+                    <Check className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     Approve ({selectedReviews.length})
                   </Button>
                   <Button
@@ -1109,9 +1109,9 @@ const Reviews = () => {
                     variant="outline"
                     onClick={() => bulkRejectMutation.mutate(selectedReviews)}
                     disabled={bulkRejectMutation.isPending}
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto text-xs sm:text-sm"
                   >
-                    <X className="h-4 w-4 mr-1" />
+                    <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                     Reject ({selectedReviews.length})
                   </Button>
                   <Button
@@ -1119,7 +1119,7 @@ const Reviews = () => {
                     variant="destructive"
                     onClick={() => bulkDeleteMutation.mutate(selectedReviews)}
                     disabled={bulkDeleteMutation.isPending}
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto text-xs sm:text-sm"
                   >
                     Delete ({selectedReviews.length})
                   </Button>
@@ -1128,59 +1128,9 @@ const Reviews = () => {
             </div>
           </CardHeader>
 
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-4">
-                {screenSize === "mobile" || screenSize === "tablet" ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <ReviewCardSkeleton key={i} />
-                  ))
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">
-                          <Skeleton className="h-4 w-4" />
-                        </TableHead>
-                        <TableHead>
-                          <Skeleton className="h-4 w-20" />
-                        </TableHead>
-                        <TableHead>
-                          <Skeleton className="h-4 w-20" />
-                        </TableHead>
-                        <TableHead>
-                          <Skeleton className="h-4 w-16" />
-                        </TableHead>
-                        <TableHead>
-                          <Skeleton className="h-4 w-12" />
-                        </TableHead>
-                        <TableHead>
-                          <Skeleton className="h-4 w-20" />
-                        </TableHead>
-                        <TableHead>
-                          <Skeleton className="h-4 w-20" />
-                        </TableHead>
-                        <TableHead>
-                          <Skeleton className="h-4 w-16" />
-                        </TableHead>
-                        <TableHead>
-                          <Skeleton className="h-4 w-12" />
-                        </TableHead>
-                        <TableHead>
-                          <Skeleton className="h-4 w-20" />
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <TableRowSkeleton key={i} />
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </div>
-            ) : reviews.length === 0 ? (
-              <div className="text-center py-12">
+          <CardContent className="p-0 sm:p-6">
+            {reviews.length === 0 ? (
+              <div className="text-center py-12 px-4">
                 <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                   <MessageSquare className="h-8 w-8 text-gray-400" />
                 </div>
@@ -1195,77 +1145,109 @@ const Reviews = () => {
               <>
                 {screenSize === "mobile" || screenSize === "tablet" ? (
                   // Enhanced Card Layout for Mobile and Tablet
-                  <div
-                    className={`grid gap-4 ${
-                      screenSize === "tablet"
-                        ? "md:grid-cols-2 lg:grid-cols-1"
-                        : "grid-cols-1"
-                    }`}
-                  >
-                    {paginatedReviews.map((review) => (
-                      <ReviewCard key={review.id} review={review} />
-                    ))}
+                  <div className="p-4 sm:p-0">
+                    <div
+                      className={`grid gap-4 ${
+                        screenSize === "tablet"
+                          ? "md:grid-cols-2 lg:grid-cols-1"
+                          : "grid-cols-1"
+                      }`}
+                    >
+                      {paginatedReviews.map((review) => (
+                        <ReviewCard key={review.id} review={review} />
+                      ))}
+                    </div>
                   </div>
                 ) : (
-                  // Desktop Table Layout
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-12">
-                            <Checkbox
-                              checked={
-                                selectedReviews.length ===
-                                  paginatedReviews.length &&
-                                paginatedReviews.length > 0
-                              }
-                              onCheckedChange={handleSelectAll}
-                            />
-                          </TableHead>
-                          <TableHead>Customer</TableHead>
-                          <TableHead>Employee</TableHead>
-                          <TableHead>Rating</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Content</TableHead>
-                          <TableHead>Sentiment</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedReviews.map((review) => (
-                          <TableRow
-                            key={review.id}
-                            className={
-                              review.flagged_as_spam ? "bg-red-50" : ""
-                            }
-                          >
-                            <TableCell>
+                  // Desktop Table Layout with responsive columns
+                  <div className="w-full">
+                    <div className="overflow-x-auto">
+                      <Table className="min-w-full">
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-8 sm:w-12">
                               <Checkbox
-                                checked={selectedReviews.includes(review.id)}
-                                onCheckedChange={(checked) =>
-                                  handleSelectReview(
-                                    review.id,
-                                    checked as boolean
-                                  )
+                                checked={
+                                  selectedReviews.length ===
+                                    paginatedReviews.length &&
+                                  paginatedReviews.length > 0
                                 }
+                                onCheckedChange={handleSelectAll}
                               />
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">
-                                  {review.customer_name}
-                                </p>
-                                {review.customer_email && (
-                                  <p className="text-sm text-gray-600 flex items-center">
-                                    <Mail className="h-3 w-3 mr-1" />
-                                    {review.customer_email}
+                            </TableHead>
+                            <TableHead className="w-32 max-w-[150px]">
+                              Customer
+                            </TableHead>
+                            <TableHead className="min-w-[100px] hidden lg:table-cell">
+                              Employee
+                            </TableHead>
+                            <TableHead className="w-16 sm:w-20">
+                              Rating
+                            </TableHead>
+                            <TableHead className="w-16 sm:w-20 hidden md:table-cell">
+                              Type
+                            </TableHead>
+                            <TableHead className="min-w-[150px] max-w-[200px] hidden xl:table-cell">
+                              Content
+                            </TableHead>
+                            {/* <TableHead className="w-20 hidden lg:table-cell">
+                              Sentiment
+                            </TableHead> */}
+                            <TableHead className="w-20">Status</TableHead>
+                            <TableHead className="w-24 hidden sm:table-cell">
+                              Date
+                            </TableHead>
+                            <TableHead className="w-16">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {paginatedReviews.map((review) => (
+                            <TableRow
+                              key={review.id}
+                              className={
+                                review.flagged_as_spam ? "bg-red-50" : ""
+                              }
+                            >
+                              <TableCell>
+                                <Checkbox
+                                  checked={selectedReviews.includes(review.id)}
+                                  onCheckedChange={(checked) =>
+                                    handleSelectReview(
+                                      review.id,
+                                      checked as boolean
+                                    )
+                                  }
+                                />
+                              </TableCell>
+                              {/* <TableCell>
+                                <div>
+                                  <p className="font-medium">
+                                    {review.customer_name}
                                   </p>
-                                )}
-                              </div>
-                            </TableCell>
-                            <TableCell>
+                                  {review.customer_email && (
+                                    <p className="text-sm text-gray-600 flex items-center">
+                                      <Mail className="h-3 w-3 mr-1" />
+                                      {review.customer_email}
+                                    </p>
+                                  )}
+                                </div>
+                              </TableCell> */}
+                              <TableCell className="max-w-[150px]">
+                                <div>
+                                  <p className="font-medium truncate">
+                                    {review.customer_name}
+                                  </p>
+                                  {review.customer_email && (
+                                    <div className="text-sm text-gray-600 flex items-center">
+                                      <Mail className="h-3 w-3 mr-1 shrink-0" />
+                                      <p className="truncate max-w-[100px]">
+                                        {review.customer_email}
+                                      </p>
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              {/* <TableCell>
                               <div>
                                 <p className="font-medium">
                                   {review.employee.name}
@@ -1276,201 +1258,227 @@ const Reviews = () => {
                                   </p>
                                 )}
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center space-x-1">
-                                {renderStars(review.rating)}
-                                <span className="ml-1 text-sm font-medium">
-                                  {review.rating}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  review.review_type === "video"
-                                    ? "default"
-                                    : "secondary"
-                                }
-                              >
-                                {review.review_type}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="max-w-xs">
-                              {review.comment ? (
-                                <div className="flex items-center gap-2">
-                                  <p className="truncate flex-1">
-                                    {review.comment}
-                                  </p>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setSelectedReviewForDetails(review);
-                                      setShowReviewDetailsDialog(true);
-                                    }}
-                                    className="h-6 w-6 p-0 shrink-0"
-                                  >
-                                    <Eye className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground">
-                                  No comment
-                                </span>
-                              )}
-                              {renderVideoPreview(review)}
-                              {review.flagged_as_spam && (
-                                <Badge variant="destructive" className="mt-1">
-                                  <Flag className="h-3 w-3 mr-1" />
-                                  Spam
-                                </Badge>
-                              )}
-                              {review.admin_response && (
-                                <Badge variant="outline" className="mt-1">
-                                  <MessageSquare className="h-3 w-3 mr-1" />
-                                  Responded
-                                </Badge>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {getSentimentBadge(review.sentiment_score)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  review.moderation_status === "approved"
-                                    ? "default"
-                                    : review.moderation_status === "flagged"
-                                    ? "destructive"
-                                    : "secondary"
-                                }
-                              >
-                                {review.moderation_status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {new Date(review.created_at).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2">
-                                {/* Keep Approve button visible */}
-                                {review.moderation_status === "pending" && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() =>
-                                      bulkApproveMutation.mutate([review.id])
-                                    }
-                                    disabled={bulkApproveMutation.isPending}
-                                    title="Approve"
-                                  >
-                                    <Check className="h-4 w-4" />
-                                  </Button>
+                            </TableCell> */}
+                              <TableCell className="hidden lg:table-cell">
+                                {review.review_target_type === "employee" &&
+                                review.employee ? (
+                                  <div>
+                                    <p className="font-medium">
+                                      {review.employee.name}
+                                    </p>
+                                    {review.employee.position && (
+                                      <p className="text-sm text-gray-600">
+                                        {review.employee.position}
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <p className="font-medium text-blue-600">
+                                      Company Review
+                                    </p>
+                                    <p className="text-sm text-gray-600">
+                                      Direct company feedback
+                                    </p>
+                                  </div>
                                 )}
-
-                                {/* More Actions Dropdown */}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center space-x-1">
+                                  {renderStars(review.rating)}
+                                  <span className="ml-1 text-sm font-medium">
+                                    {review.rating}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                <Badge
+                                  variant={
+                                    review.review_type === "video"
+                                      ? "default"
+                                      : "secondary"
+                                  }
+                                >
+                                  {review.review_type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="max-w-xs hidden xl:table-cell">
+                                {review.comment ? (
+                                  <div className="flex items-center gap-2">
+                                    <p className="truncate flex-1">
+                                      {review.comment}
+                                    </p>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setSelectedReviewForDetails(review);
+                                        setShowReviewDetailsDialog(true);
+                                      }}
+                                      className="h-6 w-6 p-0 shrink-0"
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    No comment
+                                  </span>
+                                )}
+                                {renderVideoPreview(review)}
+                                {review.flagged_as_spam && (
+                                  <Badge variant="destructive" className="mt-1">
+                                    <Flag className="h-3 w-3 mr-1" />
+                                    Spam
+                                  </Badge>
+                                )}
+                                {review.admin_response && (
+                                  <Badge variant="outline" className="mt-1">
+                                    <MessageSquare className="h-3 w-3 mr-1" />
+                                    Responded
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              {/* <TableCell className="hidden lg:table-cell">
+                                {getSentimentBadge(review.sentiment_score)}
+                              </TableCell> */}
+                              <TableCell>
+                                <Badge
+                                  variant={
+                                    review.moderation_status === "approved"
+                                      ? "default"
+                                      : review.moderation_status === "flagged"
+                                      ? "destructive"
+                                      : "secondary"
+                                  }
+                                >
+                                  {review.moderation_status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">
+                                {new Date(
+                                  review.created_at
+                                ).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex space-x-2">
+                                  {/* Keep Approve button visible */}
+                                  {review.moderation_status === "pending" && (
                                     <Button
                                       size="sm"
                                       variant="outline"
-                                      title="More Actions"
+                                      onClick={() =>
+                                        bulkApproveMutation.mutate([review.id])
+                                      }
+                                      disabled={bulkApproveMutation.isPending}
+                                      title="Approve"
                                     >
-                                      <MoreHorizontal className="h-4 w-4" />
+                                      <Check className="h-4 w-4" />
                                     </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent
-                                    align="end"
-                                    className="w-48"
-                                  >
-                                    {/* Spam Actions */}
-                                    {review.flagged_as_spam ? (
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          spamOverrideMutation.mutate(review.id)
-                                        }
-                                        disabled={
-                                          spamOverrideMutation.isPending
-                                        }
-                                      >
-                                        <Shield className="h-4 w-4 mr-2" />
-                                        Remove from Spam
-                                      </DropdownMenuItem>
-                                    ) : (
-                                      <DropdownMenuItem
-                                        onClick={() =>
-                                          markAsSpamMutation.mutate(review.id)
-                                        }
-                                        disabled={markAsSpamMutation.isPending}
-                                      >
-                                        <Flag className="h-4 w-4 mr-2" />
-                                        Add to Spam
-                                      </DropdownMenuItem>
-                                    )}
+                                  )}
 
-                                    {/* Respond Action */}
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        setSelectedReviewForResponse(review);
-                                        setResponseText(
-                                          review.admin_response || ""
-                                        );
-                                        setShowResponseDialog(true);
-                                      }}
+                                  {/* More Actions Dropdown */}
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        title="More Actions"
+                                      >
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent
+                                      align="end"
+                                      className="w-48"
                                     >
-                                      <MessageSquare className="h-4 w-4 mr-2" />
-                                      Respond
-                                    </DropdownMenuItem>
-
-                                    {/* Download Action (only for videos) */}
-                                    {review.review_type === "video" &&
-                                      review.video_url && (
+                                      {/* Spam Actions */}
+                                      {review.flagged_as_spam ? (
                                         <DropdownMenuItem
                                           onClick={() =>
-                                            handleVideoDownload(
-                                              review.video_url!,
-                                              review.customer_name
+                                            spamOverrideMutation.mutate(
+                                              review.id
                                             )
                                           }
+                                          disabled={
+                                            spamOverrideMutation.isPending
+                                          }
                                         >
-                                          <Download className="h-4 w-4 mr-2" />
-                                          Download Video
+                                          <Shield className="h-4 w-4 mr-2" />
+                                          Remove from Spam
+                                        </DropdownMenuItem>
+                                      ) : (
+                                        <DropdownMenuItem
+                                          onClick={() =>
+                                            markAsSpamMutation.mutate(review.id)
+                                          }
+                                          disabled={
+                                            markAsSpamMutation.isPending
+                                          }
+                                        >
+                                          <Flag className="h-4 w-4 mr-2" />
+                                          Add to Spam
                                         </DropdownMenuItem>
                                       )}
 
-                                    {/* Delete Action */}
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        deleteMutation.mutate(review.id)
-                                      }
-                                      disabled={deleteMutation.isPending}
-                                      className="text-red-600 focus:text-red-600"
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-2" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                                      {/* Respond Action */}
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setSelectedReviewForResponse(review);
+                                          setResponseText(
+                                            review.admin_response || ""
+                                          );
+                                          setShowResponseDialog(true);
+                                        }}
+                                      >
+                                        <MessageSquare className="h-4 w-4 mr-2" />
+                                        Respond
+                                      </DropdownMenuItem>
+
+                                      {/* Download Action (only for videos) */}
+                                      {review.review_type === "video" &&
+                                        review.video_url && (
+                                          <DropdownMenuItem
+                                            onClick={() =>
+                                              handleVideoDownload(
+                                                review.video_url!,
+                                                review.customer_name
+                                              )
+                                            }
+                                          >
+                                            <Download className="h-4 w-4 mr-2" />
+                                            Download Video
+                                          </DropdownMenuItem>
+                                        )}
+
+                                      {/* Delete Action */}
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          deleteMutation.mutate(review.id)
+                                        }
+                                        disabled={deleteMutation.isPending}
+                                        className="text-red-600 focus:text-red-600"
+                                      >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
                   </div>
                 )}
 
-                {/* Enhanced Pagination */}
+                {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
-                    <div className="text-sm text-gray-600 order-2 sm:order-1">
-                      Showing {(currentPage - 1) * reviewsPerPage + 1} to{" "}
-                      {Math.min(currentPage * reviewsPerPage, reviews.length)}{" "}
-                      of {reviews.length} reviews
-                    </div>
-                    <Pagination className="order-1 sm:order-2">
-                      <PaginationContent className="flex-wrap justify-center">
+                  <div className="mt-6 flex justify-center px-4 sm:px-0">
+                    <Pagination>
+                      <PaginationContent className="flex-wrap">
                         {currentPage > 1 && (
                           <PaginationItem>
                             <PaginationPrevious
@@ -1480,39 +1488,17 @@ const Reviews = () => {
                           </PaginationItem>
                         )}
 
-                        {/* Show fewer page numbers on mobile */}
-                        {isMobile
-                          ? // Mobile: Show current page and adjacent pages
-                            [...Array(Math.min(3, totalPages))]
-                              .map((_, i) => {
-                                const pageNum =
-                                  Math.max(1, currentPage - 1) + i;
-                                if (pageNum > totalPages) return null;
-                                return (
-                                  <PaginationItem key={pageNum}>
-                                    <PaginationLink
-                                      onClick={() => setCurrentPage(pageNum)}
-                                      isActive={currentPage === pageNum}
-                                      className="cursor-pointer"
-                                    >
-                                      {pageNum}
-                                    </PaginationLink>
-                                  </PaginationItem>
-                                );
-                              })
-                              .filter(Boolean)
-                          : // Desktop: Show all pages
-                            [...Array(totalPages)].map((_, i) => (
-                              <PaginationItem key={i + 1}>
-                                <PaginationLink
-                                  onClick={() => setCurrentPage(i + 1)}
-                                  isActive={currentPage === i + 1}
-                                  className="cursor-pointer"
-                                >
-                                  {i + 1}
-                                </PaginationLink>
-                              </PaginationItem>
-                            ))}
+                        {[...Array(totalPages)].map((_, i) => (
+                          <PaginationItem key={i + 1}>
+                            <PaginationLink
+                              onClick={() => setCurrentPage(i + 1)}
+                              isActive={currentPage === i + 1}
+                              className="cursor-pointer"
+                            >
+                              {i + 1}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ))}
 
                         {currentPage < totalPages && (
                           <PaginationItem>
@@ -1548,11 +1534,22 @@ const Reviews = () => {
           {selectedReviewForDetails && (
             <div className="space-y-4">
               {/* Customer Info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="font-medium">Customer:</span>
                   <p>{selectedReviewForDetails.customer_name}</p>
                 </div>
+                {selectedReviewForDetails.customer_email && (
+                  <div>
+                    <span className="font-medium">Email:</span>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Mail className="h-3 w-3 text-gray-500" />
+                      <p className="text-sm">
+                        {selectedReviewForDetails.customer_email}
+                      </p>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <span className="font-medium">Date:</span>
                   <p>
@@ -1563,23 +1560,34 @@ const Reviews = () => {
                 </div>
               </div>
 
-              {/* Rating */}
-              <div>
-                <span className="font-medium text-sm">Rating:</span>
-                <div className="flex items-center gap-1 mt-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`h-4 w-4 ${
-                        star <= selectedReviewForDetails.rating
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300"
-                      }`}
-                    />
-                  ))}
-                  <span className="ml-2 text-sm text-gray-600">
-                    ({selectedReviewForDetails.rating}/5)
-                  </span>
+              {/* Rating and Sentiment */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <span className="font-medium text-sm">Rating:</span>
+                  <div className="flex items-center gap-1 mt-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-4 w-4 ${
+                          star <= selectedReviewForDetails.rating
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    ))}
+                    <span className="ml-2 text-sm text-gray-600">
+                      ({selectedReviewForDetails.rating}/5)
+                    </span>
+                  </div>
+                </div>
+                {/* Sentiment Score */}
+                <div>
+                  <span className="font-medium text-sm">Sentiment:</span>
+                  <div className="mt-1">
+                    {getSentimentBadge(
+                      selectedReviewForDetails.sentiment_score
+                    ) || <Badge variant="secondary">Not analyzed</Badge>}
+                  </div>
                 </div>
               </div>
 
@@ -1587,8 +1595,9 @@ const Reviews = () => {
               <div>
                 <span className="font-medium text-sm">Employee:</span>
                 <p className="text-sm">
-                  {selectedReviewForDetails.employee.name}
-                  {selectedReviewForDetails.employee.position && (
+                  {selectedReviewForDetails.employee?.name ||
+                    "No employee assigned"}
+                  {selectedReviewForDetails.employee?.position && (
                     <span className="text-gray-600">
                       {" "}
                       - {selectedReviewForDetails.employee.position}
@@ -1752,8 +1761,9 @@ const Reviews = () => {
                     </p>
                   )}
                   <p className="text-xs text-gray-500 mt-2">
-                    Review for: {selectedReviewForResponse.employee.name}
-                    {selectedReviewForResponse.employee.position &&
+                    Review for:{" "}
+                    {selectedReviewForResponse.employee?.name || "Company"}
+                    {selectedReviewForResponse.employee?.position &&
                       ` (${selectedReviewForResponse.employee.position})`}
                   </p>
                 </div>

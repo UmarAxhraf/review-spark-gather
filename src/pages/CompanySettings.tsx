@@ -60,7 +60,7 @@ import {
   validationRules,
   sanitizeInput,
 } from "../lib/validation";
-import { useCSRF } from "../lib/csrf";
+import { BackButton } from "@/components/ui/back-button";
 
 const companyFormSchema = z.object({
   company_name: z
@@ -104,10 +104,11 @@ const companyFormSchema = z.object({
   primary_color: z.string().optional(),
   secondary_color: z.string().optional(),
   logo_url: z.string().optional(),
-  // Notification preferences
+  // Enhanced notification preferences
   email_notifications: z.boolean().default(true),
   review_notifications: z.boolean().default(true),
   weekly_reports: z.boolean().default(true),
+  weekly_report_download_alert: z.boolean().default(true), // NEW
   // Privacy settings
   public_profile: z.boolean().default(false),
   show_employee_count: z.boolean().default(true),
@@ -135,8 +136,11 @@ interface CompanyProfile {
   email_notifications?: boolean;
   review_notifications?: boolean;
   weekly_reports?: boolean;
+  weekly_report_download_alert?: boolean;
   public_profile?: boolean;
   show_employee_count?: boolean;
+  company_qr_code_id?: string;
+  company_qr_url?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -144,7 +148,6 @@ interface CompanyProfile {
 const CompanySettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { token: csrfToken, loading: csrfLoading } = useCSRF();
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -173,6 +176,7 @@ const CompanySettings = () => {
       email_notifications: true,
       review_notifications: true,
       weekly_reports: true,
+      weekly_report_download_alert: true,
       public_profile: false,
       show_employee_count: true,
     },
@@ -184,6 +188,42 @@ const CompanySettings = () => {
       fetchCompanyProfile();
     }
   }, [user]);
+
+  // Add real-time subscription for profile changes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`profile-changes-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          // Update form values when database changes
+          const updatedData = payload.new;
+          form.reset({
+            ...form.getValues(),
+            email_notifications: updatedData.email_notifications,
+            review_notifications: updatedData.review_notifications,
+            weekly_reports: updatedData.weekly_reports,
+            weekly_report_download_alert:
+              updatedData.weekly_report_download_alert,
+            public_profile: updatedData.public_profile,
+            show_employee_count: updatedData.show_employee_count,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, form]);
 
   const fetchCompanyProfile = async () => {
     if (!user) return;
@@ -224,6 +264,8 @@ const CompanySettings = () => {
           email_notifications: data.email_notifications ?? true,
           review_notifications: data.review_notifications ?? true,
           weekly_reports: data.weekly_reports ?? true,
+          weekly_report_download_alert:
+            data.weekly_report_download_alert ?? true,
           public_profile: data.public_profile ?? false,
           show_employee_count: data.show_employee_count ?? true,
         });
@@ -246,15 +288,6 @@ const CompanySettings = () => {
   const onSubmit = async (values: CompanyFormValues) => {
     if (!user) return;
 
-    if (csrfLoading || !csrfToken) {
-      toast({
-        title: "Security Validation",
-        description: "Security validation in progress. Please wait.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const rules = {
       companyName: validationRules.companyName,
       email: validationRules.email,
@@ -262,6 +295,17 @@ const CompanySettings = () => {
       website: { required: false, maxLength: 255 },
       address: { required: false, maxLength: 500 },
       description: { required: false, maxLength: 1000 },
+      // Add missing company information fields
+      industry: { required: false, maxLength: 100 },
+      employee_count: { required: false, maxLength: 50 },
+      city: { required: false, maxLength: 100 },
+      state: { required: false, maxLength: 100 },
+      zip_code: { required: false, maxLength: 20 },
+      timezone: { required: false, maxLength: 100 },
+      // Add other optional fields that should be saved
+      primary_color: { required: false, maxLength: 7 },
+      secondary_color: { required: false, maxLength: 7 },
+      logo_url: { required: false, maxLength: 500 },
     };
 
     const validation = validateAndSanitize(values, rules);
@@ -281,7 +325,6 @@ const CompanySettings = () => {
 
       const updateData = {
         ...sanitizedValues,
-        csrf_token: csrfToken,
         updated_at: new Date().toISOString(),
       };
 
@@ -407,6 +450,70 @@ const CompanySettings = () => {
     }
   };
 
+  const handlePrivacySettingChange = async (field: string, value: boolean) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ [field]: value, updated_at: new Date().toISOString() })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error("Error updating privacy setting:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update privacy setting. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Privacy Setting Updated",
+        description: `${field.replace("_", " ")} has been ${
+          value ? "enabled" : "disabled"
+        }.`,
+      });
+    } catch (error) {
+      console.error("Error updating privacy setting:", error);
+    }
+  };
+
+  const handleNotificationSettingChange = async (
+    field: string,
+    value: boolean
+  ) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ [field]: value, updated_at: new Date().toISOString() })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error("Error updating notification setting:", error);
+        toast({
+          title: "Error",
+          description:
+            "Failed to update notification setting. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Notification Setting Updated",
+        description: `${field.replace("_", " ")} has been ${
+          value ? "enabled" : "disabled"
+        }.`,
+      });
+    } catch (error) {
+      console.error("Error updating notification setting:", error);
+    }
+  };
+
   const industryOptions = [
     "Technology",
     "Healthcare",
@@ -419,6 +526,19 @@ const CompanySettings = () => {
     "Automotive",
     "Construction",
     "Consulting",
+    "Hospitality",
+    "Travel & Tourism",
+    "Entertainment & Media",
+    "Transportation & Logistics",
+    "Energy & Utilities",
+    "Nonprofit & Charity",
+    "Legal Services",
+    "Marketing & Advertising",
+    "Telecommunications",
+    "Beauty & Wellness",
+    "Agriculture",
+    "E-commerce",
+    "Public Sector & Government",
     "Other",
   ];
 
@@ -445,7 +565,10 @@ const CompanySettings = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 min-h-full">
+      <div className="mb-6">
+        <BackButton />
+      </div>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -454,15 +577,12 @@ const CompanySettings = () => {
             Manage your company information, branding, and preferences
           </p>
         </div>
-        {/* <div className="flex items-center space-x-2">
-            <Settings className="h-6 w-6 text-gray-500" />
-          </div> */}
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Hidden CSRF token field */}
-          <input type="hidden" name="csrfToken" value={csrfToken} />
+
           {/* Company Information */}
           <Card>
             <CardHeader>
@@ -614,8 +734,7 @@ const CompanySettings = () => {
                       />
                     </FormControl>
                     <FormDescription>
-                      Optional - appears on review submission pages (max 500
-                      characters)
+                      Optional (max 500 characters)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -701,9 +820,9 @@ const CompanySettings = () => {
                     <FormControl>
                       <Input placeholder="America/Los_Angeles" {...field} />
                     </FormControl>
-                    <FormDescription>
+                    {/* <FormDescription>
                       Used for scheduling reports and notifications
-                    </FormDescription>
+                    </FormDescription> */}
                     <FormMessage />
                   </FormItem>
                 )}
@@ -843,7 +962,7 @@ const CompanySettings = () => {
             </CardContent>
           </Card>
 
-          {/* Notification Preferences */}
+          {/* Enhanced Notification Preferences */}
           <Card>
             <CardHeader>
               <div className="flex items-center space-x-2">
@@ -851,7 +970,8 @@ const CompanySettings = () => {
                 <CardTitle>Notification Preferences</CardTitle>
               </div>
               <CardDescription>
-                Choose how you want to receive notifications
+                Choose how and when you want to receive notifications (changes
+                reflect immediately)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -871,7 +991,14 @@ const CompanySettings = () => {
                     <FormControl>
                       <Switch
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          // Update database immediately for notification settings
+                          handleNotificationSettingChange(
+                            "email_notifications",
+                            checked
+                          );
+                        }}
                       />
                     </FormControl>
                   </FormItem>
@@ -888,13 +1015,21 @@ const CompanySettings = () => {
                         Review Notifications
                       </FormLabel>
                       <FormDescription>
-                        Get notified when new reviews are submitted
+                        Get notified when new reviews are submitted (sent once
+                        daily)
                       </FormDescription>
                     </div>
                     <FormControl>
                       <Switch
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          // Update database immediately for notification settings
+                          handleNotificationSettingChange(
+                            "review_notifications",
+                            checked
+                          );
+                        }}
                       />
                     </FormControl>
                   </FormItem>
@@ -917,7 +1052,45 @@ const CompanySettings = () => {
                     <FormControl>
                       <Switch
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          // Update database immediately for notification settings
+                          handleNotificationSettingChange(
+                            "weekly_reports",
+                            checked
+                          );
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* NEW: Weekly Report Download Alert */}
+              <FormField
+                control={form.control}
+                name="weekly_report_download_alert"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">
+                        Weekly Report Download Alert
+                      </FormLabel>
+                      <FormDescription>
+                        Get reminded to download your reports as a backup
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          // Update database immediately for notification settings
+                          handleNotificationSettingChange(
+                            "weekly_report_download_alert",
+                            checked
+                          );
+                        }}
                       />
                     </FormControl>
                   </FormItem>
@@ -926,7 +1099,7 @@ const CompanySettings = () => {
             </CardContent>
           </Card>
 
-          {/* Privacy Settings */}
+          {/* Enhanced Privacy Settings */}
           <Card>
             <CardHeader>
               <div className="flex items-center space-x-2">
@@ -934,7 +1107,8 @@ const CompanySettings = () => {
                 <CardTitle>Privacy Settings</CardTitle>
               </div>
               <CardDescription>
-                Control your company's privacy and visibility
+                Control your company's privacy and visibility (changes reflect
+                immediately)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -954,7 +1128,11 @@ const CompanySettings = () => {
                     <FormControl>
                       <Switch
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          // Update database immediately for privacy settings
+                          handlePrivacySettingChange("public_profile", checked);
+                        }}
                       />
                     </FormControl>
                   </FormItem>
@@ -971,13 +1149,20 @@ const CompanySettings = () => {
                         Show Employee Count
                       </FormLabel>
                       <FormDescription>
-                        Display employee count on public pages
+                        Display the number of employees on your public profile
                       </FormDescription>
                     </div>
                     <FormControl>
                       <Switch
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          // Update database immediately for privacy settings
+                          handlePrivacySettingChange(
+                            "show_employee_count",
+                            checked
+                          );
+                        }}
                       />
                     </FormControl>
                   </FormItem>

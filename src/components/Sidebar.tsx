@@ -39,6 +39,7 @@ import {
   Crown,
   PlugZap,
   ChartArea,
+  Mail,
 } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import { toast } from "sonner";
@@ -139,20 +140,27 @@ const Sidebar = ({ className }: SidebarProps) => {
       path: "/reviews",
       icon: MessageSquare,
     },
+
     {
       label: "Analytics",
       path: "/analytics",
       icon: ChartArea,
     },
-    {
-      label: "QR Analytics",
-      path: "/qr-analytics",
-      icon: BarChart3,
-    },
+
     {
       label: "Platforms",
       path: "/platforms",
       icon: PlugZap,
+    },
+    {
+      label: "Review Request",
+      path: "/review-request",
+      icon: Mail,
+    },
+    {
+      label: "QR Analytics",
+      path: "/qr-analytics",
+      icon: BarChart3,
     },
     {
       label: "Export & Reports",

@@ -152,7 +152,7 @@
 //             <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
 //               <Star className="h-5 w-5 text-white" />
 //             </div>
-//             <span className="text-xl font-bold text-gray-900">ReviewPro</span>
+//             <span className="text-xl font-bold text-gray-900">Syncreviews</span>
 //           </div>
 //           <CardTitle className="text-2xl">Create Your Account</CardTitle>
 //           <CardDescription>Start collecting reviews in minutes</CardDescription>
@@ -712,7 +712,7 @@ const Signup = () => {
             <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <Star className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">ReviewPro</span>
+            <span className="text-xl font-bold text-gray-900">Syncreviews</span>
           </div>
           <CardTitle className="text-2xl">Create Your Account</CardTitle>
           <CardDescription>

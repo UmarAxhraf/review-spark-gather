@@ -26,3 +26,9 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/verify-session/deno.json"
 entrypoint = "./functions/verify-session/index.ts"
+
+[functions.yelp-api]
+enabled = true
+verify_jwt = true
+import_map = "./functions/deno.json"
+entrypoint = "./functions/yelp-api/index.ts"

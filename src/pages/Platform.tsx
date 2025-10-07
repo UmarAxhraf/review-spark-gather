@@ -1,368 +1,442 @@
-// import React, { useState } from "react";
-// import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Button } from "@/components/ui/button";
-// import { Badge } from "@/components/ui/badge";
-// import { Switch } from "@/components/ui/switch";
-// import {
-//   PlugZap,
-//   Star,
-//   MapPin,
-//   Plane,
-//   Shield,
-//   ExternalLink,
-//   Settings,
-//   Plus,
-//   CheckCircle,
-//   Clock,
-//   AlertCircle,
-// } from "lucide-react";
-// import { BackButton } from "@/components/ui/back-button";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+// Add Trash icon to the imports
+import {
+  MapPin,
+  Facebook,
+  Star,
+  ExternalLink,
+  Plus,
+  Eye,
+  Plane,
+  Shield,
+  Calendar,
+  Trash2,
+} from "lucide-react";
+import { BackButton } from "@/components/ui/back-button";
 
-// interface Integration {
-//   id: string;
-//   name: string;
-//   description: string;
-//   icon: React.ComponentType<any>;
-//   status: "connected" | "available" | "coming-soon";
-//   reviewCount?: number;
-//   lastSync?: string;
-//   features: string[];
-// }
+interface PlatformProfile {
+  id: string;
+  platform_type: string;
+  profile_url: string;
+  profile_name?: string;
+  is_active: boolean;
+}
 
-// const Platform = () => {
-//   const [integrations] = useState<Integration[]>([
-//     {
-//       id: "google-my-business",
-//       name: "Google My Business",
-//       description:
-//         "Sync reviews from your Google Business Profile to get comprehensive insights.",
-//       icon: MapPin,
-//       status: "available",
-//       features: [
-//         "Review Import",
-//         "Rating Analytics",
-//         "Response Management",
-//         "Real-time Sync",
-//       ],
-//     },
-//     {
-//       id: "tripadvisor",
-//       name: "TripAdvisor",
-//       description:
-//         "Import and manage TripAdvisor reviews for hospitality and travel businesses.",
-//       icon: Plane,
-//       status: "available",
-//       features: [
-//         "Review Import",
-//         "Traveler Insights",
-//         "Ranking Tracking",
-//         "Competitor Analysis",
-//       ],
-//     },
-//     {
-//       id: "trustpilot",
-//       name: "Trustpilot",
-//       description:
-//         "Connect your Trustpilot account to centralize all customer feedback.",
-//       icon: Shield,
-//       status: "available",
-//       features: [
-//         "Review Import",
-//         "Trust Score Tracking",
-//         "Invitation Management",
-//         "Analytics",
-//       ],
-//     },
-//     {
-//       id: "yelp",
-//       name: "Yelp",
-//       description:
-//         "Sync Yelp reviews and manage your business reputation across platforms.",
-//       icon: Star,
-//       status: "coming-soon",
-//       features: [
-//         "Review Import",
-//         "Business Insights",
-//         "Photo Management",
-//         "Check-in Data",
-//       ],
-//     },
-//     {
-//       id: "facebook",
-//       name: "Facebook Reviews",
-//       description: "Import reviews from your Facebook business page.",
-//       icon: ExternalLink,
-//       status: "coming-soon",
-//       features: [
-//         "Review Import",
-//         "Page Insights",
-//         "Social Analytics",
-//         "Engagement Tracking",
-//       ],
-//     },
-//     {
-//       id: "booking",
-//       name: "Booking.com",
-//       description: "Connect your Booking.com property to import guest reviews.",
-//       icon: ExternalLink,
-//       status: "coming-soon",
-//       features: [
-//         "Guest Reviews",
-//         "Property Analytics",
-//         "Booking Insights",
-//         "Seasonal Trends",
-//       ],
-//     },
-//   ]);
-
-//   const getStatusBadge = (status: string) => {
-//     switch (status) {
-//       case "connected":
-//         return (
-//           <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
-//             <CheckCircle className="w-3 h-3 mr-1" />
-//             Connected
-//           </Badge>
-//         );
-//       case "available":
-//         return (
-//           <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
-//             <Plus className="w-3 h-3 mr-1" />
-//             Available
-//           </Badge>
-//         );
-//       case "coming-soon":
-//         return (
-//           <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100">
-//             <Clock className="w-3 h-3 mr-1" />
-//             Coming Soon
-//           </Badge>
-//         );
-//       default:
-//         return null;
-//     }
-//   };
-
-//   const getStatusIcon = (status: string) => {
-//     switch (status) {
-//       case "connected":
-//         return <CheckCircle className="w-5 h-5 text-green-600" />;
-//       case "available":
-//         return <Plus className="w-5 h-5 text-blue-600" />;
-//       case "coming-soon":
-//         return <Clock className="w-5 h-5 text-gray-400" />;
-//       default:
-//         return null;
-//     }
-//   };
-
-//   return (
-//     <div className="p-6 space-y-6 max-w-7xl mx-auto">
-//       <div className="mb-6">
-//         <BackButton />
-//       </div>
-//       {/* Header Section */}
-//       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-//         <div>
-//           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-//             <PlugZap className="w-8 h-8 text-blue-600" />
-//             Platform Integrations
-//           </h1>
-//           <p className="text-gray-600 mt-2">
-//             Connect your review platforms to centralize all customer feedback in
-//             one place
-//           </p>
-//         </div>
-//         <Button className="flex items-center gap-2 w-full sm:w-auto">
-//           <Settings className="w-4 h-4" />
-//           Integration Settings
-//         </Button>
-//       </div>
-
-//       {/* Stats Overview */}
-//       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-//         <Card>
-//           <CardContent className="p-4">
-//             <div className="flex items-center justify-between">
-//               <div>
-//                 <p className="text-sm text-gray-600">Connected</p>
-//                 <p className="text-2xl font-bold text-green-600">0</p>
-//               </div>
-//               <CheckCircle className="w-8 h-8 text-green-600" />
-//             </div>
-//           </CardContent>
-//         </Card>
-//         <Card>
-//           <CardContent className="p-4">
-//             <div className="flex items-center justify-between">
-//               <div>
-//                 <p className="text-sm text-gray-600">Available</p>
-//                 <p className="text-2xl font-bold text-blue-600">3</p>
-//               </div>
-//               <Plus className="w-8 h-8 text-blue-600" />
-//             </div>
-//           </CardContent>
-//         </Card>
-//         <Card>
-//           <CardContent className="p-4">
-//             <div className="flex items-center justify-between">
-//               <div>
-//                 <p className="text-sm text-gray-600">Coming Soon</p>
-//                 <p className="text-2xl font-bold text-gray-600">3</p>
-//               </div>
-//               <Clock className="w-8 h-8 text-gray-600" />
-//             </div>
-//           </CardContent>
-//         </Card>
-//         <Card>
-//           <CardContent className="p-4">
-//             <div className="flex items-center justify-between">
-//               <div>
-//                 <p className="text-sm text-gray-600">Total Reviews</p>
-//                 <p className="text-2xl font-bold text-purple-600">--</p>
-//               </div>
-//               <Star className="w-8 h-8 text-purple-600" />
-//             </div>
-//           </CardContent>
-//         </Card>
-//       </div>
-
-//       {/* Integration Cards */}
-//       <div className="space-y-4">
-//         <h2 className="text-xl font-semibold text-gray-900">
-//           Available Integrations
-//         </h2>
-//         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-//           {integrations.map((integration) => {
-//             const IconComponent = integration.icon;
-//             return (
-//               <Card
-//                 key={integration.id}
-//                 className="hover:shadow-lg transition-shadow"
-//               >
-//                 <CardHeader className="pb-4">
-//                   <div className="flex items-start justify-between">
-//                     <div className="flex items-center gap-3">
-//                       <div className="p-2 bg-gray-100 rounded-lg">
-//                         <IconComponent className="w-6 h-6 text-gray-700" />
-//                       </div>
-//                       <div>
-//                         <CardTitle className="text-lg">
-//                           {integration.name}
-//                         </CardTitle>
-//                         {getStatusBadge(integration.status)}
-//                       </div>
-//                     </div>
-//                     {getStatusIcon(integration.status)}
-//                   </div>
-//                 </CardHeader>
-//                 <CardContent className="space-y-4">
-//                   <p className="text-gray-600 text-sm leading-relaxed">
-//                     {integration.description}
-//                   </p>
-
-//                   {/* Features */}
-//                   {/* <div>
-//                     <p className="text-sm font-medium text-gray-900 mb-2">
-//                       Features:
-//                     </p>
-//                     <div className="flex flex-wrap gap-2">
-//                       {integration.features.map((feature, index) => (
-//                         <Badge
-//                           key={index}
-//                           variant="outline"
-//                           className="text-xs"
-//                         >
-//                           {feature}
-//                         </Badge>
-//                       ))}
-//                     </div>
-//                   </div> */}
-
-//                   {/* Action Button */}
-//                   <div className="pt-2">
-//                     {integration.status === "available" && (
-//                       <Button className="w-full" variant="default">
-//                         <Plus className="w-4 h-4 mr-2" />
-//                         Connect {integration.name}
-//                       </Button>
-//                     )}
-//                     {integration.status === "connected" && (
-//                       <div className="space-y-2">
-//                         <div className="flex items-center justify-between">
-//                           <span className="text-sm text-gray-600">
-//                             Auto-sync enabled
-//                           </span>
-//                           <Switch checked={true} />
-//                         </div>
-//                         <Button className="w-full" variant="outline">
-//                           <Settings className="w-4 h-4 mr-2" />
-//                           Manage Integration
-//                         </Button>
-//                       </div>
-//                     )}
-//                     {integration.status === "coming-soon" && (
-//                       <Button className="w-full" variant="outline" disabled>
-//                         <Clock className="w-4 h-4 mr-2" />
-//                         Coming Soon
-//                       </Button>
-//                     )}
-//                   </div>
-//                 </CardContent>
-//               </Card>
-//             );
-//           })}
-//         </div>
-//       </div>
-
-//       {/* Help Section */}
-//       <Card className="bg-blue-50 border-blue-200">
-//         <CardContent className="p-6">
-//           <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-//             <AlertCircle className="w-6 h-6 text-blue-600 mt-1 flex-shrink-0" />
-//             <div className="flex-1">
-//               <h3 className="font-semibold text-blue-900 mb-2">
-//                 Need Help with Integrations?
-//               </h3>
-//               <p className="text-blue-800 text-sm mb-4">
-//                 Our team can help you set up integrations and migrate your
-//                 existing reviews. Each integration includes step-by-step setup
-//                 guides and dedicated support.
-//               </p>
-//               <div className="flex flex-col sm:flex-row gap-3">
-//                 <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-//                   Contact Support
-//                 </Button>
-//                 <Button
-//                   size="sm"
-//                   variant="outline"
-//                   className="border-blue-300 text-blue-700 hover:bg-blue-100"
-//                 >
-//                   View Documentation
-//                 </Button>
-//               </div>
-//             </div>
-//           </div>
-//         </CardContent>
-//       </Card>
-//     </div>
-//   );
-// };
-
-// export default Platform;
-
-import React from "react";
+interface PlatformConfig {
+  id: string;
+  name: string;
+  description: string;
+  icon: React.ComponentType<any>;
+  placeholder: string;
+  urlPattern?: RegExp;
+}
 
 const Platform = () => {
+  const { user } = useAuth();
+  const [profiles, setProfiles] = useState<PlatformProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedPlatform, setSelectedPlatform] =
+    useState<PlatformConfig | null>(null);
+  const [profileUrl, setProfileUrl] = useState("");
+  const [profileName, setProfileName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const platformConfigs: PlatformConfig[] = [
+    {
+      id: "google_my_business",
+      name: "Google My Business",
+      description:
+        "Add your Google My Business profile link to help customers find and review your business.",
+      icon: MapPin,
+      placeholder: "https://maps.google.com/...",
+      urlPattern:
+        /^https:\/\/(www\.google\.com\/maps|maps\.google\.com|goo\.gl|g\.page)\/.*/,
+    },
+    {
+      id: "facebook",
+      name: "Facebook Business Page",
+      description:
+        "Connect your Facebook business page to showcase your social presence.",
+      icon: Facebook,
+      placeholder: "https://facebook.com/...",
+      urlPattern: /^https:\/\/(www\.)?facebook\.com\/.*/,
+    },
+    {
+      id: "yelp",
+      name: "Yelp Business Profile",
+      description:
+        "Add your Yelp business profile to help customers discover and review your services.",
+      icon: Star,
+      placeholder: "https://yelp.com/biz/...",
+      urlPattern: /^https:\/\/(www\.)?yelp\.com\/biz\/.*/,
+    },
+    {
+      id: "tripadvisor",
+      name: "TripAdvisor",
+      description:
+        "Connect your TripAdvisor listing to showcase travel and hospitality reviews.",
+      icon: Plane,
+      placeholder: "https://tripadvisor.com/...",
+      urlPattern: /^https:\/\/(www\.)?tripadvisor\.(com|co\.uk|ca|com\.au)\/.*/,
+    },
+    {
+      id: "trustpilot",
+      name: "Trustpilot",
+      description:
+        "Add your Trustpilot profile to display customer trust and review scores.",
+      icon: Shield,
+      placeholder: "https://trustpilot.com/review/...",
+      urlPattern: /^https:\/\/(www\.)?trustpilot\.(com|co\.uk|dk)\/.*/,
+    },
+    {
+      id: "booking_com",
+      name: "Booking.com",
+      description:
+        "Connect your Booking.com property listing for hospitality businesses.",
+      icon: Calendar,
+      placeholder: "https://booking.com/hotel/...",
+      urlPattern: /^https:\/\/(www\.)?booking\.com\/.*/,
+    },
+  ];
+
+  useEffect(() => {
+    if (user) {
+      fetchProfiles();
+    }
+  }, [user]);
+
+  const fetchProfiles = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("platform_profiles")
+        .select("*")
+        .eq("company_id", user?.id)
+        .eq("is_active", true);
+
+      if (error) throw error;
+      setProfiles(data || []);
+    } catch (error) {
+      console.error("Error fetching profiles:", error);
+      toast.error("Failed to load platform profiles");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddProfile = (platform: PlatformConfig) => {
+    const existingProfile = profiles.find(
+      (p) => p.platform_type === platform.id
+    );
+    setSelectedPlatform(platform);
+    setProfileUrl(existingProfile?.profile_url || "");
+    setProfileName(existingProfile?.profile_name || "");
+    setShowDialog(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!selectedPlatform || !profileUrl.trim()) {
+      toast.error("Please enter a valid profile URL");
+      return;
+    }
+
+    // Validate URL format if pattern is provided
+    if (
+      selectedPlatform.urlPattern &&
+      !selectedPlatform.urlPattern.test(profileUrl)
+    ) {
+      toast.error(`Please enter a valid ${selectedPlatform.name} URL`);
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const existingProfile = profiles.find(
+        (p) => p.platform_type === selectedPlatform.id
+      );
+
+      if (existingProfile) {
+        // Update existing profile
+        const { error } = await supabase
+          .from("platform_profiles")
+          .update({
+            profile_url: profileUrl.trim(),
+            profile_name: profileName.trim() || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingProfile.id);
+
+        if (error) throw error;
+        toast.success("Profile updated successfully!");
+      } else {
+        // Create new profile
+        const { error } = await supabase.from("platform_profiles").insert({
+          company_id: user?.id,
+          platform_type: selectedPlatform.id,
+          profile_url: profileUrl.trim(),
+          profile_name: profileName.trim() || null,
+        });
+
+        if (error) throw error;
+        toast.success("Profile added successfully!");
+      }
+
+      await fetchProfiles();
+      setShowDialog(false);
+      setProfileUrl("");
+      setProfileName("");
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error("Failed to save profile. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleViewProfile = (url: string) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const getProfileForPlatform = (platformId: string) => {
+    return profiles.find((p) => p.platform_type === platformId);
+  };
+
+  // Add this new function to handle profile deletion
+  const handleDeleteProfile = async () => {
+    if (!selectedPlatform || !user?.id) return;
+
+    const existingProfile = getProfileForPlatform(selectedPlatform.id);
+    if (!existingProfile) return;
+
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("platform_profiles")
+        .delete()
+        .eq("id", existingProfile.id)
+        .eq("company_id", user.id); // Extra security check
+
+      if (error) throw error;
+
+      toast.success(`${selectedPlatform.name} profile removed successfully!`);
+      await fetchProfiles();
+      setShowDialog(false);
+      setProfileUrl("");
+      setProfileName("");
+    } catch (error) {
+      console.error("Error deleting profile:", error);
+      toast.error("Failed to remove profile. Please try again.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg">Loading platform profiles...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-        Platform Integrations
-      </h1>
-      {/* <p className="text-gray-600 mt-2">
-        Connect your review platforms to centralize all customer feedback in one
-        place
-      </p> */}
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <BackButton />
+      </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Platform Profiles</h1>
+        <p className="text-muted-foreground">
+          Manage your business profile links across different platforms. Add
+          your profile URLs to help customers find and connect with your
+          business.
+        </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {platformConfigs.map((platform) => {
+          const profile = getProfileForPlatform(platform.id);
+          const IconComponent = platform.icon;
+
+          return (
+            <Card key={platform.id} className="relative">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <IconComponent className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{platform.name}</CardTitle>
+                  </div>
+                </div>
+                <CardDescription className="text-sm">
+                  {platform.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {profile ? (
+                    <>
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center gap-2 text-green-700 text-sm font-medium mb-1">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          Profile Added
+                        </div>
+                        {profile.profile_name && (
+                          <p className="text-sm text-gray-600 mb-1">
+                            {profile.profile_name}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 break-all">
+                          {profile.profile_url}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewProfile(profile.profile_url)}
+                          className="flex-1"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddProfile(platform)}
+                          className="flex-1"
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={() => handleAddProfile(platform)}
+                      className="w-full"
+                      variant="outline"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Profile
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Add Profile Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {profiles.find((p) => p.platform_type === selectedPlatform?.id)
+                ? "Edit"
+                : "Add"}{" "}
+              {selectedPlatform?.name} Profile
+            </DialogTitle>
+            <DialogDescription>
+              Enter your {selectedPlatform?.name} profile URL to help customers
+              find your business.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="profile-url">Profile URL *</Label>
+              <Input
+                id="profile-url"
+                placeholder={selectedPlatform?.placeholder}
+                value={profileUrl}
+                onChange={(e) => setProfileUrl(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="profile-name">Display Name (Optional)</Label>
+              <Input
+                id="profile-name"
+                placeholder="e.g., Main Location, Downtown Store"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <div className="flex justify-between w-full">
+              {/* Show remove button only if profile exists */}
+              {profiles.find(
+                (p) => p.platform_type === selectedPlatform?.id
+              ) && (
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteProfile}
+                  disabled={saving || deleting}
+                  className="mr-auto"
+                >
+                  {deleting ? (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2 animate-spin" />
+                      Removing...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Remove Profile
+                    </>
+                  )}
+                </Button>
+              )}
+
+              <div className="flex gap-2 ml-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDialog(false)}
+                  disabled={saving || deleting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSaveProfile}
+                  disabled={saving || deleting}
+                >
+                  {saving ? "Saving..." : "Save Profile"}
+                </Button>
+              </div>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

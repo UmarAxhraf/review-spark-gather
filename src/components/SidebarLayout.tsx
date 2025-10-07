@@ -9,16 +9,18 @@ interface SidebarLayoutProps {
 
 const SidebarLayout = ({ children, className }: SidebarLayoutProps) => {
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="fixed inset-0 flex bg-gray-50 overflow-hidden">
       <Sidebar />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 min-w-0">
         {/* Mobile top spacing */}
         <div className="lg:hidden h-16" />
 
         {/* Scrollable content area */}
-        <main className={cn("flex-1 overflow-y-auto", className)}>
+        <main
+          className={cn("flex-1 overflow-y-auto overflow-x-auto", className)}
+        >
           {children}
         </main>
       </div>

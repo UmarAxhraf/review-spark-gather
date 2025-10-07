@@ -26,6 +26,7 @@ import { publicSupabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import VideoRecorder from "@/components/VideoRecorder";
 import VideoUploader from "@/components/VideoUploader";
+import PlatformProfileLinks from "@/components/PlatformProfileLinks";
 import {
   retryWithBackoff,
   isOnline,
@@ -51,6 +52,10 @@ interface Employee {
   qr_redirect_url?: string;
 }
 
+interface CompanyReviewParams {
+  companyQrId: string;
+}
+
 interface Company {
   id: string;
   company_name?: string;
@@ -64,6 +69,14 @@ interface Company {
   follow_up_delay_days?: number;
 }
 
+interface PlatformProfile {
+  id: string;
+  platform_type: string;
+  profile_url: string;
+  profile_name?: string;
+  is_active: boolean;
+}
+
 interface FormErrors {
   rating?: string;
   customerName?: string;
@@ -74,10 +87,17 @@ interface FormErrors {
 }
 
 const ReviewSubmission = () => {
-  const { qrCodeId } = useParams<{ qrCodeId: string }>();
+  const { qrCodeId, companyQrId } = useParams<{
+    qrCodeId?: string;
+    companyQrId?: string;
+  }>();
   const { token: csrfToken, loading: csrfLoading } = useCSRF();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<"employee" | "company">(
+    "employee"
+  );
+  const [companyData, setCompanyData] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [rating, setRating] = useState(0);
@@ -94,13 +114,102 @@ const ReviewSubmission = () => {
   >("idle");
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [showIncentive, setShowIncentive] = useState(false);
+  const [platformProfiles, setPlatformProfiles] = useState<PlatformProfile[]>(
+    []
+  );
+  const [profilesLoading, setProfilesLoading] = useState(false);
   const formSubmittedRef = useRef(false);
 
-  useEffect(() => {
-    if (qrCodeId) {
-      fetchEmployeeAndCompany();
+  const fetchPlatformProfiles = async (companyId: string) => {
+    try {
+      setProfilesLoading(true);
+      const { data, error } = await publicSupabase
+        .from("platform_profiles")
+        .select("id, platform_type, profile_url, profile_name, is_active")
+        .eq("company_id", companyId) // Make sure this matches the actual column name
+        .eq("is_active", true);
+
+      if (error) {
+        console.error("Error fetching platform profiles:", error);
+        setPlatformProfiles([]);
+        return;
+      }
+
+      console.log("Fetched platform profiles:", data); // Add this for debugging
+      setPlatformProfiles(data || []);
+    } catch (error) {
+      console.error("Error in fetchPlatformProfiles:", error);
+      setPlatformProfiles([]);
+    } finally {
+      setProfilesLoading(false);
     }
-  }, [qrCodeId]);
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (companyQrId) {
+        // Fetch company data for company reviews
+        setReviewTarget("company");
+        try {
+          console.log("Searching for company with QR ID:", companyQrId); // Debug log
+
+          const {
+            data: companyInfo,
+            error,
+            count,
+          } = await publicSupabase
+            .from("profiles")
+            .select("*", { count: "exact" })
+            .eq("company_qr_code_id", companyQrId);
+
+          console.log("Query result:", { data: companyInfo, error, count }); // Debug log
+
+          if (error) {
+            console.error("Database error:", error);
+            toast.error("Database error occurred. Please try again.");
+            setLoading(false);
+            return;
+          }
+
+          if (!companyInfo || companyInfo.length === 0) {
+            console.error("No company found with QR ID:", companyQrId);
+            toast.error(
+              "Company not found. Please check the QR code and try again."
+            );
+            setLoading(false);
+            return;
+          }
+
+          if (companyInfo.length > 1) {
+            console.error(
+              "Multiple companies found with same QR ID:",
+              companyQrId
+            );
+            toast.error(
+              "Multiple companies found with this QR code. Please contact support."
+            );
+            setLoading(false);
+            return;
+          }
+
+          setCompanyData(companyInfo[0]);
+          // Fetch platform profiles for this company
+          await fetchPlatformProfiles(companyInfo[0].id);
+          setLoading(false);
+        } catch (error) {
+          console.error("Error fetching company data:", error);
+          toast.error("Failed to load company information");
+          setLoading(false);
+        }
+      } else if (qrCodeId) {
+        // Existing employee review logic
+        setReviewTarget("employee");
+        fetchEmployeeAndCompany();
+      }
+    };
+
+    fetchData();
+  }, [qrCodeId, companyQrId]);
 
   const fetchEmployeeAndCompany = async () => {
     try {
@@ -155,6 +264,14 @@ const ReviewSubmission = () => {
           incentive_enabled: false,
           follow_up_enabled: false,
         });
+
+        // Add this in the useEffect or fetchEmployeeAndCompany function
+        console.log(
+          "Company ID for platform profiles:",
+          employeeData.company_id
+        );
+        // Fetch platform profiles for this company
+        await fetchPlatformProfiles(employeeData.company_id);
       } catch (companyError) {
         console.warn(
           "Using default company settings due to error:",
@@ -445,29 +562,36 @@ const ReviewSubmission = () => {
       return;
     }
 
-    if (!employee) {
+    if (reviewTarget === "employee" && !employee) {
       toast.error("Employee information not found");
       return;
     }
 
-    // Add expiration check here
-    const isExpired = employee.qr_expires_at
-      ? new Date(employee.qr_expires_at) <= new Date()
-      : false;
-
-    if (isExpired) {
-      toast.error(
-        "This QR code has expired and can no longer accept new reviews. Please contact the business for an updated QR code."
-      );
+    if (reviewTarget === "company" && !companyData) {
+      toast.error("Company information not found");
       return;
     }
 
-    // Also check if QR code is active
-    if (!employee.is_active) {
-      toast.error(
-        "This QR code is currently inactive and cannot accept reviews. Please contact the business."
-      );
-      return;
+    // Add expiration check here for employee reviews
+    if (reviewTarget === "employee" && employee) {
+      const isExpired = employee.qr_expires_at
+        ? new Date(employee.qr_expires_at) <= new Date()
+        : false;
+
+      if (isExpired) {
+        toast.error(
+          "This QR code has expired and can no longer accept new reviews. Please contact the business for an updated QR code."
+        );
+        return;
+      }
+
+      // Also check if QR code is active
+      if (!employee.is_active) {
+        toast.error(
+          "This QR code is currently inactive and cannot accept reviews. Please contact the business."
+        );
+        return;
+      }
     }
 
     if (!isOnline()) {
@@ -520,21 +644,35 @@ const ReviewSubmission = () => {
 
       const reviewData = await retryWithBackoff(
         async () => {
+          const baseReviewData = {
+            customer_name: customerName.trim(),
+            customer_email: customerEmail.trim() || null,
+            customer_phone: customerPhone.trim() || null,
+            rating,
+            comment: comment.trim() || null,
+            review_type: reviewType,
+            video_url: videoUrl,
+            allow_follow_up: !!customerEmail,
+            share_permission: true,
+            review_target_type: reviewTarget,
+          };
+
+          const reviewDataWithTarget =
+            reviewTarget === "employee"
+              ? {
+                  ...baseReviewData,
+                  employee_id: employee.id,
+                  company_id: employee.company_id,
+                }
+              : {
+                  ...baseReviewData,
+                  target_company_id: companyData?.id,
+                  company_id: companyData?.id,
+                };
+
           const { data, error } = await publicSupabase
             .from("reviews")
-            .insert({
-              employee_id: employee.id,
-              company_id: employee.company_id,
-              customer_name: customerName.trim(),
-              customer_email: customerEmail.trim() || null,
-              customer_phone: customerPhone.trim() || null,
-              rating,
-              comment: comment.trim() || null,
-              review_type: reviewType,
-              video_url: videoUrl,
-              allow_follow_up: !!customerEmail,
-              share_permission: true,
-            })
+            .insert(reviewDataWithTarget)
             .select("id")
             .single();
 
@@ -571,14 +709,14 @@ const ReviewSubmission = () => {
         setSubmissionStatus("success");
 
         // Show incentive if enabled
-        if (company?.incentive_enabled) {
+        if (company?.incentive_enabled || companyData?.incentive_enabled) {
           setShowIncentive(true);
         }
 
         toast.success("Review submitted successfully!");
 
         // Handle redirect URL
-        if (employee?.qr_redirect_url) {
+        if (reviewTarget === "employee" && employee?.qr_redirect_url) {
           setTimeout(() => {
             window.location.href = employee.qr_redirect_url!;
           }, 3000); // Redirect after 3 seconds
@@ -646,7 +784,7 @@ const ReviewSubmission = () => {
     );
   }
 
-  if (!employee) {
+  if (!employee && !companyData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 py-8 px-4 flex items-center justify-center">
         <div className="text-center">
@@ -668,9 +806,12 @@ const ReviewSubmission = () => {
       <div
         className="min-h-screen py-8 px-4 flex items-center justify-center"
         style={{
-          background: company?.primary_color
-            ? `linear-gradient(to bottom right, ${company.primary_color}20, ${company.primary_color}10)`
-            : "linear-gradient(to bottom right, #3b82f620, #3b82f610)",
+          background:
+            company?.primary_color || companyData?.primary_color
+              ? `linear-gradient(to bottom right, ${
+                  company?.primary_color || companyData?.primary_color
+                }20, ${company?.primary_color || companyData?.primary_color}10)`
+              : "linear-gradient(to bottom right, #3b82f620, #3b82f610)",
         }}
       >
         <Card className="max-w-2xl w-full shadow-xl">
@@ -682,32 +823,43 @@ const ReviewSubmission = () => {
               </h2>
               <p className="text-gray-600 text-lg">
                 {company?.thank_you_message ||
+                  companyData?.thank_you_message ||
                   "Your review has been submitted successfully!"}
               </p>
             </div>
 
-            {showIncentive && company?.incentive_enabled && (
-              <div className="mb-6 p-4 bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-lg border border-yellow-300">
-                <Gift className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-                <h3 className="font-semibold text-yellow-800 mb-2">
-                  Special Offer!
-                </h3>
-                <p className="text-yellow-700">
-                  {company.incentive_type === "discount"
-                    ? `Get ${company.incentive_value} off your next purchase!`
-                    : company.incentive_type === "points"
-                    ? `You earned ${company.incentive_value} loyalty points!`
-                    : "Thank you for your feedback - check with us for your special offer!"}
-                </p>
-              </div>
-            )}
+            {showIncentive &&
+              (company?.incentive_enabled ||
+                companyData?.incentive_enabled) && (
+                <div className="mb-6 p-4 bg-gradient-to-r from-yellow-100 to-yellow-200 rounded-lg border border-yellow-300">
+                  <Gift className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+                  <h3 className="font-semibold text-yellow-800 mb-2">
+                    Special Offer!
+                  </h3>
+                  <p className="text-yellow-700">
+                    {(company?.incentive_type ||
+                      companyData?.incentive_type) === "discount"
+                      ? `Get ${
+                          company?.incentive_value ||
+                          companyData?.incentive_value
+                        } off your next purchase!`
+                      : (company?.incentive_type ||
+                          companyData?.incentive_type) === "points"
+                      ? `You earned ${
+                          company?.incentive_value ||
+                          companyData?.incentive_value
+                        } loyalty points!`
+                      : "Thank you for your feedback - check with us for your special offer!"}
+                  </p>
+                </div>
+              )}
 
             <div className="space-y-4">
               <Button onClick={resetForm} className="w-full" variant="outline">
                 Submit Another Review
               </Button>
 
-              {employee?.qr_redirect_url && (
+              {reviewTarget === "employee" && employee?.qr_redirect_url && (
                 <p className="text-sm text-gray-500">
                   You will be redirected automatically in a few seconds...
                 </p>
@@ -721,33 +873,59 @@ const ReviewSubmission = () => {
 
   return (
     <div
-      className="min-h-screen py-8 px-4"
+      className="min-h-screen py-8 px-4 overflow-y-auto overflow-x-hidden max-h-screen"
       style={{
-        background: company?.primary_color
-          ? `linear-gradient(to bottom right, ${company.primary_color}20, ${company.primary_color}10)`
-          : "linear-gradient(to bottom right, #3b82f620, #3b82f610)",
+        background:
+          company?.primary_color || companyData?.primary_color
+            ? `linear-gradient(to bottom right, ${
+                company?.primary_color || companyData?.primary_color
+              }20, ${company?.primary_color || companyData?.primary_color}10)`
+            : "linear-gradient(to bottom right, #3b82f620, #3b82f610)",
       }}
     >
       <div className="max-w-2xl mx-auto">
         {/* Company Header */}
         <div className="text-center mb-8">
-          {company?.logo_url && (
-            <img
-              src={company.logo_url}
-              alt={company.company_name || "Company Logo"}
-              className="h-16 w-auto mx-auto mb-4"
-            />
+          {reviewTarget === "company" && companyData ? (
+            <>
+              {companyData.logo_url && (
+                <img
+                  src={companyData.logo_url}
+                  alt={companyData.company_name || "Company Logo"}
+                  className="h-16 w-auto mx-auto mb-4"
+                />
+              )}
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Share Your Experience with{" "}
+                <span style={{ color: "#007bff" }}>
+                  {companyData.company_name}
+                </span>
+              </h1>
+              <p className="text-gray-600">
+                Your feedback helps us improve our service
+              </p>
+            </>
+          ) : (
+            <>
+              {company?.logo_url && (
+                <img
+                  src={company.logo_url}
+                  alt={company.company_name || "Company Logo"}
+                  className="h-16 w-auto mx-auto mb-4"
+                />
+              )}
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Share Your Experience
+              </h1>
+              <p className="text-gray-600">
+                Help us improve by sharing your feedback about{" "}
+                <span className="font-semibold">{employee?.name}</span>
+                {employee?.position && (
+                  <span className="text-gray-500"> ({employee.position})</span>
+                )}
+              </p>
+            </>
           )}
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Share Your Experience
-          </h1>
-          <p className="text-gray-600">
-            Help us improve by sharing your feedback about{" "}
-            <span className="font-semibold">{employee.name}</span>
-            {employee.position && (
-              <span className="text-gray-500"> ({employee.position})</span>
-            )}
-          </p>
         </div>
 
         {/* Custom Landing Page Content */}
@@ -757,6 +935,15 @@ const ReviewSubmission = () => {
               className="text-sm text-blue-800"
               dangerouslySetInnerHTML={{ __html: employee.custom_landing_page }}
             />
+          </div>
+        )}
+
+        {/* Platform Profile Links */}
+        {!profilesLoading && platformProfiles.length > 0 && (
+          <div className="mb-6">
+            <div className="bg-white/20 backdrop-blur-md rounded-lg border border-gray-200 p-6 shadow-sm">
+              <PlatformProfileLinks profiles={platformProfiles} className="" />
+            </div>
           </div>
         )}
 

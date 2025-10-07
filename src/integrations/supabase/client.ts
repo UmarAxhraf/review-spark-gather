@@ -31,18 +31,7 @@ export const supabase = createClient<Database>(
     global: {
       headers: {
         Accept: "application/json",
-      },
-      // Add fetch options with timeout
-      fetch: (url, options) => {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-        
-        return fetch(url, {
-          ...options,
-          signal: controller.signal,
-        }).finally(() => {
-          clearTimeout(timeoutId);
-        });
+        apikey: SUPABASE_PUBLISHABLE_KEY, // ADD THIS LINE!
       },
     },
   }
@@ -64,10 +53,14 @@ export const publicSupabase = createClient<Database>(
         // Removed Content-Type to allow storage uploads to set their own MIME types
         Accept: "application/json",
         Prefer: "return=representation",
+        apikey: SUPABASE_PUBLISHABLE_KEY, // ADD THIS LINE TOO!
       },
     },
   }
 );
+
+// console.log("SUPABASE_URL:", SUPABASE_URL);
+// console.log("SUPABASE_KEY:", SUPABASE_PUBLISHABLE_KEY ? "LOADED" : "MISSING");
 
 // Ensure the public client starts with no session
 publicSupabase.auth.signOut({ scope: "local" });

@@ -1,0 +1,69 @@
+name: Email Notifications
+
+on:
+  schedule:
+    - cron: "0 9 * * *" # Daily at 9 AM UTC
+    - cron: "0 10 * * 1" # Weekly on Monday at 10 AM UTC
+    - cron: "0 11 * * 2" # Download reminders on Tuesday at 11 AM UTC
+
+jobs:
+  send-notifications:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Daily Notifications
+        if: github.event.schedule == '0 9 * * *'
+        run: |
+          echo "🚀 Triggering Daily Notifications..."
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/send-daily-notifications" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+
+          echo "📩 Supabase responded with HTTP status: $RESPONSE"
+          echo "🔍 Response body:"
+          cat response.json
+
+          if [ "$RESPONSE" -ge 400 ]; then
+            echo "❌ Failed to trigger Daily Notifications."
+            exit 1
+          fi
+
+      - name: Send Weekly Reports
+        if: github.event.schedule == '0 10 * * 1'
+        run: |
+          echo "📊 Triggering Weekly Reports..."
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/send-weekly-reports" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+
+          echo "📩 Supabase responded with HTTP status: $RESPONSE"
+          echo "🔍 Response body:"
+          cat response.json
+
+          if [ "$RESPONSE" -ge 400 ]; then
+            echo "❌ Failed to trigger Weekly Reports."
+            exit 1
+          fi
+
+      - name: Send Download Reminders
+        if: github.event.schedule == '0 11 * * 2'
+        run: |
+          echo "📥 Triggering Download Reminders..."
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/send-download-reminders" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+
+          echo "📩 Supabase responded with HTTP status: $RESPONSE"
+          echo "🔍 Response body:"
+          cat response.json
+
+          if [ "$RESPONSE" -ge 400 ]; then
+            echo "❌ Failed to trigger Download Reminders."
+            exit 1
+          fi

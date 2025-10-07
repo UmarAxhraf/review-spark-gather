@@ -31,7 +31,8 @@ const Index = () => {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   // Update to include the new method
-  const { subscription, createSubscription, handlePlanSelection } = useSubscription();
+  const { subscription, createSubscription, handlePlanSelection } =
+    useSubscription();
 
   // Add useEffect to handle anchor scrolling
   useEffect(() => {
@@ -206,7 +207,9 @@ const Index = () => {
               <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <Star className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">ReviewPro</span>
+              <span className="text-xl font-bold text-gray-900">
+                Syncreviews
+              </span>
             </div>
             <div className="flex items-center space-x-4">
               {user ? (
@@ -411,7 +414,7 @@ const Index = () => {
             Ready to Transform Your Review Collection?
           </h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of businesses already using ReviewPro to collect
+            Join thousands of businesses already using Syncreviews to collect
             authentic customer reviews and build trust.
           </p>
           {user ? (
@@ -445,10 +448,10 @@ const Index = () => {
             <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <Star className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-white">ReviewPro</span>
+            <span className="text-xl font-bold text-white">Syncreviews</span>
           </div>
           <div className="text-center text-gray-400">
-            <p>&copy; 2024 ReviewPro. All rights reserved.</p>
+            <p>&copy; 2024 Syncreviews. All rights reserved.</p>
           </div>
         </div>
       </footer>

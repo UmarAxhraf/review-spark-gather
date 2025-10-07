@@ -28,7 +28,9 @@ const NotificationBell = () => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const channelRef = useRef<string>(`notifications-changes-${Math.random().toString(36).substr(2, 9)}`);
+  const channelRef = useRef<string>(
+    `notifications-changes-${Math.random().toString(36).substr(2, 9)}`
+  );
 
   // Fetch notifications
   const fetchNotifications = async () => {
