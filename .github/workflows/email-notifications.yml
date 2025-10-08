@@ -1,6 +1,7 @@
 name: Email Notifications
 
 on:
+  workflow_dispatch: # 👈 this enables the manual Run button
   schedule:
     - cron: "0 9 * * *" # Daily at 9 AM UTC
     - cron: "0 10 * * 1" # Weekly on Monday at 10 AM UTC
@@ -14,6 +15,7 @@ jobs:
       - name: Send Daily Notifications
         if: github.event.schedule == '0 9 * * *'
         run: |
+          echo "🕒 Current UTC time: $(date -u)"
           echo "🚀 Triggering Daily Notifications..."
           RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
             "${{ secrets.SUPABASE_URL }}/functions/v1/send-daily-notifications" \
@@ -33,6 +35,7 @@ jobs:
       - name: Send Weekly Reports
         if: github.event.schedule == '0 10 * * 1'
         run: |
+          echo "🕒 Current UTC time: $(date -u)"
           echo "📊 Triggering Weekly Reports..."
           RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
             "${{ secrets.SUPABASE_URL }}/functions/v1/send-weekly-reports" \
@@ -52,6 +55,7 @@ jobs:
       - name: Send Download Reminders
         if: github.event.schedule == '0 11 * * 2'
         run: |
+          echo "🕒 Current UTC time: $(date -u)"
           echo "📥 Triggering Download Reminders..."
           RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
             "${{ secrets.SUPABASE_URL }}/functions/v1/send-download-reminders" \
