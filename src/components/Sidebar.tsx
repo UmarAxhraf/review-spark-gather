@@ -443,7 +443,7 @@ const Sidebar = ({ className }: SidebarProps) => {
         {/* Bottom Section - Support and Profile */}
         <div className="border-t border-gray-200 relative">
           {/* Support Button */}
-          <div className="p-3">
+          <div className="px-3 py-2 pt-1.5">
             {isCollapsed ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -538,7 +538,7 @@ const Sidebar = ({ className }: SidebarProps) => {
               )}
 
               {/* Profile Dropdown Trigger */}
-              <div className="p-3">
+              <div className="px-3 py-2">
                 <Button
                   variant="ghost"
                   className="w-full p-3 h-auto justify-between"
@@ -572,7 +572,7 @@ const Sidebar = ({ className }: SidebarProps) => {
             </div>
           ) : (
             /* Collapsed Profile Section */
-            <div className="p-2">
+            <div className="px-3 py-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="w-full p-2 justify-center">
