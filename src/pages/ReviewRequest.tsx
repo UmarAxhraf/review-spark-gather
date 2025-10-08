@@ -171,11 +171,20 @@ const ReviewRequest = () => {
   // Generate company QR code
   const generateCompanyQRCode = async () => {
     if (!user || !companyProfile?.company_qr_code_id) return null;
-
+  
     try {
+      // Debug logging
+      console.log('Environment check:', {
+        VITE_APP_URL: import.meta.env.VITE_APP_URL,
+        config_app_url: config.app.url,
+        NODE_ENV: import.meta.env.NODE_ENV,
+        PROD: import.meta.env.PROD
+      });
+      
       // Use company_qr_code_id instead of user.id
       // QR Code generation
       const reviewUrl = `${config.app.url}/review/company/${companyProfile.company_qr_code_id}`;
+      console.log('Generated review URL:', reviewUrl);
       
       // Email template review button
       <a href="${config.app.url}/review/company/${companyProfile?.company_qr_code_id}" class="button">📝 Leave a Review Online</a>
