@@ -902,7 +902,12 @@ const ReviewSubmission = () => {
                 </span>
               </h1>
               <p className="text-gray-600">
-                Your feedback helps us improve our service
+                Your feedback helps{" "}
+                <span style={{ color: "#007bff" }}>
+                  {companyData.company_name}
+                </span>{" "}
+                know what’s working well and what we can improve, so we can make
+                your next experience even better.
               </p>
             </>
           ) : (

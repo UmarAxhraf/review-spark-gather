@@ -20,8 +20,14 @@ const corsHeaders = {
 const validateCSRFToken = (request: Request): boolean => {
   // Skip CSRF validation for service role requests (internal function calls)
   const authHeader = request.headers.get("authorization");
-  if (authHeader && authHeader.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '')) {
-    return true;
+  if (authHeader) {
+    // Extract token from "Bearer <token>" format
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (serviceRoleKey && token === serviceRoleKey) {
+      console.log('Service role request detected, skipping CSRF validation');
+      return true;
+    }
   }
   
   const csrfToken = request.headers.get("X-CSRF-Token");
@@ -62,8 +68,12 @@ serve(async (req) => {
     const emailRequest: EmailRequest = await req.json();
     let result;
 
-    // Use Hostinger SMTP as primary
-    if (emailRequest.type === "supabase" || !emailRequest.type) {
+    // Handle review response emails
+    if (emailRequest.type === "review_response") {
+      result = await sendReviewResponseEmail(emailRequest);
+    }
+    // Use Hostinger SMTP as primary for other types
+    else if (emailRequest.type === "supabase" || !emailRequest.type) {
       result = await sendWithHostingerSMTP(emailRequest);
     } else if (emailRequest.type === "resend") {
       result = await sendWithResend(emailRequest);
@@ -98,6 +108,55 @@ serve(async (req) => {
   }
 });
 
+// Add new function for review response emails
+async function sendReviewResponseEmail(emailData: any) {
+  try {
+    // Get the review response email template
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: template, error: templateError } = await supabaseClient
+      .from('email_templates')
+      .select('subject, body')
+      .eq('name', 'Review Response Email')
+      .single();
+
+    if (templateError || !template) {
+      throw new Error('Review response email template not found');
+    }
+
+    // Replace template variables
+    let subject = template.subject;
+    let body = template.body;
+
+    const templateData = {
+      customer_name: emailData.customer_name,
+      review_text: emailData.review_text,
+      admin_response: emailData.admin_response,
+      company_name: emailData.company_name,
+    };
+
+    Object.entries(templateData).forEach(([key, value]) => {
+      const placeholder = `{{${key}}}`;
+      subject = subject.replace(new RegExp(placeholder, 'g'), String(value));
+      body = body.replace(new RegExp(placeholder, 'g'), String(value));
+    });
+
+    // Send via SMTP
+    return await sendWithHostingerSMTP({
+      to: emailData.to,
+      subject: subject,
+      html: body,
+      type: 'supabase'
+    });
+  } catch (error) {
+    console.error('Review response email error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Native SMTP implementation for Hostinger
 async function sendWithHostingerSMTP(emailData: EmailRequest) {
   try {
@@ -128,11 +187,19 @@ async function sendWithHostingerSMTP(emailData: EmailRequest) {
       return decoder.decode(buffer.subarray(0, bytesRead || 0));
     }
 
+    // Helper function to read response without sending command
+    async function readResponse(): Promise<string> {
+      const buffer = new Uint8Array(1024);
+      const bytesRead = await conn.read(buffer);
+      return decoder.decode(buffer.subarray(0, bytesRead || 0));
+    }
+
     // SMTP conversation
-    let response = await sendCommand(""); // Read initial greeting
+    let response = await readResponse(); // Read initial greeting without sending anything
     console.log("SMTP Greeting:", response);
 
-    response = await sendCommand(`EHLO ${smtpHost}`);
+    // Use proper domain for EHLO command
+    response = await sendCommand("EHLO syncreviews.com");
     console.log("EHLO Response:", response);
 
     response = await sendCommand("AUTH LOGIN");
@@ -160,19 +227,25 @@ async function sendWithHostingerSMTP(emailData: EmailRequest) {
     response = await sendCommand("DATA");
     console.log("DATA Response:", response);
 
-    // Send email content
-    const emailContent = [
-      `From: ${emailData.fromName || "SyncReviews"} <${emailData.from || smtpUser}>`,
-      `To: ${emailData.to}`,
-      `Subject: ${emailData.subject}`,
-      "MIME-Version: 1.0",
-      "Content-Type: text/html; charset=UTF-8",
-      "",
-      emailData.html,
-      "."
-    ].join("\r\n");
-
-    response = await sendCommand(emailContent);
+    // Replace the email content sending section (around lines 221-230)
+    // Send email content line by line
+    const emailLines = [
+    `From: ${emailData.fromName || "SyncReviews"} <${emailData.from || smtpUser}>`,
+    `To: ${emailData.to}`,
+    `Subject: ${emailData.subject}`,
+    "MIME-Version: 1.0",
+    "Content-Type: text/html; charset=UTF-8",
+    "", // Empty line to separate headers from body
+    emailData.html
+    ];
+    
+    // Send each line separately
+    for (const line of emailLines) {
+    await conn.write(encoder.encode(line + "\r\n"));
+    }
+    
+    // Send termination sequence
+    response = await sendCommand(".");
     console.log("Email Content Response:", response);
 
     // Send QUIT

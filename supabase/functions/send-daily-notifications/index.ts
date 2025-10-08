@@ -172,6 +172,7 @@ serve(async (req) => {
         }
 
         // Send email via existing send-email function
+        console.log(`Sending email to ${company.email} for company ${company.name}`);
         const emailResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
           method: 'POST',
           headers: {
@@ -179,14 +180,15 @@ serve(async (req) => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            type: 'hostinger',
+            type: 'supabase',
             to: company.email,
             subject: subject,
             html: body
           })
-        })
+        });
 
         if (emailResponse.ok) {
+          console.log(`✅ Email sent successfully to ${company.email}`);
           // Record successful send
           await supabaseClient
             .from('email_send_history')

@@ -28,6 +28,7 @@ import QRCode from "qrcode";
 import { csrfManager } from "@/lib/csrf";
 import { config } from "@/lib/config";
 import { BackButton } from "@/components/ui/back-button";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ReviewRequest {
   id: string;
@@ -45,6 +46,7 @@ interface ReviewRequestFormData {
   lastName: string;
   email: string;
   companyName: string;
+  emailBody: string;
 }
 
 // Skeleton Loader Component for Table
@@ -100,6 +102,8 @@ const ReviewRequest = () => {
     lastName: "",
     email: "",
     companyName: "",
+    emailBody:
+      "Thank you for choosing our services! We'd love to hear your thoughts! Your feedback helps us grow and improve, and we truly value your opinion. You can quickly share your thoughts by scanning the QR code below or clicking the button to leave your review online.",
   });
 
   // Fetch company profile for logo and company name
@@ -226,7 +230,6 @@ const ReviewRequest = () => {
         <body>
           <div class="container">
             <!-- SyncReviews Branding -->
-
             <div class="myapps-branding">
               <a href="https://review-spark-gather.vercel.app" target="_blank">
                 <img src="https://review-spark-gather.vercel.app/logo.png" alt="SyncReviews" class="myapps-logo" />
@@ -247,15 +250,27 @@ const ReviewRequest = () => {
             
             <div class="content">
               <p>Dear ${formData.firstName} ${formData.lastName},</p>
-              <p>We'd love to hear your thoughts! Your feedback helps us grow and improve, and we truly value your opinion.</p>
-              <p>You can quickly share your thoughts by scanning the QR code below or clicking the button to leave your review online.</p>
+              
+              <!-- Custom Email Body -->
+              <div style="margin: 20px 0; white-space: pre-line;">${
+                formData.emailBody
+              }</div>
+              
+              <!-- Protected QR Code Section -->
               
               <div class="qr-section">
                 <h3>📱 Quick Review - Scan QR Code</h3>
-                <img src="${qrCodeDataUrl}" alt="QR Code for Review" class="qr-code" />
-                <p><em>Scan this QR code with your phone camera to leave a quick review</em></p>
+                <div style="background: white; padding: 20px; border-radius: 8px; display: inline-block;">
+                  <img src="${qrCodeDataUrl}" 
+                       alt="QR Code for Review" 
+                       style="width: 200px; height: 200px; border: 3px solid ${
+                         companyProfile?.primary_color || "#3b82f6"
+                       }; border-radius: 8px;" />
+              </div>
+              <p><em>Scan this QR code with your phone camera to leave a quick review</em></p>
               </div>
               
+              <!-- Protected Review Button -->
               <div style="text-align: center; margin: 30px 0;">
                 <a href="${config.app.url}/review/company/${
         companyProfile?.company_qr_code_id
@@ -437,7 +452,7 @@ const ReviewRequest = () => {
               Send Review Request
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[525px]">
             <DialogHeader>
               <DialogTitle>Send Review Request</DialogTitle>
             </DialogHeader>
@@ -491,6 +506,26 @@ const ReviewRequest = () => {
                   required
                 />
               </div>
+
+              {/* New Editable Email Body Field */}
+              <div className="space-y-2">
+                <Label htmlFor="emailBody">Email Message</Label>
+                <Textarea
+                  id="emailBody"
+                  value={formData.emailBody}
+                  onChange={(e) =>
+                    handleInputChange("emailBody", e.target.value)
+                  }
+                  placeholder="Customize your review request message..."
+                  rows={5}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  💡 Note: The QR code and review button will be automatically
+                  added below your message and cannot be edited.
+                </p>
+              </div>
+
               <div className="flex justify-end space-x-2 pt-4">
                 <Button
                   type="button"
