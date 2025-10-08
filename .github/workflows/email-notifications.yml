@@ -13,34 +13,61 @@ jobs:
 
     steps:
       - name: Send Daily Notifications
-        if: github.event.schedule == '0 9 * * *'
+        if: github.event.schedule == '0 9 * * *' || github.event_name == 'workflow_dispatch'
         run: |
           echo "🕒 Current UTC time: $(date -u)"
           echo "🚀 Triggering Daily Notifications..."
-          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+          echo "📍 Supabase URL: ${{ secrets.SUPABASE_URL }}"
+          echo "🔑 Service Role Key (first 10 chars): ${SUPABASE_SERVICE_ROLE_KEY:0:10}..."
+          
+          # Test connectivity first
+          echo "🔗 Testing connectivity to Supabase..."
+          curl -I "${{ secrets.SUPABASE_URL }}/functions/v1/send-daily-notifications" || echo "❌ Connection test failed"
+          
+          # Make the actual request with verbose output
+          RESPONSE=$(curl -v -s -o response.json -w "%{http_code}" -X POST \
             "${{ secrets.SUPABASE_URL }}/functions/v1/send-daily-notifications" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
+            -H "User-Agent: GitHub-Actions" \
             -d '{}')
 
           echo "📩 Supabase responded with HTTP status: $RESPONSE"
           echo "🔍 Response body:"
           cat response.json
+          echo ""
+          
+          # Check if response file exists and has content
+          if [ ! -f response.json ]; then
+            echo "❌ No response file created - request may have failed completely"
+            exit 1
+          fi
+          
+          if [ -z "$(cat response.json)" ]; then
+            echo "❌ Empty response - possible network or authentication issue"
+            exit 1
+          fi
 
           if [ "$RESPONSE" -ge 400 ]; then
             echo "❌ Failed to trigger Daily Notifications."
             exit 1
           fi
+          
+          echo "✅ Daily notifications triggered successfully!"
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Send Weekly Reports
-        if: github.event.schedule == '0 10 * * 1'
+        if: github.event.schedule == '0 10 * * 1' || github.event_name == 'workflow_dispatch'
         run: |
           echo "🕒 Current UTC time: $(date -u)"
           echo "📊 Triggering Weekly Reports..."
-          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+          
+          RESPONSE=$(curl -v -s -o response.json -w "%{http_code}" -X POST \
             "${{ secrets.SUPABASE_URL }}/functions/v1/send-weekly-reports" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
+            -H "User-Agent: GitHub-Actions" \
             -d '{}')
 
           echo "📩 Supabase responded with HTTP status: $RESPONSE"
@@ -51,16 +78,22 @@ jobs:
             echo "❌ Failed to trigger Weekly Reports."
             exit 1
           fi
+          
+          echo "✅ Weekly reports triggered successfully!"
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
       - name: Send Download Reminders
-        if: github.event.schedule == '0 11 * * 2'
+        if: github.event.schedule == '0 11 * * 2' || github.event_name == 'workflow_dispatch'
         run: |
           echo "🕒 Current UTC time: $(date -u)"
           echo "📥 Triggering Download Reminders..."
-          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+          
+          RESPONSE=$(curl -v -s -o response.json -w "%{http_code}" -X POST \
             "${{ secrets.SUPABASE_URL }}/functions/v1/send-download-reminders" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
+            -H "User-Agent: GitHub-Actions" \
             -d '{}')
 
           echo "📩 Supabase responded with HTTP status: $RESPONSE"
@@ -71,3 +104,7 @@ jobs:
             echo "❌ Failed to trigger Download Reminders."
             exit 1
           fi
+          
+          echo "✅ Download reminders triggered successfully!"
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
