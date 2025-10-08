@@ -174,7 +174,11 @@ const ReviewRequest = () => {
 
     try {
       // Use company_qr_code_id instead of user.id
+      // QR Code generation
       const reviewUrl = `${config.app.url}/review/company/${companyProfile.company_qr_code_id}`;
+      
+      // Email template review button
+      <a href="${config.app.url}/review/company/${companyProfile?.company_qr_code_id}" class="button">📝 Leave a Review Online</a>
       const qrCodeDataUrl = await QRCode.toDataURL(reviewUrl, {
         width: 300,
         margin: 2,
