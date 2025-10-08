@@ -152,11 +152,11 @@ const Sidebar = ({ className }: SidebarProps) => {
       path: "/platforms",
       icon: PlugZap,
     },
-    {
-      label: "Review Request",
-      path: "/review-request",
-      icon: Mail,
-    },
+    // {
+    //   label: "Review Request",
+    //   path: "/review-request",
+    //   icon: Mail,
+    // },
     {
       label: "QR Analytics",
       path: "/qr-analytics",
