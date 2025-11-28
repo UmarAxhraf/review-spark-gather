@@ -192,6 +192,16 @@ const formatValidationError = (field, error) => {
     companyName: "Company Name",
   };
 
+  if (!error) return "Please correct the highlighted fields.";
+
+  // If error already contains a standard required message or starts with the field, return as-is
+  if (
+    error.toLowerCase().includes("is required") ||
+    error.toLowerCase().startsWith(field.toLowerCase())
+  ) {
+    return error;
+  }
+
   const fieldName =
     fieldNames[field] || field.charAt(0).toUpperCase() + field.slice(1);
   return `${fieldName}: ${error}`;
@@ -339,6 +349,32 @@ const Signup = () => {
         return;
       }
 
+      // Normalize values and pre-check duplicates via secure RPC
+      const normalizedEmail = validation.sanitizedData.email
+        .trim()
+        .toLowerCase();
+      const normalizedCompanyName = validation.sanitizedData.companyName
+        .trim()
+        .toLowerCase();
+
+      const { data: exists, error: existsError } = await supabase.rpc(
+        "is_profile_company_email_taken",
+        {
+          company_name: normalizedCompanyName,
+          email: normalizedEmail,
+        }
+      );
+
+      if (existsError) {
+        console.error("Duplicate check error:", existsError);
+      } else if (exists === true) {
+        toast.error(
+          "A company with this name and email already exists. Please sign in or use a different combination."
+        );
+        setIsLoading(false);
+        return;
+      }
+
       const { error } = await signUp(
         validation.sanitizedData.email,
         validation.sanitizedData.password,
@@ -463,7 +499,7 @@ const Signup = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name</Label>
+              <Label htmlFor="companyName">Company Name <span className="text-red-500">*</span></Label>
               <Input
                 id="companyName"
                 placeholder="Enter your company name"
@@ -471,6 +507,7 @@ const Signup = () => {
                 onChange={handleChange}
                 onBlur={() => handleBlur("companyName")}
                 required
+                aria-required="true"
                 disabled={isLoading}
                 className={
                   validationErrors.companyName
@@ -479,14 +516,14 @@ const Signup = () => {
                 }
               />
               {validationErrors.companyName && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-red-600" role="alert" aria-live="polite">
                   {validationErrors.companyName}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
               <Input
                 id="email"
                 type="email"
@@ -495,6 +532,7 @@ const Signup = () => {
                 onChange={handleChange}
                 onBlur={() => handleBlur("email")}
                 required
+                aria-required="true"
                 disabled={isLoading}
                 className={
                   validationErrors.email
@@ -503,12 +541,12 @@ const Signup = () => {
                 }
               />
               {validationErrors.email && (
-                <p className="text-sm text-red-600">{validationErrors.email}</p>
+                <p className="text-sm text-red-600" role="alert" aria-live="polite">{validationErrors.email}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -518,6 +556,7 @@ const Signup = () => {
                   onChange={handleChange}
                   onBlur={() => handleBlur("password")}
                   required
+                  aria-required="true"
                   disabled={isLoading}
                   className={`pr-10 ${
                     validationErrors.password
@@ -541,14 +580,14 @@ const Signup = () => {
                 </button>
               </div>
               {validationErrors.password && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-red-600" role="alert" aria-live="polite">
                   {validationErrors.password}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Confirm Password <span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -558,6 +597,7 @@ const Signup = () => {
                   onChange={handleChange}
                   onBlur={() => handleBlur("confirmPassword")}
                   required
+                  aria-required="true"
                   disabled={isLoading}
                   className={`pr-10 ${
                     validationErrors.confirmPassword
@@ -585,7 +625,7 @@ const Signup = () => {
                 </button>
               </div>
               {validationErrors.confirmPassword && (
-                <p className="text-sm text-red-600">
+                <p className="text-sm text-red-600" role="alert" aria-live="polite">
                   {validationErrors.confirmPassword}
                 </p>
               )}

@@ -171,23 +171,28 @@ const ReviewRequest = () => {
   // Generate company QR code
   const generateCompanyQRCode = async () => {
     if (!user || !companyProfile?.company_qr_code_id) return null;
-  
+
     try {
       // Debug logging
-      console.log('Environment check:', {
-        VITE_APP_URL: import.meta.env.VITE_APP_URL,
-        config_app_url: config.app.url,
-        NODE_ENV: import.meta.env.NODE_ENV,
-        PROD: import.meta.env.PROD
-      });
-      
+      //   console.log('Environment check:', {
+      //     VITE_APP_URL: import.meta.env.VITE_APP_URL,
+      //     config_app_url: config.app.url,
+      //     NODE_ENV: import.meta.env.NODE_ENV,
+      //     PROD: import.meta.env.PROD
+      //   });
+
       // Use company_qr_code_id instead of user.id
       // QR Code generation
       const reviewUrl = `${config.app.url}/review/company/${companyProfile.company_qr_code_id}`;
-      console.log('Generated review URL:', reviewUrl);
-      
+      //console.log("Generated review URL:", reviewUrl);
+
       // Email template review button
-      <a href="${config.app.url}/review/company/${companyProfile?.company_qr_code_id}" class="button">📝 Leave a Review Online</a>
+      <a
+        href="${config.app.url}/review/company/${companyProfile?.company_qr_code_id}"
+        class="button"
+      >
+        📝 Leave a Review Online
+      </a>;
       const qrCodeDataUrl = await QRCode.toDataURL(reviewUrl, {
         width: 300,
         margin: 2,
@@ -573,7 +578,7 @@ const ReviewRequest = () => {
       {/* Search and Table */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <CardTitle>Review Requests</CardTitle>
             <div className="flex items-center space-x-2">
               <div className="relative">
@@ -582,7 +587,7 @@ const ReviewRequest = () => {
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-full sm:w-64"
                 />
               </div>
               <Button variant="outline" size="sm" onClick={fetchReviewRequests}>
@@ -592,98 +597,199 @@ const ReviewRequest = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader className="bg-blue-600">
-                <TableRow>
-                  <TableHead className="text-white font-semibold">
-                    S.No
-                  </TableHead>
-                  <TableHead className="text-white font-semibold">
-                    Name
-                  </TableHead>
-                  <TableHead className="text-white font-semibold">
-                    Email
-                  </TableHead>
-                  <TableHead className="text-white font-semibold">
-                    Company
-                  </TableHead>
-                  <TableHead className="text-white font-semibold">
-                    Created Date
-                  </TableHead>
-                  <TableHead className="text-white font-semibold">
-                    Last Sent Date
-                  </TableHead>
-                  <TableHead className="text-white font-semibold">
-                    Status
-                  </TableHead>
-                  <TableHead className="text-white font-semibold">
-                    Resend
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isFetching ? (
-                  <TableSkeleton />
-                ) : filteredRequests.length === 0 ? (
+          {/* Desktop Table View */}
+          <div className="hidden lg:block">
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-blue-600">
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8">
-                      No review requests found
-                    </TableCell>
+                    <TableHead className="text-white font-semibold min-w-[60px]">
+                      S.No
+                    </TableHead>
+                    <TableHead className="text-white font-semibold min-w-[150px]">
+                      Name
+                    </TableHead>
+                    <TableHead className="text-white font-semibold min-w-[200px]">
+                      Email
+                    </TableHead>
+                    <TableHead className="text-white font-semibold min-w-[150px]">
+                      Company
+                    </TableHead>
+                    <TableHead className="text-white font-semibold min-w-[120px]">
+                      Created Date
+                    </TableHead>
+                    <TableHead className="text-white font-semibold min-w-[120px]">
+                      Last Sent Date
+                    </TableHead>
+                    <TableHead className="text-white font-semibold min-w-[80px]">
+                      Status
+                    </TableHead>
+                    <TableHead className="text-white font-semibold min-w-[80px]">
+                      Resend
+                    </TableHead>
                   </TableRow>
-                ) : (
-                  filteredRequests.map((request, index) => (
-                    <TableRow key={request.id}>
-                      <TableCell>
-                        {(currentPage - 1) * entriesPerPage + index + 1}
-                      </TableCell>
-                      <TableCell>
-                        {request.first_name} {request.last_name}
-                      </TableCell>
-                      <TableCell>{request.email}</TableCell>
-                      <TableCell>{request.company_name}</TableCell>
-                      <TableCell>
-                        {new Date(request.created_date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {request.last_sent_date
-                          ? new Date(
-                              request.last_sent_date
-                            ).toLocaleDateString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            request.status === "sent" ? "default" : "secondary"
-                          }
-                        >
-                          {request.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            // Implement resend functionality
-                            toast.info("Resend functionality coming soon");
-                          }}
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                        </Button>
+                </TableHeader>
+                <TableBody>
+                  {isFetching ? (
+                    <TableSkeleton />
+                  ) : filteredRequests.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        No review requests found
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    filteredRequests.map((request, index) => (
+                      <TableRow key={request.id}>
+                        <TableCell>
+                          {(currentPage - 1) * entriesPerPage + index + 1}
+                        </TableCell>
+                        <TableCell>
+                          {request.first_name} {request.last_name}
+                        </TableCell>
+                        <TableCell>{request.email}</TableCell>
+                        <TableCell>{request.company_name}</TableCell>
+                        <TableCell>
+                          {new Date(request.created_date).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {request.last_sent_date
+                            ? new Date(
+                                request.last_sent_date
+                              ).toLocaleDateString()
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              request.status === "sent"
+                                ? "default"
+                                : "secondary"
+                            }
+                          >
+                            {request.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              toast.info("Resend functionality coming soon");
+                            }}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Mobile/Tablet Card View */}
+          <div className="lg:hidden space-y-4">
+            {isFetching ? (
+              // Mobile skeleton
+              Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="p-4">
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                </Card>
+              ))
+            ) : filteredRequests.length === 0 ? (
+              <Card className="p-8">
+                <div className="text-center text-muted-foreground">
+                  No review requests found
+                </div>
+              </Card>
+            ) : (
+              filteredRequests.map((request, index) => (
+                <Card key={request.id} className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="font-semibold text-lg">
+                        {request.first_name} {request.last_name}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        #{(currentPage - 1) * entriesPerPage + index + 1}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="text-sm font-medium text-muted-foreground min-w-[80px]">
+                          Email:
+                        </span>
+                        <span className="text-sm break-all">
+                          {request.email}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="text-sm font-medium text-muted-foreground min-w-[80px]">
+                          Company:
+                        </span>
+                        <span className="text-sm">{request.company_name}</span>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="text-sm font-medium text-muted-foreground min-w-[80px]">
+                          Created:
+                        </span>
+                        <span className="text-sm">
+                          {new Date(request.created_date).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="text-sm font-medium text-muted-foreground min-w-[80px]">
+                          Last Sent:
+                        </span>
+                        <span className="text-sm">
+                          {request.last_sent_date
+                            ? new Date(
+                                request.last_sent_date
+                              ).toLocaleDateString()
+                            : "-"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <Badge
+                        variant={
+                          request.status === "sent" ? "default" : "secondary"
+                        }
+                      >
+                        {request.status}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          toast.info("Resend functionality coming soon");
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Resend
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
           </div>
 
           {/* Pagination */}
           {!isFetching && totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-center justify-between mt-4 gap-4">
+              <p className="text-sm text-muted-foreground text-center sm:text-left">
                 Showing {(currentPage - 1) * entriesPerPage + 1} to{" "}
                 {Math.min(currentPage * entriesPerPage, totalEntries)} of{" "}
                 {totalEntries} entries

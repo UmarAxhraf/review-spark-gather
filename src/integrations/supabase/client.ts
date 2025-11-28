@@ -51,9 +51,9 @@ export const publicSupabase = createClient<Database>(
     global: {
       headers: {
         // Removed Content-Type to allow storage uploads to set their own MIME types
+        // For public operations, avoid returning representation to circumvent SELECT RLS
         Accept: "application/json",
-        Prefer: "return=representation",
-        apikey: SUPABASE_PUBLISHABLE_KEY, // ADD THIS LINE TOO!
+        apikey: SUPABASE_PUBLISHABLE_KEY,
       },
     },
   }

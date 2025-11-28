@@ -6,14 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  MapPin,
-  Facebook,
-  Star,
-  Plane,
-  Shield,
-  Calendar,
-} from "lucide-react";
+import { MapPin, Facebook, Star, Plane, Shield, Calendar } from "lucide-react";
 
 interface PlatformProfile {
   id: string;
@@ -85,17 +78,20 @@ const PlatformProfileLinks: React.FC<PlatformProfileLinksProps> = ({
     <div className={`space-y-3 ${className}`}>
       <div className="text-center">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Visit Our Profiles
+          Visit Our Company Profiles
         </h3>
         <p className="text-sm text-gray-600 mb-4">
           Check out our presence on these platforms or leave a review directly
         </p>
       </div>
-      
+
       <div className="flex flex-wrap justify-center gap-3">
         <TooltipProvider>
           {activeProfiles.map((profile) => {
-            const config = platformConfigs[profile.platform_type as keyof typeof platformConfigs];
+            const config =
+              platformConfigs[
+                profile.platform_type as keyof typeof platformConfigs
+              ];
             if (!config) return null;
 
             const IconComponent = config.icon;
@@ -115,7 +111,9 @@ const PlatformProfileLinks: React.FC<PlatformProfileLinksProps> = ({
                 <TooltipContent>
                   <p className="font-medium">{config.name}</p>
                   {profile.profile_name && (
-                    <p className="text-xs text-gray-500">{profile.profile_name}</p>
+                    <p className="text-xs text-gray-500">
+                      {profile.profile_name}
+                    </p>
                   )}
                 </TooltipContent>
               </Tooltip>

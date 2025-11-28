@@ -8,7 +8,7 @@ export const config = {
 
   // Application
   app: {
-    name: import.meta.env.VITE_APP_NAME || "Review Spark Gather",
+    name: import.meta.env.VITE_APP_NAME || "SyncReviews",
     url: import.meta.env.VITE_APP_URL || "http://localhost:8080",
     environment: import.meta.env.VITE_APP_ENVIRONMENT || "development",
   },

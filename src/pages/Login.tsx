@@ -484,7 +484,7 @@ const Login = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
               <Input
                 id="email"
                 type="email"
@@ -492,13 +492,14 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value.trim())}
                 required
+                aria-required="true"
                 disabled={isLoading || isRateLimited()}
                 className="transition-colors"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -507,6 +508,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  aria-required="true"
                   disabled={isLoading || isRateLimited()}
                   className="pr-10 transition-colors"
                 />

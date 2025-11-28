@@ -40,6 +40,7 @@ import {
   PlugZap,
   ChartArea,
   Mail,
+  PanelsTopLeft,
 } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 import { toast } from "sonner";
@@ -58,6 +59,7 @@ const Sidebar = ({ className }: SidebarProps) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [companyName, setCompanyName] = useState<string | null>(null);
 
   // Ref for profile dropdown click-outside detection
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -113,6 +115,31 @@ const Sidebar = ({ className }: SidebarProps) => {
     };
   }, [user]);
 
+  // Fetch company name for display in profile dropdown
+  useEffect(() => {
+    const fetchCompanyName = async () => {
+      if (!user?.id) return;
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("company_name")
+          .eq("id", user.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching company name:", error);
+          return;
+        }
+
+        setCompanyName(data?.company_name ?? null);
+      } catch (err) {
+        console.error("Error fetching company name:", err);
+      }
+    };
+
+    fetchCompanyName();
+  }, [user?.id]);
+
   // Format notification count (9+ for counts over 9)
   const formatNotificationCount = (count: number) => {
     if (count === 0) return null;
@@ -126,7 +153,7 @@ const Sidebar = ({ className }: SidebarProps) => {
       icon: Home,
     },
     {
-      label: "Team Members",
+      label: "Employee Panel",
       path: "/employees",
       icon: Users,
     },
@@ -140,43 +167,43 @@ const Sidebar = ({ className }: SidebarProps) => {
       path: "/reviews",
       icon: MessageSquare,
     },
-
+    {
+      label: "Employee Projects",
+      path: "/employee-projects",
+      icon: FileText,
+    },
+    {
+      label: "Platform Profiles",
+      path: "/platforms",
+      icon: PlugZap,
+    },
     {
       label: "Analytics",
       path: "/analytics",
       icon: ChartArea,
     },
+    {
+      label: "Review Request",
+      path: "/review-request",
+      icon: Mail,
+    },
 
-    {
-      label: "Platforms",
-      path: "/platforms",
-      icon: PlugZap,
-    },
     // {
-    //   label: "Review Request",
-    //   path: "/review-request",
-    //   icon: Mail,
+    //   label: "Review Widget",
+    //   path: "/review-widget",
+    //   icon: PanelsTopLeft,
     // },
-    {
-      label: "QR Analytics",
-      path: "/qr-analytics",
-      icon: BarChart3,
-    },
-    {
-      label: "Export & Reports",
-      path: "/export-reports",
-      icon: FileText,
-    },
-    {
-      label: "Data Management",
-      path: "/data-management",
-      icon: Database,
-    },
+
     {
       label: "Notifications",
       path: "/notifications",
       icon: Bell,
       hasNotification: true,
+    },
+    {
+      label: "QR Analytics",
+      path: "/qr-analytics",
+      icon: BarChart3,
     },
   ];
 
@@ -261,7 +288,7 @@ const Sidebar = ({ className }: SidebarProps) => {
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">SR</span>
           </div>
-          <span className="font-semibold text-gray-900">Syncreviews</span>
+          <span className="font-semibold text-gray-900">SyncReviews</span>
         </div>
 
         <div className="flex items-center space-x-2">
@@ -279,6 +306,11 @@ const Sidebar = ({ className }: SidebarProps) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <div className="flex flex-col space-y-1 p-2">
+                {companyName && (
+                  <p className="text-sm font-bold leading-none text-blue-700">
+                    {companyName}
+                  </p>
+                )}
                 <p className="text-sm font-medium leading-none">
                   {user?.email}
                 </p>
@@ -338,7 +370,7 @@ const Sidebar = ({ className }: SidebarProps) => {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">SR</span>
               </div>
-              <span className="font-semibold text-gray-900">Syncreviews</span>
+              <span className="font-semibold text-gray-900">SyncReviews</span>
             </div>
           ) : (
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mx-auto">
@@ -378,7 +410,369 @@ const Sidebar = ({ className }: SidebarProps) => {
         {/* Navigation Items */}
         <div className="flex-1 overflow-y-auto py-2.5">
           <nav className="space-y-1 px-3">
+            {/* Data Tools dropdown moved to bottom */}
+            {false &&
+              (() => {
+                const label = "Data Tools";
+                const Icon = Database;
+                const isGroupActive = [
+                  "/export-reports",
+                  "/data-management",
+                ].includes(location.pathname);
+                const triggerClasses = cn(
+                  "w-full justify-start h-10 relative",
+                  isCollapsed && "justify-center px-0",
+                  !isCollapsed &&
+                    (isGroupActive
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "text-gray-700 hover:bg-gray-100")
+                );
+
+                const trigger = (
+                  <Button variant="ghost" className={triggerClasses}>
+                    <Icon className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
+                    {!isCollapsed && (
+                      <span className="flex-1 text-left">{label}</span>
+                    )}
+                    {!isCollapsed && (
+                      <ChevronDown className="h-4 w-4 ml-auto" />
+                    )}
+                  </Button>
+                );
+
+                if (isCollapsed) {
+                  return (
+                    <DropdownMenu>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <DropdownMenuTrigger asChild>
+                            {React.cloneElement(trigger as React.ReactElement, {
+                              className: cn(
+                                triggerClasses,
+                                isGroupActive &&
+                                  "bg-blue-600 text-white hover:bg-blue-700"
+                              ),
+                            })}
+                          </DropdownMenuTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="ml-2">
+                          <p>{label}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <DropdownMenuContent
+                        side="right"
+                        align="start"
+                        className="w-56"
+                      >
+                        <DropdownMenuItem
+                          onClick={() => handleNavigation("/qr-analytics")}
+                        >
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          <span>QR Analytics</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleNavigation("/export-reports")}
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span>Export & Reports</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleNavigation("/data-management")}
+                        >
+                          <Database className="mr-2 h-4 w-4" />
+                          <span>Data Management</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                }
+
+                return (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      side="right"
+                      align="start"
+                      className="w-56"
+                    >
+                      <DropdownMenuItem
+                        onClick={() => handleNavigation("/qr-analytics")}
+                      >
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        <span>QR Analytics</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleNavigation("/export-reports")}
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span>Export & Reports</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleNavigation("/data-management")}
+                      >
+                        <Database className="mr-2 h-4 w-4" />
+                        <span>Data Management</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              })()}
+
             {navigationItems.map((item) => {
+              // Hide flat entries that are moved to the Data Tools dropdown
+              const hiddenPaths = new Set([
+                "/export-reports",
+                "/data-management",
+                "/analytics",
+              ]);
+              if (hiddenPaths.has(item.path)) return null;
+              // Insert Analytics dropdown in place of the flat QR Analytics item
+              if (item.path === "/qr-analytics") {
+                const label = "Analytics";
+                const IconGroup = ChartArea;
+                const isGroupActive = ["/analytics", "/qr-analytics"].includes(
+                  location.pathname
+                );
+                const triggerClasses = cn(
+                  "w-full justify-start h-10 relative",
+                  isCollapsed && "justify-center px-0",
+                  !isCollapsed &&
+                    (isGroupActive
+                      ? "bg-blue-600 text-white hover:bg-blue-700"
+                      : "text-gray-700 hover:bg-gray-100")
+                );
+
+                const trigger = (
+                  <Button variant="ghost" className={triggerClasses}>
+                    <IconGroup
+                      className={cn("h-5 w-5", !isCollapsed && "mr-3")}
+                    />
+                    {!isCollapsed && (
+                      <span className="flex-1 text-left">{label}</span>
+                    )}
+                    {!isCollapsed && (
+                      <ChevronDown className="h-4 w-4 ml-auto" />
+                    )}
+                  </Button>
+                );
+
+                if (isCollapsed) {
+                  return (
+                    <>
+                      <DropdownMenu key={`${item.path}-analytics`}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                              {React.cloneElement(
+                                trigger as React.ReactElement,
+                                {
+                                  className: cn(
+                                    triggerClasses,
+                                    isGroupActive &&
+                                      "bg-blue-600 text-white hover:bg-blue-700"
+                                  ),
+                                }
+                              )}
+                            </DropdownMenuTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="ml-2">
+                            <p>{label}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <DropdownMenuContent
+                          side="bottom"
+                          align="start"
+                          className="w-56"
+                        >
+                          <DropdownMenuItem
+                            onClick={() => handleNavigation("/analytics")}
+                          >
+                            <ChartArea className="mr-2 h-4 w-4" />
+                            <span>Analytics</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleNavigation("/qr-analytics")}
+                          >
+                            <BarChart3 className="mr-2 h-4 w-4" />
+                            <span>QR Analytics</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+
+                      {/* Data Tools directly below Analytics */}
+                      {(() => {
+                        const dataLabel = "Data Tools";
+                        const DataIcon = Database;
+                        const isDataActive = [
+                          "/export-reports",
+                          "/data-management",
+                        ].includes(location.pathname);
+                        const dataTriggerClasses = cn(
+                          "w-full justify-start h-10 relative",
+                          isCollapsed && "justify-center px-0",
+                          !isCollapsed &&
+                            (isDataActive
+                              ? "bg-blue-600 text-white hover:bg-blue-700"
+                              : "text-gray-700 hover:bg-gray-100")
+                        );
+                        const dataTrigger = (
+                          <Button
+                            variant="ghost"
+                            className={dataTriggerClasses}
+                          >
+                            <DataIcon
+                              className={cn("h-5 w-5", !isCollapsed && "mr-3")}
+                            />
+                            {!isCollapsed && (
+                              <span className="flex-1 text-left">
+                                {dataLabel}
+                              </span>
+                            )}
+                            {!isCollapsed && (
+                              <ChevronDown className="h-4 w-4 ml-auto" />
+                            )}
+                          </Button>
+                        );
+                        return (
+                          <DropdownMenu key="data-tools-dropdown">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                  {React.cloneElement(
+                                    dataTrigger as React.ReactElement,
+                                    {
+                                      className: cn(
+                                        dataTriggerClasses,
+                                        isDataActive &&
+                                          "bg-blue-600 text-white hover:bg-blue-700"
+                                      ),
+                                    }
+                                  )}
+                                </DropdownMenuTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="ml-2">
+                                <p>{dataLabel}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <DropdownMenuContent
+                              side="bottom"
+                              align="start"
+                              className="w-56"
+                            >
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleNavigation("/export-reports")
+                                }
+                              >
+                                <FileText className="mr-2 h-4 w-4" />
+                                <span>Export & Reports</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleNavigation("/data-management")
+                                }
+                              >
+                                <Database className="mr-2 h-4 w-4" />
+                                <span>Data Management</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        );
+                      })()}
+                    </>
+                  );
+                }
+
+                return (
+                  <>
+                    <DropdownMenu key={`${item.path}-analytics`}>
+                      <DropdownMenuTrigger asChild>
+                        {trigger}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        side="bottom"
+                        align="start"
+                        className="w-56"
+                      >
+                        <DropdownMenuItem
+                          onClick={() => handleNavigation("/analytics")}
+                        >
+                          <ChartArea className="mr-2 h-4 w-4" />
+                          <span>Analytics</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleNavigation("/qr-analytics")}
+                        >
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          <span>QR Analytics</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Data Tools directly below Analytics */}
+                    {(() => {
+                      const dataLabel = "Data Tools";
+                      const DataIcon = Database;
+                      const isDataActive = [
+                        "/export-reports",
+                        "/data-management",
+                      ].includes(location.pathname);
+                      const dataTriggerClasses = cn(
+                        "w-full justify-start h-10 relative",
+                        isCollapsed && "justify-center px-0",
+                        !isCollapsed &&
+                          (isDataActive
+                            ? "bg-blue-600 text-white hover:bg-blue-700"
+                            : "text-gray-700 hover:bg-gray-100")
+                      );
+                      const dataTrigger = (
+                        <Button variant="ghost" className={dataTriggerClasses}>
+                          <DataIcon
+                            className={cn("h-5 w-5", !isCollapsed && "mr-3")}
+                          />
+                          {!isCollapsed && (
+                            <span className="flex-1 text-left">
+                              {dataLabel}
+                            </span>
+                          )}
+                          {!isCollapsed && (
+                            <ChevronDown className="h-4 w-4 ml-auto" />
+                          )}
+                        </Button>
+                      );
+                      return (
+                        <DropdownMenu key="data-tools-dropdown">
+                          <DropdownMenuTrigger asChild>
+                            {dataTrigger}
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            side="bottom"
+                            align="start"
+                            className="w-56"
+                          >
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleNavigation("/export-reports")
+                              }
+                            >
+                              <FileText className="mr-2 h-4 w-4" />
+                              <span>Export & Reports</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleNavigation("/data-management")
+                              }
+                            >
+                              <Database className="mr-2 h-4 w-4" />
+                              <span>Data Management</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    })()}
+                  </>
+                );
+              }
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
               const showNotificationBadge =
@@ -443,7 +837,7 @@ const Sidebar = ({ className }: SidebarProps) => {
         {/* Bottom Section - Support and Profile */}
         <div className="border-t border-gray-200 relative">
           {/* Support Button */}
-          <div className="px-3 py-2 pt-1.5">
+          <div className="px-3 pt-1 py-1">
             {isCollapsed ? (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -478,6 +872,11 @@ const Sidebar = ({ className }: SidebarProps) => {
               {isProfileExpanded && (
                 <div className="absolute bottom-full left-3 right-3 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 space-y-1 z-50">
                   <div className="flex flex-col space-y-1 p-2">
+                    {companyName && (
+                      <p className="text-sm font-bold leading-none text-blue-700">
+                        {companyName}
+                      </p>
+                    )}
                     <p className="text-sm font-medium leading-none">
                       {user?.email}
                     </p>
@@ -538,10 +937,10 @@ const Sidebar = ({ className }: SidebarProps) => {
               )}
 
               {/* Profile Dropdown Trigger */}
-              <div className="px-3 py-2">
+              <div className="px-3 py-1">
                 <Button
                   variant="ghost"
-                  className="w-full p-3 h-auto justify-between"
+                  className="w-full p-2 h-auto justify-between"
                   onClick={() => setIsProfileExpanded(!isProfileExpanded)}
                 >
                   <div className="flex items-center space-x-3 min-w-0">
@@ -552,6 +951,11 @@ const Sidebar = ({ className }: SidebarProps) => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0 text-left">
+                      {companyName && (
+                        <p className="text-xs text-gray-700 truncate">
+                          {companyName}
+                        </p>
+                      )}
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {user?.email}
                       </p>
@@ -586,6 +990,11 @@ const Sidebar = ({ className }: SidebarProps) => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="right" align="end" className="w-56">
                   <div className="flex flex-col space-y-1 p-2">
+                    {companyName && (
+                      <p className="text-sm font-medium leading-none text-gray-900">
+                        {companyName}
+                      </p>
+                    )}
                     <p className="text-sm font-medium leading-none">
                       {user?.email}
                     </p>

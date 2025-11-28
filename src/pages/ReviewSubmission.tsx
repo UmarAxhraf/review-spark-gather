@@ -118,6 +118,7 @@ const ReviewSubmission = () => {
     []
   );
   const [profilesLoading, setProfilesLoading] = useState(false);
+  const [blockedMessage, setBlockedMessage] = useState<string | null>(null);
   const formSubmittedRef = useRef(false);
 
   const fetchPlatformProfiles = async (companyId: string) => {
@@ -193,6 +194,33 @@ const ReviewSubmission = () => {
           }
 
           setCompanyData(companyInfo[0]);
+          // Evaluate subscription status for blocking
+          const now = new Date();
+          const status = companyInfo[0]?.subscription_status as
+            | string
+            | undefined;
+          const subEnd = companyInfo[0]?.subscription_end
+            ? new Date(companyInfo[0].subscription_end)
+            : null;
+          const trialEnd = companyInfo[0]?.trial_end
+            ? new Date(companyInfo[0].trial_end)
+            : null;
+
+          const isExpiredOrEnded =
+            status === "expired" ||
+            status === "ended" ||
+            (status === "trial" && trialEnd && trialEnd <= now) ||
+            ((status === "active" || status === "canceled") &&
+              subEnd &&
+              subEnd <= now);
+
+          if (isExpiredOrEnded) {
+            setBlockedMessage(
+              "This company's subscription has expired or ended. Reviews are not allowed at this time."
+            );
+          } else {
+            setBlockedMessage(null);
+          }
           // Fetch platform profiles for this company
           await fetchPlatformProfiles(companyInfo[0].id);
           setLoading(false);
@@ -223,7 +251,7 @@ const ReviewSubmission = () => {
           const { data, error } = await publicSupabase
             .from("employees")
             .select(
-              "id, name, position, company_id, email, is_active, qr_code_id, qr_redirect_url, custom_landing_page, created_at, updated_at"
+              "id, name, position, company_id, email, is_active, qr_code_id, qr_redirect_url, custom_landing_page, qr_is_active, qr_expires_at, created_at, updated_at"
             )
             .eq("qr_code_id", qrCodeId)
             .single();
@@ -246,7 +274,9 @@ const ReviewSubmission = () => {
       try {
         const { data: companyData, error: companyError } = await publicSupabase
           .from("profiles")
-          .select("id, company_name, logo_url, primary_color")
+          .select(
+            "id, company_name, logo_url, primary_color, subscription_status, subscription_end, trial_end"
+          )
           .eq("id", employeeData.company_id)
           .maybeSingle();
 
@@ -264,6 +294,46 @@ const ReviewSubmission = () => {
           incentive_enabled: false,
           follow_up_enabled: false,
         });
+
+        // Evaluate QR and subscription blocking
+        const now = new Date();
+        const isQRExpired = employeeData.qr_expires_at
+          ? new Date(employeeData.qr_expires_at) <= now
+          : false;
+        const isQRInactive = employeeData.qr_is_active === false;
+
+        const status = companyData?.subscription_status as
+          | string
+          | undefined;
+        const subEnd = companyData?.subscription_end
+          ? new Date(companyData.subscription_end)
+          : null;
+        const trialEnd = companyData?.trial_end
+          ? new Date(companyData.trial_end)
+          : null;
+        const isSubscriptionBlocked =
+          status === "expired" ||
+          status === "ended" ||
+          (status === "trial" && trialEnd && trialEnd <= now) ||
+          ((status === "active" || status === "canceled") &&
+            subEnd &&
+            subEnd <= now);
+
+        if (isQRInactive) {
+          setBlockedMessage(
+            "This QR code is deactivated and cannot accept reviews."
+          );
+        } else if (isQRExpired) {
+          setBlockedMessage(
+            "This QR code has expired and can no longer accept new reviews."
+          );
+        } else if (isSubscriptionBlocked) {
+          setBlockedMessage(
+            "This company's subscription has expired or ended. Reviews are not allowed at this time."
+          );
+        } else {
+          setBlockedMessage(null);
+        }
 
         // Add this in the useEffect or fetchEmployeeAndCompany function
         console.log(
@@ -389,6 +459,8 @@ const ReviewSubmission = () => {
     }
   };
 
+  const [recordedDurationSec, setRecordedDurationSec] = useState<number | null>(null);
+
   const uploadVideo = async (file: Blob | File): Promise<string> => {
     if (!file) {
       throw new Error("No file provided");
@@ -471,10 +543,26 @@ const ReviewSubmission = () => {
           } = publicSupabase.storage
             .from("video-reviews")
             .getPublicUrl(data.path);
-
-          return publicUrl;
+          try {
+            const urlObj = new URL(publicUrl);
+            if (recordedDurationSec && recordedDurationSec > 0) {
+              urlObj.searchParams.set("d", String(recordedDurationSec));
+            }
+            return urlObj.toString();
+          } catch {
+            return publicUrl;
+          }
         }
-        return signedUrlData.signedUrl;
+        // Append duration hint `d` to signed URL if available
+        try {
+          const urlObj = new URL(signedUrlData.signedUrl);
+          if (recordedDurationSec && recordedDurationSec > 0) {
+            urlObj.searchParams.set("d", String(recordedDurationSec));
+          }
+          return urlObj.toString();
+        } catch {
+          return signedUrlData.signedUrl;
+        }
       },
       3,
       2000
@@ -556,6 +644,12 @@ const ReviewSubmission = () => {
       return;
     }
 
+    // Blocked by QR or subscription
+    if (blockedMessage) {
+      toast.error(blockedMessage);
+      return;
+    }
+
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
@@ -572,7 +666,7 @@ const ReviewSubmission = () => {
       return;
     }
 
-    // Add expiration check here for employee reviews
+    // Add expiration/active check here for employee reviews
     if (reviewTarget === "employee" && employee) {
       const isExpired = employee.qr_expires_at
         ? new Date(employee.qr_expires_at) <= new Date()
@@ -585,10 +679,38 @@ const ReviewSubmission = () => {
         return;
       }
 
-      // Also check if QR code is active
-      if (!employee.is_active) {
+      // Check QR active flag
+      if (employee.qr_is_active === false) {
         toast.error(
           "This QR code is currently inactive and cannot accept reviews. Please contact the business."
+        );
+        return;
+      }
+    }
+
+    // Block if subscription expired or ended
+    const now = new Date();
+    const companyProfile = reviewTarget === "employee" ? company : companyData;
+    if (companyProfile) {
+      const status = (companyProfile as any).subscription_status as
+        | string
+        | undefined;
+      const subEnd = (companyProfile as any).subscription_end
+        ? new Date((companyProfile as any).subscription_end)
+        : null;
+      const trialEnd = (companyProfile as any).trial_end
+        ? new Date((companyProfile as any).trial_end)
+        : null;
+      const isBlocked =
+        status === "expired" ||
+        status === "ended" ||
+        (status === "trial" && trialEnd && trialEnd <= now) ||
+        ((status === "active" || status === "canceled") &&
+          subEnd &&
+          subEnd <= now);
+      if (isBlocked) {
+        toast.error(
+          "This company's subscription has expired or ended. Reviews are not allowed at this time."
         );
         return;
       }
@@ -763,8 +885,9 @@ const ReviewSubmission = () => {
     formSubmittedRef.current = false;
   };
 
-  const handleVideoRecorded = (blob: Blob) => {
-    setVideoFile(blob);
+  const handleVideoRecorded = (payload: { blob: Blob; durationSec: number }) => {
+    setVideoFile(payload.blob);
+    setRecordedDurationSec(payload.durationSec || null);
     setFormErrors((prev) => ({ ...prev, video: undefined }));
   };
 
@@ -1177,7 +1300,7 @@ const ReviewSubmission = () => {
               {/* Submit Button */}
               <Button
                 type="submit"
-                disabled={submitting || !isOnline()}
+                disabled={submitting || !isOnline() || !!blockedMessage}
                 className="w-full"
                 size="lg"
               >
@@ -1191,12 +1314,13 @@ const ReviewSubmission = () => {
                 )}
               </Button>
 
-              {!isOnline() && (
+              {(blockedMessage || !isOnline()) && (
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    No internet connection. Please check your network and try
-                    again.
+                    {blockedMessage
+                      ? blockedMessage
+                      : "No internet connection. Please check your network and try again."}
                   </AlertDescription>
                 </Alert>
               )}

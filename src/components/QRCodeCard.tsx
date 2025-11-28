@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Settings,
   MoreHorizontal,
+  FileText,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useQRCode } from "@/contexts/QRCodeContext";
@@ -72,6 +73,7 @@ const QRCodeCard: React.FC<QRCodeCardProps> = ({
 }) => {
   const { settings } = useQRCode();
   const reviewUrl = `${window.location.origin}/review/${employee.qr_code_id}`;
+  const projectUrl = `${window.location.origin}/project/${employee.qr_code_id}`;
   const isExpired = employee.qr_expires_at
     ? new Date(employee.qr_expires_at) <= new Date()
     : false;
@@ -134,6 +136,16 @@ const QRCodeCard: React.FC<QRCodeCardProps> = ({
     } catch (error) {
       console.error("Error copying URL:", error);
       toast.error("Failed to copy URL");
+    }
+  };
+
+  const handleCopyProjectUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(projectUrl);
+      toast.success("Project submission link copied to clipboard");
+    } catch (error) {
+      console.error("Error copying project URL:", error);
+      toast.error("Failed to copy project link");
     }
   };
 
@@ -356,12 +368,24 @@ const QRCodeCard: React.FC<QRCodeCardProps> = ({
             <Button
               variant="outline"
               size="sm"
+              onClick={handleCopyProjectUrl}
+              className="flex items-center gap-1"
+              disabled={!isActive}
+            >
+              <FileText className="h-3 w-3" />
+              Copy Project Link
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 gap-2">
+            <Button
+              variant="default"
+              size="sm"
               onClick={handleCopyUrl}
               className="flex items-center gap-1"
               disabled={!isActive}
             >
               <Copy className="h-3 w-3" />
-              Copy URL
+              Copy QR Code URL
             </Button>
           </div>
         </div>

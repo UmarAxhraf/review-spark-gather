@@ -48,6 +48,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [durationLocked, setDurationLocked] = useState(false);
   const [volume, setVolume] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -57,6 +58,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Use a reasonable fixed max when duration is unknown to avoid slider pinning
+  const UNKNOWN_DURATION_FALLBACK_MAX = 60; // seconds
 
   const togglePlay = () => {
     if (videoRef.current) {
@@ -89,19 +93,151 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
+    const video = videoRef.current;
+    if (video) {
+      setCurrentTime(video.currentTime);
+      // Do NOT recompute duration during playback to avoid jumping
     }
   };
 
-  const handleLoadedMetadata = () => {
-    if (videoRef.current) {
-      setDuration(videoRef.current.duration);
+  // Helper to compute a safe, finite duration (exclude currentTime to keep total static)
+  const getSafeDuration = (video: HTMLVideoElement): number => {
+    const candidates: number[] = [];
+    const d = video.duration;
+    if (Number.isFinite(d) && !Number.isNaN(d) && d > 0) candidates.push(d);
+    try {
+      if (video.seekable && video.seekable.length > 0) {
+        const end = video.seekable.end(video.seekable.length - 1);
+        if (Number.isFinite(end) && end > 0) candidates.push(end);
+      }
+      if (video.buffered && video.buffered.length > 0) {
+        const end = video.buffered.end(video.buffered.length - 1);
+        if (Number.isFinite(end) && end > 0) candidates.push(end);
+      }
+    } catch {}
+    return candidates.length ? Math.max(...candidates) : 0;
+  };
+
+  const MIN_VALID_DURATION = 3; // avoid transient 0–2s metadata glitches
+  const updateDuration = (lockIfValid: boolean = false) => {
+    const video = videoRef.current;
+    if (!video || durationLocked) return;
+    const d = getSafeDuration(video);
+    if (Number.isFinite(d) && d >= MIN_VALID_DURATION) {
+      setDuration(d);
+      if (lockIfValid) setDurationLocked(true);
     }
+  };
+
+  // Force-resolve duration for sources that report Infinity/unknown until end.
+  const forceResolveDuration = () => {
+    const video = videoRef.current;
+    if (!video || durationLocked) return;
+
+    // If we already have a valid duration, lock and return.
+    const initial = getSafeDuration(video);
+    if (Number.isFinite(initial) && initial >= MIN_VALID_DURATION) {
+      setDuration(initial);
+      setDurationLocked(true);
+      return;
+    }
+
+    // Need metadata available to perform the seek trick.
+    if (video.readyState < 1) return; // HAVE_METADATA
+
+    const wasPaused = video.paused;
+    const prevTime = video.currentTime;
+
+    const finish = () => {
+      const d = getSafeDuration(video);
+      if (Number.isFinite(d) && d >= MIN_VALID_DURATION) {
+        setDuration(d);
+        setDurationLocked(true);
+      }
+      try {
+        video.currentTime = prevTime;
+        if (wasPaused) video.pause();
+      } catch {}
+      video.removeEventListener("timeupdate", onUpdateOnce);
+      video.removeEventListener("seeked", onUpdateOnce);
+    };
+
+    const onUpdateOnce = () => finish();
+
+    try {
+      video.addEventListener("timeupdate", onUpdateOnce);
+      video.addEventListener("seeked", onUpdateOnce);
+      // Jump far ahead; browser clamps to end, revealing true duration.
+      video.currentTime = 1e9;
+    } catch {
+      // As a fallback, try a smaller large seek.
+      try {
+        video.currentTime = 1e6;
+      } catch {}
+    }
+  };
+
+  // Parse duration hint from `src` query parameter `d` and lock if valid
+  useEffect(() => {
+    let hintedDuration: number | null = null;
+    try {
+      // Only attempt parsing for http(s) URLs
+      if (src.startsWith("http")) {
+        const u = new URL(src);
+        const dParam = u.searchParams.get("d");
+        if (dParam) {
+          const val = Number(dParam);
+          if (Number.isFinite(val) && val > 0) hintedDuration = val;
+        }
+      }
+    } catch {}
+
+    if (hintedDuration && !durationLocked) {
+      setDuration(hintedDuration);
+      setDurationLocked(true);
+    }
+    // Reset current time when source changes
+    setCurrentTime(0);
+    setIsPlaying(false);
+  }, [src]);
+
+  const handleLoadedMetadata = () => {
+    // Capture initial duration without locking, then re-check shortly
+    updateDuration(false);
+    setTimeout(() => {
+      if (!durationLocked) {
+        updateDuration(true);
+        if (!durationLocked) forceResolveDuration();
+      }
+    }, 300);
+  };
+
+  const handleDurationChange = () => {
+    // When browser reports duration change, lock if valid to prevent jumping
+    updateDuration(true);
+  };
+
+  const handleCanPlayThrough = () => {
+    // At this point, browsers usually know the full duration
+    updateDuration(true);
+    if (!durationLocked) forceResolveDuration();
   };
 
   const handleEnded = () => {
     setIsPlaying(false);
+    // If duration never resolved via metadata, use the final playback time
+    const video = videoRef.current;
+    if (video && !durationLocked) {
+      const metaDuration = getSafeDuration(video);
+      const finalDuration =
+        Number.isFinite(metaDuration) && metaDuration > 0
+          ? metaDuration
+          : video.currentTime;
+      if (Number.isFinite(finalDuration) && finalDuration > 0) {
+        setDuration(finalDuration);
+        setDurationLocked(true);
+      }
+    }
     onEnded?.();
   };
 
@@ -140,6 +276,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const formatTime = (time: number): string => {
+    if (!Number.isFinite(time) || Number.isNaN(time) || time <= 0) {
+      return "--:--";
+    }
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
@@ -240,8 +379,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             src={src}
             poster={poster}
             autoPlay={autoPlay}
+            preload="metadata"
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
+            onDurationChange={handleDurationChange}
+            onLoadedData={() => updateDuration(false)}
+            onCanPlayThrough={handleCanPlayThrough}
             onEnded={handleEnded}
             onWaiting={handleWaiting}
             onPlaying={handlePlaying}
@@ -266,7 +409,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 <input
                   type="range"
                   min="0"
-                  max={duration}
+                  max={
+                    Number.isFinite(duration) && duration > 0
+                      ? duration
+                      : Math.max(UNKNOWN_DURATION_FALLBACK_MAX, currentTime + 5)
+                  }
                   value={currentTime}
                   onChange={handleSeek}
                   className="w-full h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"

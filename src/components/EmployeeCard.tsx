@@ -6,9 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { QRCodeSVG } from "qrcode.react";
 import {
-  User,
   Mail,
-  Eye,
   Edit,
   Trash,
   Star,
@@ -16,8 +14,11 @@ import {
   Users,
   Calendar,
   Award,
+  FileText,
+  Copy,
 } from "lucide-react";
-import AddEmployeeDialog from "./AddEmployeeDialog";
+import { toast } from "sonner";
+// AddEmployeeDialog is rendered at page level; card triggers parent handler
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,8 +61,6 @@ interface EmployeeCardProps {
   employee: Employee;
   onEdit: (employee: Employee) => void;
   onDelete: (employeeId: string) => void;
-  onViewQR: (employee: Employee) => void;
-  onViewProfile?: (employee: Employee) => void;
   onToggleStatus?: (employeeId: string, newStatus: boolean) => void;
 }
 
@@ -69,14 +68,12 @@ const EmployeeCard = ({
   employee,
   onEdit,
   onDelete,
-  onViewQR,
-  onViewProfile,
   onToggleStatus,
 }: EmployeeCardProps) => {
-  const [showQR, setShowQR] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // Editing is handled by parent page-level dialog
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const reviewUrl = `${window.location.origin}/review/${employee.qr_code_id}`;
+  const projectUrl = `${window.location.origin}/project/${employee.qr_code_id}`;
 
   const getInitials = (name: string) => {
     return name
@@ -98,24 +95,11 @@ const EmployeeCard = ({
     return new Date(dateString).toLocaleDateString();
   };
 
-  const handleEdit = () => {
-    setEditDialogOpen(true);
-  };
-
-  const handleEditComplete = () => {
-    setEditDialogOpen(false);
-    onEdit(employee);
-  };
+  
 
   const handleDelete = () => {
     onDelete(employee.id);
     setShowDeleteDialog(false);
-  };
-
-  const handleViewProfile = () => {
-    if (onViewProfile) {
-      onViewProfile(employee);
-    }
   };
 
   return (
@@ -230,39 +214,50 @@ const EmployeeCard = ({
             )}
           </div>
 
-          {/* QR Code (toggleable) */}
-          {showQR && (
-            <div className="flex justify-center p-4 bg-gray-50 rounded-lg">
-              <QRCodeSVG value={reviewUrl} size={120} />
-            </div>
-          )}
+          {/* QR Code (always visible) */}
+          <div className="flex justify-center p-4 bg-gray-50 rounded-lg">
+            <QRCodeSVG value={reviewUrl} size={120} />
+          </div>
 
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-2">
-            {onViewProfile && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleViewProfile}
-                className="text-xs"
-              >
-                <User className="h-3 w-3 mr-1" />
-                Profile
-              </Button>
-            )}
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowQR(!showQR)}
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(reviewUrl);
+                  toast.success("Review URL copied to clipboard!");
+                } catch (error) {
+                  toast.error("Failed to copy URL");
+                }
+              }}
               className="text-xs"
             >
-              <Eye className="h-3 w-3 mr-1" />
-              {showQR ? "Hide" : "Show"} QR
+              <Copy className="h-3 w-3 mr-1" />
+              Copy QR URL
+            </Button>
+
+            <Button
+              variant="default"
+              size="sm"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(projectUrl);
+                  toast.success("Project submission link copied to clipboard");
+                } catch (error) {
+                  toast.error("Failed to copy project link");
+                }
+              }}
+              className="text-xs"
+            >
+              <FileText className="h-3 w-3 mr-1" />
+              Copy Project URL
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={handleEdit}
+              onClick={() => onEdit(employee)}
               className="text-xs"
             >
               <Edit className="h-3 w-3 mr-1" />
@@ -281,13 +276,7 @@ const EmployeeCard = ({
         </CardContent>
       </Card>
 
-      {/* Edit Dialog */}
-      <AddEmployeeDialog
-        employee={employee}
-        onEmployeeAdded={handleEditComplete}
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-      />
+      {/* Edit Dialog removed from card; handled at page level */}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

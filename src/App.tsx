@@ -27,6 +27,9 @@ const QRCodes = lazy(() => import("./pages/QRCodes"));
 const Reviews = lazy(() => import("./pages/Reviews"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const ReviewSubmission = lazy(() => import("./pages/ReviewSubmission"));
+const ProjectSubmission = lazy(() => import("./pages/ProjectSubmission"));
+const Projects = lazy(() => import("./pages/Projects"));
+const ProjectDetails = lazy(() => import("./pages/ProjectDetails"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const CompanySettings = lazy(() => import("./pages/CompanySettings"));
@@ -40,6 +43,7 @@ const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const Platform = lazy(() => import("./pages/Platform"));
 const Support = lazy(() => import("./pages/Support"));
 const ReviewRequest = lazy(() => import("./pages/ReviewRequest"));
+const ReviewWidget = lazy(() => import("./pages/ReviewWidget"));
 
 // Loading component for Suspense fallback
 const PageLoader = () => (
@@ -82,6 +86,10 @@ const App = () => (
                       <Route
                         path="/review/:qrCodeId"
                         element={<ReviewSubmission />}
+                      />
+                      <Route
+                        path="/project/:qrCodeId"
+                        element={<ProjectSubmission />}
                       />
                       <Route
                         path="/review/company/:companyQrId"
@@ -163,12 +171,48 @@ const App = () => (
                         }
                       />
                       <Route
+                        path="/employee-projects"
+                        element={
+                          <ProtectedRoute>
+                            <SubscriptionGuard>
+                              <SidebarLayout>
+                                <Projects />
+                              </SidebarLayout>
+                            </SubscriptionGuard>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/employee-projects/:id"
+                        element={
+                          <ProtectedRoute>
+                            <SubscriptionGuard>
+                              <SidebarLayout>
+                                <ProjectDetails />
+                              </SidebarLayout>
+                            </SubscriptionGuard>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
                         path="/review-request"
                         element={
                           <ProtectedRoute>
                             <SubscriptionGuard>
                               <SidebarLayout>
                                 <ReviewRequest />
+                              </SidebarLayout>
+                            </SubscriptionGuard>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/review-widget"
+                        element={
+                          <ProtectedRoute>
+                            <SubscriptionGuard>
+                              <SidebarLayout>
+                                <ReviewWidget />
                               </SidebarLayout>
                             </SubscriptionGuard>
                           </ProtectedRoute>

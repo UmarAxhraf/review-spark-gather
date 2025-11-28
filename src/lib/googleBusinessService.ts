@@ -107,7 +107,7 @@ class GoogleBusinessService {
     });
 
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-    //console.log("Generated OAuth URL:", authUrl);
+    console.log("Generated OAuth URL:", authUrl);
     return authUrl;
   }
 
@@ -136,7 +136,7 @@ class GoogleBusinessService {
 
     if (!response.ok) {
       const errorData = await response.text();
-      //console.error("Token exchange failed:", errorData);
+      console.error("Token exchange failed:", errorData);
       throw new Error(`Token exchange failed: ${response.status}`);
     }
 
@@ -163,7 +163,7 @@ class GoogleBusinessService {
 
     for (let attempt = 1; attempt <= this.MAX_RETRIES; attempt++) {
       try {
-        //console.log(`Token refresh attempt ${attempt}/${this.MAX_RETRIES}`);
+        console.log(`Token refresh attempt ${attempt}/${this.MAX_RETRIES}`);
 
         // In the refreshAccessToken method, around line 161
         const response = await fetch("https://oauth2.googleapis.com/token", {
@@ -204,7 +204,7 @@ class GoogleBusinessService {
           throw new Error("No access token received from refresh");
         }
 
-        //console.log("Token refreshed successfully");
+        console.log("Token refreshed successfully");
         return {
           access_token: data.access_token,
           expires_in: data.expires_in || 3600,
@@ -215,7 +215,7 @@ class GoogleBusinessService {
 
         if (attempt < this.MAX_RETRIES && !error.message.includes("invalid")) {
           const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-          // console.log(`Retrying token refresh in ${delay}ms...`);
+          console.log(`Retrying token refresh in ${delay}ms...`);
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
@@ -241,7 +241,7 @@ class GoogleBusinessService {
     }
 
     // Token needs refresh
-    //console.log("Token expired or expiring soon, refreshing...");
+    console.log("Token expired or expiring soon, refreshing...");
 
     try {
       const refreshed = await this.refreshAccessToken(connection.refresh_token);
@@ -282,7 +282,7 @@ class GoogleBusinessService {
     const cachedFetcher = createCachedQuery(
       cacheKey,
       async () => {
-        // console.log("Fetching business accounts from Google API...");
+        console.log("Fetching business accounts from Google API...");
 
         const response = await fetch(
           "https://mybusinessaccountmanagement.googleapis.com/v1/accounts",
@@ -324,7 +324,7 @@ class GoogleBusinessService {
     const cachedFetcher = createCachedQuery(
       cacheKey,
       async () => {
-        //console.log(`Fetching locations for account: ${accountName}`);
+        console.log(`Fetching locations for account: ${accountName}`);
 
         const response = await fetch(
           `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations`,
@@ -383,7 +383,7 @@ class GoogleBusinessService {
     const cachedFetcher = createCachedQuery(
       cacheKey,
       async () => {
-        //console.log(`Fetching reviews for location: ${locationName}`);
+        console.log(`Fetching reviews for location: ${locationName}`);
 
         const response = await fetch(
           `https://mybusiness.googleapis.com/v4/${locationName}/reviews`,
@@ -506,7 +506,7 @@ class GoogleBusinessService {
       }
 
       // STEP 1: Get cached or fetch accounts
-      //console.log("Fetching business accounts...");
+      console.log("Fetching business accounts...");
       const accounts = await this.getBusinessAccounts(accessToken);
 
       if (accounts.length === 0) {
@@ -527,7 +527,7 @@ class GoogleBusinessService {
         };
       }
 
-      // console.log(`Found ${accounts.length} account(s)`);
+      console.log(`Found ${accounts.length} account(s)`);
       let allLocations: any[] = [];
 
       // STEP 2: Process accounts and get locations (with caching)
@@ -558,9 +558,9 @@ class GoogleBusinessService {
           account.name
         );
 
-        // console.log(
-        //   `Found ${accountLocations.length} locations for account ${account.name}`
-        // );
+        console.log(
+          `Found ${accountLocations.length} locations for account ${account.name}`
+        );
 
         // Save locations to database
         for (const location of accountLocations) {
@@ -622,16 +622,16 @@ class GoogleBusinessService {
 
       for (const location of allLocations) {
         try {
-          // console.log(
-          //   `Fetching reviews for: ${location.location_display_name}`
-          // );
+          console.log(
+            `Fetching reviews for: ${location.location_display_name}`
+          );
 
           const reviews = await this.getLocationReviews(
             accessToken,
             location.google_location_name
           );
 
-          //console.log(`Found ${reviews.length} reviews`);
+          console.log(`Found ${reviews.length} reviews`);
 
           for (const review of reviews) {
             await supabase.from("google_reviews").upsert(
@@ -804,7 +804,7 @@ class GoogleBusinessService {
     try {
       // Use deleteConnection for a clean disconnect that allows easy reconnection
       await this.deleteConnection(userId);
-      //console.log("Google Business integration disconnected successfully");
+      console.log("Google Business integration disconnected successfully");
     } catch (error) {
       console.error("Error disconnecting Google Business:", error);
       throw error;
@@ -825,7 +825,7 @@ class GoogleBusinessService {
         );
       }
 
-      //console.log("Google Business connection deleted successfully");
+      console.log("Google Business connection deleted successfully");
     } catch (error) {
       console.error("Error deleting Google Business connection:", error);
       throw error;

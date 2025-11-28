@@ -482,8 +482,66 @@ const Profile = () => {
   // Initial loading state
   if (loadingState === "loading" && !profile) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="space-y-6 p-6">
+        <div className="mb-6">
+          <BackButton />
+        </div>
+
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        {/* Overview + Details skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Overview card */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="text-center">
+              <Skeleton className="h-5 w-24 mx-auto" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-24 w-24 rounded-full mx-auto" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-3/4 mx-auto" />
+                <Skeleton className="h-3 w-1/2 mx-auto" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Details card */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <Skeleton className="h-5 w-32" />
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-4 w-full" />
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Platform Profiles skeleton */}
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-5 w-40" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

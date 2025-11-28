@@ -22,8 +22,13 @@ export const SubscriptionProgress: React.FC<SubscriptionProgressProps> = ({
 
   // Calculate days elapsed
   const today = new Date();
-  const daysElapsed = Math.ceil(
+  const daysElapsedRaw = Math.ceil(
     (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  // Clamp elapsed days between 0 and totalDays so it never exceeds the period
+  const daysElapsed = Math.min(
+    totalDays,
+    Math.max(0, daysElapsedRaw)
   );
 
   // Calculate days remaining

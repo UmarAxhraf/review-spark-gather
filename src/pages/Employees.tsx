@@ -357,18 +357,8 @@ const Employees = () => {
     }
   };
 
-  const handleViewQR = (employee: Employee) => {
-    setSelectedEmployee(employee);
-    setQrDialogOpen(true);
-  };
-
   const handleEditEmployee = (employee: Employee) => {
     setEditingEmployee(employee);
-  };
-
-  const handleViewProfile = (employee: Employee) => {
-    // Implement profile view logic here
-    // console.log("View profile for:", employee);
   };
 
   const handleBulkExport = () => {
@@ -439,7 +429,9 @@ const Employees = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Team Members</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Team Members Management
+          </h1>
           <p className="text-gray-600 mt-1">
             Manage your team and track their performance
           </p>
@@ -581,9 +573,7 @@ const Employees = () => {
               employee={employee}
               onToggleStatus={handleToggleEmployeeStatus}
               onDelete={handleDeleteEmployee}
-              onViewQR={handleViewQR}
               onEdit={handleEditEmployee}
-              onViewProfile={handleViewProfile}
             />
           ))}
         </div>

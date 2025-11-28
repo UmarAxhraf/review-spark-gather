@@ -529,7 +529,7 @@ const Notifications = () => {
                 {unreadCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                    className="h-4 min-w-[1.25rem] rounded-full px-1 text-xs inline-flex items-center justify-center"
                   >
                     {unreadCount}
                   </Badge>
@@ -541,7 +541,7 @@ const Notifications = () => {
                 {unreadCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
+                    className="ml-1 h-5 min-w-[1.25rem] px-2 rounded-full text-xs inline-flex items-center justify-center"
                   >
                     {unreadCount}
                   </Badge>
@@ -563,7 +563,7 @@ const Notifications = () => {
                 {reviewCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                    className="h-4 min-w-[1.25rem] rounded-full px-1 text-xs inline-flex items-center justify-center"
                   >
                     {reviewCount}
                   </Badge>
@@ -576,7 +576,7 @@ const Notifications = () => {
                 {reviewCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
+                    className="ml-1 h-5 min-w-[1.25rem] px-2 rounded-full text-xs inline-flex items-center justify-center"
                   >
                     {reviewCount}
                   </Badge>
@@ -598,7 +598,7 @@ const Notifications = () => {
                 {teamCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                    className="h-4 min-w-[1.25rem] rounded-full px-1 text-xs inline-flex items-center justify-center"
                   >
                     {teamCount}
                   </Badge>
@@ -611,7 +611,7 @@ const Notifications = () => {
                 {teamCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
+                    className="ml-1 h-5 min-w-[1.25rem] px-2 rounded-full text-xs inline-flex items-center justify-center"
                   >
                     {teamCount}
                   </Badge>
@@ -633,7 +633,7 @@ const Notifications = () => {
                 {qrCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                    className="h-4 min-w-[1.25rem] rounded-full px-1 text-xs inline-flex items-center justify-center"
                   >
                     {qrCount}
                   </Badge>
@@ -646,7 +646,7 @@ const Notifications = () => {
                 {qrCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
+                    className="ml-1 h-5 min-w-[1.25rem] px-2 rounded-full text-xs inline-flex items-center justify-center"
                   >
                     {qrCount}
                   </Badge>
@@ -668,7 +668,7 @@ const Notifications = () => {
                 {systemCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="h-4 w-4 rounded-full p-0 text-xs flex items-center justify-center"
+                    className="h-4 min-w-[1.25rem] rounded-full px-1 text-xs inline-flex items-center justify-center"
                   >
                     {systemCount}
                   </Badge>
@@ -681,7 +681,7 @@ const Notifications = () => {
                 {systemCount > 0 && (
                   <Badge
                     variant="destructive"
-                    className="ml-1 h-5 w-5 rounded-full p-1.5 text-xs"
+                    className="ml-1 h-5 min-w-[1.25rem] px-2 rounded-full text-xs inline-flex items-center justify-center"
                   >
                     {systemCount}
                   </Badge>

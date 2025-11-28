@@ -417,6 +417,66 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
     setIsLoading(true);
 
     try {
+      // Required field validation
+      const name = (formData.name || "").trim();
+      const email = (formData.email || "").trim();
+      const departmentId = formData.department_id;
+      const positionId = formData.position_id;
+      const emailRegex = /^\S+@\S+\.\S+$/;
+
+      if (!name) {
+        toast.error("Name is required.");
+        setIsLoading(false);
+        return;
+      }
+      if (!email) {
+        toast.error("Email is required.");
+        setIsLoading(false);
+        return;
+      }
+      if (!emailRegex.test(email)) {
+        toast.error("Please enter a valid email address.");
+        setIsLoading(false);
+        return;
+      }
+      if (!departmentId) {
+        toast.error("Department is required.");
+        setIsLoading(false);
+        return;
+      }
+      if (!positionId) {
+        toast.error(
+          "Position is required. Select a position for the chosen department."
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      // Normalize inputs for duplicate checking
+      const normalizedName = (formData.name || "").trim();
+      const normalizedEmail = (formData.email || "").trim().toLowerCase();
+
+      // Pre-check for duplicates only when email is provided
+      if (!currentEmployee?.id && normalizedEmail) {
+        const { data: existingEmployees, error: dupCheckError } = await supabase
+          .from("employees")
+          .select("id")
+          .eq("company_id", user.id)
+          .ilike("name", normalizedName)
+          .ilike("email", normalizedEmail)
+          .limit(1);
+
+        if (dupCheckError) {
+          console.error("Duplicate check error:", dupCheckError);
+        } else if (existingEmployees && existingEmployees.length > 0) {
+          toast.error(
+            "An employee with the same name and email already exists in your company."
+          );
+          setIsLoading(false);
+          return;
+        }
+      }
+
       let photoUrl = formData.photo_url;
 
       // Upload photo if a new one was selected
@@ -442,8 +502,8 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
       }
 
       const employeeData = {
-        name: formData.name,
-        email: formData.email || null,
+        name: (formData.name || "").trim(),
+        email: (formData.email || "").trim() || null,
         position: positionTitle || null,
         department_id: formData.department_id || null,
         position_id: formData.position_id || null,
@@ -456,7 +516,29 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
       let employeeId: string;
 
       if (currentEmployee?.id) {
-        // Update existing employee
+        // Update existing employee: pre-check duplicates if email is provided
+        if (normalizedEmail) {
+          const { data: existingEmployees, error: dupCheckError } = await supabase
+            .from("employees")
+            .select("id")
+            .eq("company_id", user.id)
+            .ilike("name", normalizedName)
+            .ilike("email", normalizedEmail)
+            .neq("id", currentEmployee.id)
+            .limit(1);
+
+          if (dupCheckError) {
+            console.error("Duplicate check error (update):", dupCheckError);
+          } else if (existingEmployees && existingEmployees.length > 0) {
+            toast.error(
+              "Another employee with the same name and email already exists in your company."
+            );
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        // Proceed with update
         const { error } = await supabase
           .from("employees")
           .update(employeeData)
@@ -472,8 +554,15 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
           .insert([employeeData])
           .select("id")
           .single();
-
-        if (error) throw error;
+        if (error) {
+          // Handle unique constraint violation gracefully
+          if (error.code === "23505") {
+            toast.error(
+              "An employee with the same name and email already exists in your company."
+            );
+          }
+          throw error;
+        }
         employeeId = data.id;
         toast.success("Employee added successfully!");
       }
@@ -509,7 +598,13 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
       onEmployeeAdded();
     } catch (error: any) {
       console.error("Error saving employee:", error);
-      toast.error(error.message || "Failed to save employee");
+      if (error?.code === "23505") {
+        toast.error(
+          "Duplicate employee detected: same name and email within your company."
+        );
+      } else {
+        toast.error(error.message || "Failed to save employee");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -618,7 +713,7 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email *</Label>
             <Input
               id="email"
               type="email"
@@ -627,6 +722,7 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
                 setFormData({ ...formData, email: e.target.value })
               }
               placeholder="Enter email address"
+              required
             />
           </div>
         </div>
@@ -634,14 +730,14 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
         {/* Department and Position Selection */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="department">Department</Label>
+            <Label htmlFor="department">Department *</Label>
             <Select
               key={`department-${departments.length}`}
               value={formData.department_id}
               onValueChange={handleDepartmentChange}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select department" />
+                <SelectValue placeholder="Select department (required)" />
               </SelectTrigger>
               <SelectContent className="max-h-[200px] overflow-y-auto">
                 {departments.map((dept) => (
@@ -653,7 +749,7 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="position">Position</Label>
+            <Label htmlFor="position">Position *</Label>
             <Select
               key={`position-${formData.department_id}-${filteredPositions.length}`}
               value={formData.position_id}
@@ -668,8 +764,8 @@ const AddEmployeeDialog: React.FC<AddEmployeeDialogProps> = ({
                     !formData.department_id
                       ? "Select department first"
                       : filteredPositions.length === 0
-                      ? "No positions available"
-                      : "Select position"
+                      ? "No positions available (required)"
+                      : "Select position (required)"
                   }
                 />
               </SelectTrigger>

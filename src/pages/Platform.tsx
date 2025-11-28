@@ -34,6 +34,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { BackButton } from "@/components/ui/back-button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CardSkeleton } from "@/components/ui/skeleton-loaders";
 
 interface PlatformProfile {
   id: string;
@@ -255,9 +257,18 @@ const Platform = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-lg">Loading platform profiles...</div>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="mb-6">
+          <BackButton />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <CardSkeleton key={i} />
+          ))}
         </div>
       </div>
     );
@@ -271,9 +282,8 @@ const Platform = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Platform Profiles</h1>
         <p className="text-muted-foreground">
-          Manage your business profile links across different platforms. Add
-          your profile URLs to help customers find and connect with your
-          business.
+          Add your profile URLs to help customers find and connect with your
+          business. These links will appear on the review submission page.
         </p>
       </div>
 

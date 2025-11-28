@@ -52,7 +52,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 // Types
 interface VideoRecorderProps {
-  onVideoRecorded: (blob: Blob) => void;
+  onVideoRecorded: (payload: { blob: Blob; durationSec: number }) => void;
   maxDuration?: number;
   initialQuality?: VideoQuality;
   autoStart?: boolean;
@@ -639,12 +639,12 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
             throw new Error("Recorded video is empty");
           }
 
+          const finalDuration = recordingTime;
           if (actualVideoDuration === 0) {
-            setActualVideoDuration(recordingTime);
+            setActualVideoDuration(finalDuration);
+          } else {
+            setActualVideoDuration(finalDuration);
           }
-
-          // Set the actual video duration when processing completes
-          setActualVideoDuration(recordingTime);
 
           // Verify the blob type is set correctly
           if (!blob.type || !blob.type.startsWith("video/")) {
@@ -655,10 +655,10 @@ const VideoRecorder: React.FC<VideoRecorderProps> = ({
               type: "video/webm",
             });
             setRecordedBlob(correctedBlob);
-            onVideoRecorded(correctedBlob);
+            onVideoRecorded({ blob: correctedBlob, durationSec: finalDuration });
           } else {
             setRecordedBlob(blob);
-            onVideoRecorded(blob);
+            onVideoRecorded({ blob, durationSec: finalDuration });
           }
 
           setState("completed");
