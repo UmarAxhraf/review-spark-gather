@@ -2,6 +2,11 @@ name: Email Notifications
 
 on:
   workflow_dispatch: # 👈 this enables the manual Run button
+    inputs:
+      force:
+        description: "Force run (append ?force=true to function URLs)"
+        required: false
+        default: "false"
   schedule:
     - cron: "0 9 * * *" # Daily at 9 AM UTC
     - cron: "0 10 * * 1" # Weekly on Monday at 10 AM UTC
@@ -62,9 +67,15 @@ jobs:
         run: |
           echo "🕒 Current UTC time: $(date -u)"
           echo "📊 Triggering Weekly Reports..."
+          # Append ?force=true only for manual runs when input force=true
+          FORCE_PARAM=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force }}" = "true" ]; then
+            FORCE_PARAM="?force=true"
+            echo "⚙️ Force override enabled: ${FORCE_PARAM}"
+          fi
           
           RESPONSE=$(curl -v -s -o response.json -w "%{http_code}" -X POST \
-            "${{ secrets.SUPABASE_URL }}/functions/v1/send-weekly-reports" \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/send-weekly-reports${FORCE_PARAM}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
             -H "User-Agent: GitHub-Actions" \
@@ -88,9 +99,15 @@ jobs:
         run: |
           echo "🕒 Current UTC time: $(date -u)"
           echo "📥 Triggering Download Reminders..."
+          # Append ?force=true only for manual runs when input force=true
+          FORCE_PARAM=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.force }}" = "true" ]; then
+            FORCE_PARAM="?force=true"
+            echo "⚙️ Force override enabled: ${FORCE_PARAM}"
+          fi
           
           RESPONSE=$(curl -v -s -o response.json -w "%{http_code}" -X POST \
-            "${{ secrets.SUPABASE_URL }}/functions/v1/send-download-reminders" \
+            "${{ secrets.SUPABASE_URL }}/functions/v1/send-download-reminders${FORCE_PARAM}" \
             -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
             -H "Content-Type: application/json" \
             -H "User-Agent: GitHub-Actions" \
