@@ -97,13 +97,15 @@ const ReviewRequest = () => {
   const [companyProfile, setCompanyProfile] = useState<any>(null);
   const entriesPerPage = 10;
 
+  const DEFAULT_EMAIL_BODY =
+    "Thank you for choosing our services! We'd love to hear your thoughts! Your feedback helps us grow and improve, and we truly value your opinion. You can quickly share your thoughts by scanning the QR code below or clicking the button to leave your review online.";
+
   const [formData, setFormData] = useState<ReviewRequestFormData>({
     firstName: "",
     lastName: "",
     email: "",
     companyName: "",
-    emailBody:
-      "Thank you for choosing our services! We'd love to hear your thoughts! Your feedback helps us grow and improve, and we truly value your opinion. You can quickly share your thoughts by scanning the QR code below or clicking the button to leave your review online.",
+    emailBody: DEFAULT_EMAIL_BODY,
   });
 
   // Fetch company profile for logo and company name
@@ -168,32 +170,13 @@ const ReviewRequest = () => {
     }
   };
 
-  // Generate company QR code
-  const generateCompanyQRCode = async () => {
+  // Generate company QR code as Base64 (for inline CID attachments)
+  const generateCompanyQRCodeBase64 = async () => {
     if (!user || !companyProfile?.company_qr_code_id) return null;
 
     try {
-      // Debug logging
-      //   console.log('Environment check:', {
-      //     VITE_APP_URL: import.meta.env.VITE_APP_URL,
-      //     config_app_url: config.app.url,
-      //     NODE_ENV: import.meta.env.NODE_ENV,
-      //     PROD: import.meta.env.PROD
-      //   });
-
-      // Use company_qr_code_id instead of user.id
-      // QR Code generation
-      const reviewUrl = `${config.app.url}/review/company/${companyProfile.company_qr_code_id}`;
-      //console.log("Generated review URL:", reviewUrl);
-
-      // Email template review button
-      <a
-        href="${config.app.url}/review/company/${companyProfile?.company_qr_code_id}"
-        class="button"
-      >
-        📝 Leave a Review Online
-      </a>;
-      const qrCodeDataUrl = await QRCode.toDataURL(reviewUrl, {
+      const reviewUrl = `${config.app.publicUrl}/review/company/${companyProfile.company_qr_code_id}`;
+      const dataUrl = await QRCode.toDataURL(reviewUrl, {
         width: 300,
         margin: 2,
         color: {
@@ -201,7 +184,8 @@ const ReviewRequest = () => {
           light: "#FFFFFF",
         },
       });
-      return qrCodeDataUrl;
+      const base64 = dataUrl.split(",")[1];
+      return base64;
     } catch (error) {
       console.error("Error generating QR code:", error);
       return null;
@@ -279,7 +263,7 @@ const ReviewRequest = () => {
               <div class="qr-section">
                 <h3>📱 Quick Review - Scan QR Code</h3>
                 <div style="background: white; padding: 20px; border-radius: 8px; display: inline-block;">
-                  <img src="${qrCodeDataUrl}" 
+                  <img src="cid:company-qr-code" 
                        alt="QR Code for Review" 
                        style="width: 200px; height: 200px; border: 3px solid ${
                          companyProfile?.primary_color || "#3b82f6"
@@ -290,7 +274,7 @@ const ReviewRequest = () => {
               
               <!-- Protected Review Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${config.app.url}/review/company/${
+                <a href="${config.app.publicUrl}/review/company/${
         companyProfile?.company_qr_code_id
       }" class="button">📝 Leave a Review Online</a>
               </div>
@@ -324,6 +308,14 @@ const ReviewRequest = () => {
         from: "support@syncreviews.com",
         fromName: "SyncReviews",
         type: "supabase",
+        inlineImages: [
+          {
+            cid: "company-qr-code",
+            base64: qrCodeDataUrl,
+            filename: "company-qr.png",
+            contentType: "image/png",
+          },
+        ],
       };
 
       const { data, error } = await supabase.functions.invoke("send-email", {
@@ -372,8 +364,8 @@ const ReviewRequest = () => {
         return;
       }
 
-      // Generate QR code
-      const qrCodeDataUrl = await generateCompanyQRCode();
+      // Generate QR code Base64 for inline CID attachment
+      const qrCodeDataUrl = await generateCompanyQRCodeBase64();
       if (!qrCodeDataUrl) {
         toast.error("Failed to generate QR code");
         setIsLoading(false);
@@ -407,8 +399,14 @@ const ReviewRequest = () => {
         toast.warning("Review request saved but email failed to send");
       }
 
-      // Reset form and close dialog
-      setFormData({ firstName: "", lastName: "", email: "", companyName: "" });
+      // Reset form and close dialog (restore default email body)
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        companyName: "",
+        emailBody: DEFAULT_EMAIL_BODY,
+      });
       setIsOpen(false);
       fetchReviewRequests();
     } catch (error) {
@@ -460,7 +458,8 @@ const ReviewRequest = () => {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Review Requests</h1>
           <p className="text-muted-foreground">
-            Send review requests to customers and track responses
+            Send review requests to customers asking them to share their
+            feedback about the company.
           </p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>

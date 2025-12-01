@@ -31,6 +31,10 @@
       "source": "/api/public-reviews",
       "destination": "https://uiszftfrxbqjqdgybbmk.functions.supabase.co/public-reviews"
     },
+    {
+      "source": "/api/qr-image/(.*)",
+      "destination": "https://uiszftfrxbqjqdgybbmk.functions.supabase.co/qr-image/$1"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

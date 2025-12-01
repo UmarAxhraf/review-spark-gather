@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { QRCodeProvider } from "./contexts/QRCodeContext";
@@ -45,10 +46,23 @@ const Support = lazy(() => import("./pages/Support"));
 const ReviewRequest = lazy(() => import("./pages/ReviewRequest"));
 const ReviewWidget = lazy(() => import("./pages/ReviewWidget"));
 
-// Loading component for Suspense fallback
+// Loading component for Suspense fallback (skeleton-based)
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  <div className="container py-8 space-y-4">
+    <Skeleton className="h-6 w-1/3" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="border rounded-lg p-4">
+          <div className="flex justify-between mb-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+          <Skeleton className="h-3 w-3/4 mb-2" />
+          <Skeleton className="h-3 w-full mb-2" />
+          <Skeleton className="h-3 w-2/3" />
+        </div>
+      ))}
+    </div>
   </div>
 );
 
@@ -209,8 +223,100 @@ const App = () => (
                       <Route
                         path="/review-widget"
                         element={
-                          <ProtectedRoute>
-                            <SubscriptionGuard>
+                          <ProtectedRoute
+                            fallbackDuringLoading={
+                              <div className="container space-y-6">
+                                <div className="my-6">
+                                  <Skeleton className="h-6 w-32" />
+                                </div>
+                                <div className="space-y-2">
+                                  <Skeleton className="h-8 w-1/3" />
+                                  <Skeleton className="h-4 w-2/3" />
+                                </div>
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                  <div className="rounded-lg border p-4 md:p-6">
+                                    <Skeleton className="h-5 w-40 mb-3" />
+                                    <div className="space-y-3">
+                                      <Skeleton className="h-4 w-full" />
+                                      <Skeleton className="h-4 w-full" />
+                                      <Skeleton className="h-4 w-3/4" />
+                                    </div>
+                                  </div>
+                                  <div className="rounded-lg border p-4 md:p-6">
+                                    <Skeleton className="h-5 w-40 mb-3" />
+                                    <Skeleton className="h-24 w-full" />
+                                    <div className="mt-3 flex gap-3">
+                                      <Skeleton className="h-10 w-20" />
+                                      <Skeleton className="h-10 w-24" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="rounded-lg border p-4 md:p-6">
+                                  <Skeleton className="h-5 w-32 mb-3" />
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    {[0,1,2].map((i) => (
+                                      <div key={i} className="border rounded-lg p-3">
+                                        <div className="flex items-center justify-between mb-2">
+                                          <Skeleton className="h-4 w-24" />
+                                          <Skeleton className="h-3 w-16" />
+                                        </div>
+                                        <Skeleton className="h-3 w-3/4 mb-2" />
+                                        <Skeleton className="h-3 w-full mb-2" />
+                                        <Skeleton className="h-3 w-2/3" />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            }
+                          >
+                            <SubscriptionGuard
+                              fallback={
+                                <div className="container space-y-6">
+                                  <div className="my-6">
+                                    <Skeleton className="h-6 w-32" />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Skeleton className="h-8 w-1/3" />
+                                    <Skeleton className="h-4 w-2/3" />
+                                  </div>
+                                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    <div className="rounded-lg border p-4 md:p-6">
+                                      <Skeleton className="h-5 w-40 mb-3" />
+                                      <div className="space-y-3">
+                                        <Skeleton className="h-4 w-full" />
+                                        <Skeleton className="h-4 w-full" />
+                                        <Skeleton className="h-4 w-3/4" />
+                                      </div>
+                                    </div>
+                                    <div className="rounded-lg border p-4 md:p-6">
+                                      <Skeleton className="h-5 w-40 mb-3" />
+                                      <Skeleton className="h-24 w-full" />
+                                      <div className="mt-3 flex gap-3">
+                                        <Skeleton className="h-10 w-20" />
+                                        <Skeleton className="h-10 w-24" />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="rounded-lg border p-4 md:p-6">
+                                    <Skeleton className="h-5 w-32 mb-3" />
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                      {[0,1,2].map((i) => (
+                                        <div key={i} className="border rounded-lg p-3">
+                                          <div className="flex items-center justify-between mb-2">
+                                            <Skeleton className="h-4 w-24" />
+                                            <Skeleton className="h-3 w-16" />
+                                          </div>
+                                          <Skeleton className="h-3 w-3/4 mb-2" />
+                                          <Skeleton className="h-3 w-full mb-2" />
+                                          <Skeleton className="h-3 w-2/3" />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              }
+                            >
                               <SidebarLayout>
                                 <ReviewWidget />
                               </SidebarLayout>

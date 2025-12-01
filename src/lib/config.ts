@@ -1,15 +1,36 @@
 // Secure Environment configuration - FRONTEND SAFE
+const APP_URL =
+  import.meta.env.VITE_APP_URL ||
+  (import.meta.env.PROD
+    ? "https://review-spark-gather.vercel.app"
+    : "http://localhost:8080");
+
+// Derive Supabase Functions base URL from Supabase URL (always public)
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+const SUPABASE_FUNCTIONS_URL = SUPABASE_URL
+  ? SUPABASE_URL.replace(".supabase.co", ".functions.supabase.co")
+  : "https://uiszftfrxbqjqdgybbmk.functions.supabase.co"; // fallback to current project
+
+// Ensure emails use a public-facing app URL even in development
+const PUBLIC_APP_URL =
+  import.meta.env.VITE_PUBLIC_APP_URL ||
+  (APP_URL.includes("localhost")
+    ? "https://review-spark-gather.vercel.app"
+    : APP_URL);
+
 export const config = {
   // Supabase - Public keys only
   supabase: {
     url: import.meta.env.VITE_SUPABASE_URL,
     anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    functionsUrl: SUPABASE_FUNCTIONS_URL,
   },
 
   // Application
   app: {
     name: import.meta.env.VITE_APP_NAME || "SyncReviews",
-    url: import.meta.env.VITE_APP_URL || "http://localhost:8080",
+    url: APP_URL,
+    publicUrl: PUBLIC_APP_URL,
     environment: import.meta.env.VITE_APP_ENVIRONMENT || "development",
   },
 

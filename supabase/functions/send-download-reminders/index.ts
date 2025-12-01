@@ -31,13 +31,18 @@ serve(async (req) => {
     // Get current date for tracking (send on Tuesdays, day after weekly reports)
     const today = new Date();
     const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const url = new URL(req.url);
+    const force = url.searchParams.get("force") === "true";
 
-    // Only run on Tuesdays (day 2)
-    if (currentDay !== 2) {
+    // Only run on Tuesdays (day 2) unless force override supplied
+    if (!force && currentDay !== 2) {
       return new Response(
         JSON.stringify({ message: "Download reminders only sent on Tuesdays" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+    if (force && currentDay !== 2) {
+      console.log("Force override enabled: running download reminders outside Tuesday");
     }
 
     const todayStr = today.toISOString().split("T")[0];
@@ -96,8 +101,9 @@ serve(async (req) => {
           .eq("sent_date", yesterdayStr)
           .single();
 
-        // Only send download reminder if they received a weekly report
-        if (!weeklyReportSent) {
+        // Only send download reminder if they received a weekly report,
+        // unless force override is enabled
+        if (!weeklyReportSent && !force) {
           console.log(
             `No weekly report sent to ${company.company_name} yesterday, skipping download reminder`
           );

@@ -54,6 +54,10 @@ export const SubscriptionGuard: React.FC<SubscriptionGuardProps> = ({
   }, [canAccessApp, loading, location, navigate, subscription, allowTemporaryAccess]);
 
   if (loading) {
+    // If a fallback is provided, use it during loading to avoid spinner
+    if (fallback) {
+      return <>{fallback}</>;
+    }
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

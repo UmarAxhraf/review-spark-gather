@@ -45,13 +45,18 @@ serve(async (req) => {
     // Get current date for tracking (send on Mondays for previous week)
     const today = new Date();
     const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const url = new URL(req.url);
+    const force = url.searchParams.get("force") === "true";
 
-    // Only run on Mondays (day 1)
-    if (currentDay !== 1) {
+    // Only run on Mondays (day 1) unless force override supplied
+    if (!force && currentDay !== 1) {
       return new Response(
         JSON.stringify({ message: "Weekly reports only sent on Mondays" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+    if (force && currentDay !== 1) {
+      console.log("Force override enabled: running weekly reports outside Monday");
     }
 
     const weekStart = new Date(today);
@@ -113,7 +118,7 @@ serve(async (req) => {
             `
             id,
             rating,
-            response,
+            admin_response,
             created_at
           `
           )
@@ -154,7 +159,7 @@ serve(async (req) => {
         const responseRate =
           totalReviews > 0
             ? Math.round(
-                (reviews.filter((r) => r.response).length / totalReviews) * 100
+                (reviews.filter((r: any) => !!r.admin_response).length / totalReviews) * 100
               )
             : 0;
         const qrScansCount = qrScans?.length || 0;

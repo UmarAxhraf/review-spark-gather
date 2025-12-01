@@ -1,4 +1,5 @@
 import { BackButton } from "@/components/ui/back-button";
+import { Skeleton } from "@/components/ui/skeleton";
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 // No API keys or custom endpoints needed; rewrite handles /api/public-reviews
@@ -8,6 +9,8 @@ const ReviewWidget: React.FC = () => {
   const [companyId, setCompanyId] = useState("");
   const [theme, setTheme] = useState<"light" | "dark" | "auto">("light");
   const [limit, setLimit] = useState<number>(6);
+  const [copied, setCopied] = useState(false);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   // Removed custom API override to rely on /api/public-reviews rewrite
 
   const targetId = "reviews-widget";
@@ -37,6 +40,8 @@ const ReviewWidget: React.FC = () => {
   const copySnippet = async () => {
     try {
       await navigator.clipboard.writeText(snippet);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
     } catch {
       // noop
     }
@@ -48,6 +53,23 @@ const ReviewWidget: React.FC = () => {
     if (container) container.innerHTML = "";
     const existing = document.getElementById("sr-preview-script");
     if (existing) existing.remove();
+
+    // Show local skeleton loader while the widget initializes/fetches
+    setIsLoadingPreview(true);
+
+    // Observe for sr-widget mount inside the target container to hide skeleton
+    if (container) {
+      const observer = new MutationObserver(() => {
+        if (container.querySelector(".sr-widget")) {
+          setIsLoadingPreview(false);
+          observer.disconnect();
+        }
+      });
+      observer.observe(container, { childList: true, subtree: true });
+
+      // Fallback timeout in case observer doesn't trigger (error or network issues)
+      window.setTimeout(() => setIsLoadingPreview(false), 6000);
+    }
 
     const script = document.createElement("script");
     script.id = "sr-preview-script";
@@ -62,7 +84,7 @@ const ReviewWidget: React.FC = () => {
 
   return (
     <div className="container space-y-6">
-      <div className="mb-6">
+      <div className="my-6">
         <BackButton />
       </div>
       <div className="mb-6">
@@ -123,9 +145,12 @@ const ReviewWidget: React.FC = () => {
           <div className="mt-3 flex gap-3">
             <button
               onClick={copySnippet}
-              className="rounded-md bg-black px-3 py-2 text-white"
+              disabled={copied}
+              className={`rounded-md px-3 py-2 text-white ${
+                copied ? "bg-green-600" : "bg-black"
+              }`}
             >
-              Copy
+              {copied ? "Copied" : "Copy"}
             </button>
             <button
               onClick={loadPreview}
@@ -143,7 +168,26 @@ const ReviewWidget: React.FC = () => {
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-6 md:max-w-none max-w-[860px] w-full mx-auto">
-        <h2 className="mb-3 text-xl font-semibold">Preview</h2>
+        <h2 className="text-xl font-semibold">Preview</h2>
+        <p className="mb-3 text-muted-foreground">
+          Click the preview button above to see how your company’s review widget
+          will look.
+        </p>
+        {isLoadingPreview && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="border rounded-lg p-3" aria-hidden="true">
+                <div className="flex items-center justify-between mb-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                <Skeleton className="h-3 w-3/4 mb-2" />
+                <Skeleton className="h-3 w-full mb-2" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+            ))}
+          </div>
+        )}
         <div id={targetId} />
       </div>
 

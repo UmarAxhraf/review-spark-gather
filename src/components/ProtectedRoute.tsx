@@ -12,12 +12,14 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   requiresSubscription?: boolean;
   allowPublicAccess?: boolean; // For review submission pages
+  fallbackDuringLoading?: React.ReactNode; // Optional route-specific loading UI
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiresSubscription = true,
   allowPublicAccess = false,
+  fallbackDuringLoading,
 }) => {
   const { user, loading, session, verifySession } = useAuth();
   const {
@@ -46,6 +48,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Show loading while checking auth
   if (loading) {
+    if (fallbackDuringLoading) return <>{fallbackDuringLoading}</>;
     return <PageLoading />;
   }
 
@@ -58,6 +61,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   if (requiresSubscription) {
     // Still loading subscription data
     if (subscriptionLoading) {
+      if (fallbackDuringLoading) return <>{fallbackDuringLoading}</>;
       return <PageLoading />;
     }
 

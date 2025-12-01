@@ -8,6 +8,7 @@ interface EmailRequest {
   from?: string;
   fromName?: string;
   type?: string;
+  inlineImages?: { cid: string; base64: string; filename?: string; contentType?: string }[];
 }
 
 const corsHeaders = {
@@ -72,7 +73,11 @@ serve(async (req) => {
     if (emailRequest.type === "review_response") {
       result = await sendReviewResponseEmail(emailRequest);
     }
-    // Use Hostinger SMTP as primary for other types
+    // Explicit Hostinger SMTP path (weekly/reminder callers use type: 'hostinger')
+    else if (emailRequest.type === "hostinger") {
+      result = await sendWithHostingerSMTP(emailRequest);
+    }
+    // Default/legacy path: treat 'supabase' or missing type as Hostinger SMTP
     else if (emailRequest.type === "supabase" || !emailRequest.type) {
       result = await sendWithHostingerSMTP(emailRequest);
     } else if (emailRequest.type === "resend") {
@@ -227,21 +232,49 @@ async function sendWithHostingerSMTP(emailData: EmailRequest) {
     response = await sendCommand("DATA");
     console.log("DATA Response:", response);
 
-    // Replace the email content sending section (around lines 221-230)
-    // Send email content line by line
-    const emailLines = [
-    `From: ${emailData.fromName || "SyncReviews"} <${emailData.from || smtpUser}>`,
-    `To: ${emailData.to}`,
-    `Subject: ${emailData.subject}`,
-    "MIME-Version: 1.0",
-    "Content-Type: text/html; charset=UTF-8",
-    "", // Empty line to separate headers from body
-    emailData.html
+    // Build MIME email with optional inline images
+    const boundary = `----=_SyncReviews_MIME_${Date.now()}`;
+    const useMultipart = Array.isArray(emailData.inlineImages) && emailData.inlineImages.length > 0;
+
+    const headerLines = [
+      `From: ${emailData.fromName || "SyncReviews"} <${emailData.from || smtpUser}>`,
+      `To: ${emailData.to}`,
+      `Subject: ${emailData.subject}`,
+      "MIME-Version: 1.0",
+      useMultipart
+        ? `Content-Type: multipart/related; boundary=\"${boundary}\"`
+        : "Content-Type: text/html; charset=UTF-8",
+      "",
     ];
-    
-    // Send each line separately
-    for (const line of emailLines) {
-    await conn.write(encoder.encode(line + "\r\n"));
+
+    for (const line of headerLines) {
+      await conn.write(encoder.encode(line + "\r\n"));
+    }
+
+    if (useMultipart) {
+      // HTML part
+      await conn.write(encoder.encode(`--${boundary}\r\n`));
+      await conn.write(encoder.encode("Content-Type: text/html; charset=UTF-8\r\n\r\n"));
+      await conn.write(encoder.encode(emailData.html + "\r\n"));
+
+      // Inline images
+      for (const img of emailData.inlineImages!) {
+        const contentType = img.contentType || "image/png";
+        const filename = img.filename || `${img.cid}.png`;
+        await conn.write(encoder.encode(`--${boundary}\r\n`));
+        await conn.write(
+          encoder.encode(
+            `Content-Type: ${contentType}\r\nContent-Transfer-Encoding: base64\r\nContent-ID: <${img.cid}>\r\nContent-Disposition: inline; filename=\"${filename}\"\r\n\r\n`
+          )
+        );
+        await conn.write(encoder.encode(img.base64 + "\r\n"));
+      }
+
+      // Closing boundary
+      await conn.write(encoder.encode(`--${boundary}--\r\n`));
+    } else {
+      // Simple HTML body
+      await conn.write(encoder.encode(emailData.html + "\r\n"));
     }
     
     // Send termination sequence

@@ -37,6 +37,13 @@
       .sr-widget .sr-video img { display: block; width: 100%; height: auto; }
       .sr-widget .sr-footer { margin-top: 8px; display: flex; justify-content: flex-end; padding-right: 4px; }
       .sr-widget .sr-brand { font-size: 12px; color: var(--sr-subtle); padding: 2px 6px; border-radius: 6px; background: transparent; }
+
+      /* Skeleton styles */
+      .sr-widget .sr-skeleton { position: relative; overflow: hidden; border: 1px solid var(--sr-border); border-radius: 12px; padding: 14px; background: var(--sr-bg); box-shadow: var(--sr-shadow); }
+      .sr-widget .sr-skel-bar { height: 12px; border-radius: 6px; background: rgba(229,231,235,0.8); }
+      .sr-widget[data-theme="dark"] .sr-skel-bar { background: rgba(31,41,55,0.8); }
+      .sr-widget .sr-skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.4), rgba(255,255,255,0)); animation: sr-shimmer 1.2s ease-in-out infinite; }
+      @keyframes sr-shimmer { 100% { transform: translateX(100%); } }
     `;
     document.head.appendChild(style);
   }
@@ -107,6 +114,22 @@
       scriptEl.parentNode?.insertBefore(container, scriptEl.nextSibling);
     }
 
+    // Render skeletons while fetching
+    const skeletonCount = Math.min(3, Math.max(1, limit));
+    for (let i = 0; i < skeletonCount; i++) {
+      const sk = document.createElement("div");
+      sk.className = "sr-skeleton";
+      sk.innerHTML = `
+        <div class="sr-row" style="margin-bottom:8px">
+          <div class="sr-skel-bar" style="width:44%; height:14px"></div>
+          <div class="sr-skel-bar" style="width:22%; height:12px"></div>
+        </div>
+        <div class="sr-skel-bar" style="width:62%; height:12px"></div>
+        <div class="sr-skel-bar" style="width:92%; height:12px; margin-top:6px"></div>
+      `;
+      list.appendChild(sk);
+    }
+
     // Fetch reviews
     const apiBase = apiOverride || buildApiBase(scriptEl);
     const url = `${apiBase}?company_id=${encodeURIComponent(companyId)}&limit=${encodeURIComponent(String(limit))}`;
@@ -116,6 +139,9 @@
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       const reviews = (json && json.reviews) || [];
+
+      // Clear skeletons before rendering content
+      list.innerHTML = "";
 
       if (!reviews.length) {
         const empty = document.createElement("div");
@@ -155,6 +181,8 @@
         list.appendChild(card);
       });
     } catch (e) {
+      // Clear skeletons on error
+      list.innerHTML = "";
       const err = document.createElement("div");
       err.className = "sr-card";
       err.innerHTML = `<p class="sr-subtle">Failed to load reviews.</p>`;
