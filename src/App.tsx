@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageLoading } from "@/components/ui/page-loading";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { QRCodeProvider } from "./contexts/QRCodeContext";
@@ -46,23 +48,35 @@ const Support = lazy(() => import("./pages/Support"));
 const ReviewRequest = lazy(() => import("./pages/ReviewRequest"));
 const ReviewWidget = lazy(() => import("./pages/ReviewWidget"));
 
-// Loading component for Suspense fallback (skeleton-based)
-const PageLoader = () => (
-  <div className="container py-8 space-y-4">
-    <Skeleton className="h-6 w-1/3" />
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="border rounded-lg p-4">
-          <div className="flex justify-between mb-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-3 w-16" />
-          </div>
-          <Skeleton className="h-3 w-3/4 mb-2" />
-          <Skeleton className="h-3 w-full mb-2" />
-          <Skeleton className="h-3 w-2/3" />
+// Global fallback (spinner) used to minimize mismatched skeletons on public pages
+const GlobalSuspenseFallback = () => (
+  <PageLoading fullScreen text="Loading..." />
+);
+
+// Auth page skeleton to match login/signup card layout
+const AuthPageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <Card className="w-full max-w-md">
+      <CardHeader>
+        <div className="space-y-2 text-center">
+          <Skeleton className="h-6 w-32 mx-auto" />
+          <Skeleton className="h-4 w-40 mx-auto" />
         </div>
-      ))}
-    </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-5 w-24" />
+          <Skeleton className="h-5 w-24" />
+        </div>
+        <Skeleton className="h-10 w-full" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-4 w-28" />
+        </div>
+      </CardContent>
+    </Card>
   </div>
 );
 
@@ -91,12 +105,26 @@ const App = () => (
                 <Toaster />
                 <Sonner />
                 <BrowserRouter>
-                  <Suspense fallback={<PageLoader />}>
+                  <Suspense fallback={<GlobalSuspenseFallback />}>
                     <Routes>
                       {/* Public routes */}
                       <Route path="/" element={<Index />} />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/signup" element={<Signup />} />
+                      <Route
+                        path="/login"
+                        element={
+                          <Suspense fallback={<AuthPageLoader />}>
+                            <Login />
+                          </Suspense>
+                        }
+                      />
+                      <Route
+                        path="/signup"
+                        element={
+                          <Suspense fallback={<AuthPageLoader />}>
+                            <Signup />
+                          </Suspense>
+                        }
+                      />
                       <Route
                         path="/review/:qrCodeId"
                         element={<ReviewSubmission />}

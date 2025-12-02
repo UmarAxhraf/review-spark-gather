@@ -188,11 +188,11 @@ const Sidebar = ({ className }: SidebarProps) => {
       icon: Mail,
     },
 
-    // {
-    //   label: "Review Widget",
-    //   path: "/review-widget",
-    //   icon: PanelsTopLeft,
-    // },
+    {
+      label: "Review Widget",
+      path: "/review-widget",
+      icon: PanelsTopLeft,
+    },
 
     {
       label: "Notifications",

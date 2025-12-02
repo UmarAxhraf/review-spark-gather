@@ -94,8 +94,9 @@ const ReviewWidget: React.FC = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-6 md:max-w-none max-w-[640px] w-full mx-auto">
+      {/* <div className="grid grid-cols-1 gap-6 md:grid-cols-2"> */}
+      <div className="grid grid-cols-1 gap-6">
+        {/* <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-6 md:max-w-none max-w-[640px] w-full mx-auto">
           <h2 className="mb-3 text-xl font-semibold">Configuration</h2>
           <div className="space-y-4">
             <div>
@@ -133,9 +134,8 @@ const ReviewWidget: React.FC = () => {
                 className="w-full rounded-md border border-gray-300 p-2"
               />
             </div>
-            {/* Custom API removed; rely on /api/public-reviews rewrite */}
           </div>
-        </div>
+        </div> */}
 
         <div className="rounded-lg border border-gray-200 bg-white p-4 md:p-6 md:max-w-none max-w-[640px] w-full mx-auto">
           <h2 className="mb-3 text-xl font-semibold">Embed Snippet</h2>
@@ -204,8 +204,8 @@ const ReviewWidget: React.FC = () => {
           </li>
           <li>No keys or extra attributes are required.</li>
           <li>
-            Adjust <code>data-theme</code> and <code>data-limit</code> as
-            needed.
+            Adjust <code>data-theme</code> like Light, Dark, Auto and{" "}
+            <code>data-limit</code> like 5,6 as needed.
           </li>
         </ul>
       </div>
